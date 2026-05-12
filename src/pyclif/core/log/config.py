@@ -39,9 +39,9 @@ class PyclifVerbosityOption(BaseVerbosityOption):
         verb_level_int = PYCLIF_LOG_LEVELS[value]
 
         # Check if file logging is active and requires a lower log level
-        file_level_name = ctx.meta.get("pyclif_log_file_level", "DEBUG")
+        file_level_name = ctx.meta.get("pyclif.log_file_level", "DEBUG")
         file_level_int = PYCLIF_LOG_LEVELS.get(file_level_name, logging.DEBUG)
-        has_file = ctx.meta.get("pyclif_log_file_path") is not None
+        has_file = ctx.meta.get("pyclif.log_file_path") is not None
 
         min_level: int = min(verb_level_int, file_level_int) if has_file else verb_level_int
 
@@ -276,8 +276,8 @@ def create_log_file_callback(
     def callback(ctx, param, value):
         """Callback function for the log file option."""
         if value:
-            ctx.meta["pyclif_log_file_path"] = value
-            ctx.meta["pyclif_log_file_level"] = default_level
+            ctx.meta["pyclif.log_file_path"] = value
+            ctx.meta["pyclif.log_file_level"] = default_level
             setup_file_logging(
                 log_file=value,
                 level=default_level,

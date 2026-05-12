@@ -545,6 +545,35 @@ class TestPyclifVerbosityOption:
         assert mock_ctx.meta["click_extra.verbosity_level"] == "DEBUG"
         assert mock_ctx.meta["click_extra.verbosity"] == "DEBUG"
 
+    @patch("pyclif.core.log.config.configure_rich_logging")
+    def test_set_level_uses_pyclif_dot_log_file_keys(self, mock_configure, verbosity_option):
+        """set_level reads pyclif.log_file_path and pyclif.log_file_level,
+        not the old underscore names.
+
+        When a log file is active, the effective logger level must be min(verbosity, file_level).
+        If the wrong key names were read, the file branch would be skipped and the logger
+        would be set to the verbosity level alone.
+        """
+        mock_ctx = Mock()
+        mock_ctx.meta = {
+            "pyclif.log_file_path": "/tmp/test.log",
+            "pyclif.log_file_level": "DEBUG",
+        }
+        mock_param = Mock()
+        mock_logger = Mock()
+
+        with patch.object(
+            type(verbosity_option), "all_loggers", new_callable=PropertyMock
+        ) as mock_all_loggers:
+            mock_all_loggers.return_value = iter([mock_logger])
+            with patch.object(verbosity_option, "reset_loggers"):
+                # noinspection PyTypeChecker
+                verbosity_option.set_level(mock_ctx, mock_param, "WARNING")
+
+        # file_level=DEBUG (10) < verbosity=WARNING (30) → min level is DEBUG
+        expected_level = min(PYCLIF_LOG_LEVELS["WARNING"], PYCLIF_LOG_LEVELS["DEBUG"])
+        mock_logger.setLevel.assert_called_once_with(expected_level)
+
 
 class TestLoggerFactoryFunctions:
     """Test logger factory functions."""
