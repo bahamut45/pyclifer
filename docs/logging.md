@@ -59,10 +59,19 @@ def cli():
     use_rich_logging=True,
     enable_secrets_filter=True,
     add_log_file_option=True,
-    log_file_default_level="TRACE"
+    log_file_default_level="TRACE",
 )
 def advanced_cli():
     """CLI with explicit Rich configuration."""
+    pass
+
+
+@app_group(
+    enable_secrets_filter=True,
+    sensitive_fields=["bearer_token", "api_secret_key"],
+)
+def secure_cli():
+    """CLI that masks custom sensitive fields in addition to the defaults."""
     pass
 ```
 
@@ -125,7 +134,8 @@ from pyclif import get_logger, configure_rich_logging
 configure_rich_logging(
     use_rich=True,
     rich_tracebacks=True,
-    enable_secrets_filter=True
+    enable_secrets_filter=True,
+    sensitive_fields=["bearer_token", "api_secret_key"],  # merged into defaults
 )
 
 logger = get_logger()  # Automatically Rich-enabled
@@ -133,10 +143,28 @@ logger = get_logger()  # Automatically Rich-enabled
 
 ## Features
 
+### Custom Sensitive Fields
+
+`SecretsMasker` ships with a built-in set of field names it always masks (`password`, `api_key`,
+`token`, `secret`, `access_token`, etc.). Pass `sensitive_fields` to extend this list — the
+defaults are never removed.
+
+```python
+@app_group(
+    sensitive_fields=["bearer_token", "api_secret_key"],
+)
+def cli():
+    """bearer_token and api_secret_key are masked in addition to the defaults."""
+    pass
+```
+
+`sensitive_fields` propagates to both the console handler and the file handler (if `--log-file`
+is active). The complete default list is available as `SecretsMasker.DEFAULT_FIELDS`.
+
 ### Preserved Functionality
 
 - **TRACE level**: Custom debug level (value 5)
-- **SecretsMasker filter**: Automatic masking of sensitive data
+- **SecretsMasker filter**: Automatic masking of sensitive data — extensible via `sensitive_fields`
 - **Full compatibility**: Works with existing code without modifications
 
 ### Rich Capabilities
