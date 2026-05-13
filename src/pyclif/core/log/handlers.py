@@ -25,6 +25,7 @@ class RichExtraStreamHandler(ExtraStreamHandler):
         stream: TextIOBase | None = None,
         rich_tracebacks: bool = True,
         enable_secrets_filter: bool = True,
+        sensitive_fields: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the Rich Extra Stream Handler.
@@ -33,27 +34,25 @@ class RichExtraStreamHandler(ExtraStreamHandler):
             stream: Output stream (defaults to sys.stderr).
             rich_tracebacks: Enable Rich tracebacks.
             enable_secrets_filter: Enable automatic secrets filtering.
+            sensitive_fields: Additional field names to mask on top of the defaults.
+                              Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
             **kwargs: Additional keyword arguments passed to RichHandler.
         """
-        # Initialize the parent ExtraStreamHandler
         super().__init__(stream or sys.stderr)
 
-        # Create Rich console that uses the same stream
         self.rich_console = Console(
             file=self.stream,
             stderr=(self.stream == sys.stderr),
         )
 
-        # Create Rich handler for advanced features
         self._rich_handler = RichHandler(
             console=self.rich_console,
             rich_tracebacks=rich_tracebacks,
             **kwargs,
         )
 
-        # Add secret filter by default
         if enable_secrets_filter:
-            self.addFilter(SecretsMasker())
+            self.addFilter(SecretsMasker(sensitive_fields=sensitive_fields))
 
     def emit(self, record: logging.LogRecord) -> None:
         """Use Rich handler for enhanced output while maintaining click-extra compatibility.

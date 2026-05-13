@@ -60,6 +60,7 @@ class GroupDecorator:
                 use_rich=True,
                 rich_tracebacks=True,
                 enable_secrets_filter=self.config.enable_secrets_filter,
+                sensitive_fields=self.config.sensitive_fields or None,
             )
 
     def _apply_rich_help(self, f: Callable) -> Callable:
@@ -109,6 +110,7 @@ class GroupDecorator:
                 interval=self.config.log_file_rotation_interval,
                 backup_count=self.config.log_file_rotation_backup_count,
                 enable_secrets_filter=self.config.enable_secrets_filter,
+                sensitive_fields=self.config.sensitive_fields or None,
             )(f)
 
         if self.config.add_version_option:
@@ -536,6 +538,7 @@ def log_file_option(
     interval: int = 1,
     backup_count: int = 7,
     enable_secrets_filter: bool = False,
+    sensitive_fields: list[str] | None = None,
     is_global: bool = False,
     show_envvar: bool = True,
     **kwargs: Any,
@@ -549,6 +552,8 @@ def log_file_option(
         interval: Rotation interval value.
         backup_count: Number of backup files to keep.
         enable_secrets_filter: Enable secrets filtering in logs.
+        sensitive_fields: Additional field names to mask on top of the defaults.
+                          Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
         is_global: If True, the option is propagated to all subcommands.
         show_envvar: Show environment variables in the help output.
         **kwargs: Additional arguments passed to the option decorator.
@@ -569,6 +574,7 @@ def log_file_option(
         interval=interval,
         backup_count=backup_count,
         enable_secrets_filter=enable_secrets_filter,
+        sensitive_fields=sensitive_fields,
     )
 
     return option(*param_decls, is_global=is_global, show_envvar=show_envvar, **kwargs)

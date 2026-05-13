@@ -3,7 +3,7 @@
 import logging
 import re
 from collections import namedtuple
-from typing import Any
+from typing import Any, ClassVar
 
 DEFAULT_SENSITIVE_FIELDS = frozenset(
     {
@@ -22,7 +22,6 @@ DEFAULT_SENSITIVE_FIELDS = frozenset(
         "service_account",
     }
 )
-REGEX_SENSITIVE_FIELDS = re.compile("|".join(DEFAULT_SENSITIVE_FIELDS))
 
 
 def should_hide_value_for_key(name: str) -> bool:
@@ -45,14 +44,22 @@ def should_hide_value_for_key(name: str) -> bool:
 
 
 class SecretsMasker(logging.Filter):
-    """Redact secrets from logs"""
+    """Redact secrets from logs."""
 
     ALREADY_FILTERED_FLAG = "__SecretsMasker_filtered"
+    DEFAULT_FIELDS: ClassVar[frozenset[str]] = DEFAULT_SENSITIVE_FIELDS
 
-    def __init__(self):
-        """Initialize the filter with the default sensitive field regex."""
+    def __init__(self, sensitive_fields: list[str] | None = None) -> None:
+        """Initialize the masker, merging sensitive_fields into DEFAULT_FIELDS.
+
+        Args:
+            sensitive_fields: Additional field names to mask on top of DEFAULT_FIELDS.
+                              None and [] are equivalent — only DEFAULT_FIELDS are used.
+        """
         super().__init__()
-        self.replacer = REGEX_SENSITIVE_FIELDS
+        all_fields = self.DEFAULT_FIELDS | set(sensitive_fields or [])
+        pattern = "|".join(re.escape(f) for f in sorted(all_fields))
+        self._regex = re.compile(rf"\b({pattern})\b", re.IGNORECASE)
 
     def filter(self, record: logging.LogRecord) -> bool:
         """Filter a log record by redacting sensitive values.
@@ -66,14 +73,14 @@ class SecretsMasker(logging.Filter):
 
         Returns:
             True if the record was successfully filtered or already processed,
-            False if no replacer is configured.
+            False if no regex is configured.
         """
         record_dict = record.__dict__
 
         if self.ALREADY_FILTERED_FLAG in record_dict:
             return True
 
-        if self.replacer:
+        if self._regex:
             for k, v in record_dict.items():
                 record_dict[k] = self.redact(v)
         else:

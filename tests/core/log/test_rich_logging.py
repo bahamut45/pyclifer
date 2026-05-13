@@ -416,11 +416,34 @@ class TestSecretsMasker:
         assert should_hide_value_for_key(42) is False
         assert should_hide_value_for_key(None) is False
 
-    def test_filter_returns_false_when_replacer_is_none(self, masker):
-        """Test that filter() returns False when no replacer is configured."""
-        masker.replacer = None
+    def test_filter_returns_false_when_regex_is_none(self, masker):
+        """filter() returns False when _regex is set to None."""
+        masker._regex = None
         record = logging.LogRecord("test", logging.INFO, "", 0, "msg", (), None)
         assert masker.filter(record) is False
+
+    def test_sensitive_fields_are_added_to_defaults(self):
+        """sensitive_fields extends DEFAULT_FIELDS — defaults remain active."""
+        masker = SecretsMasker(sensitive_fields=["bearer_token"])
+        test_data = {"bearer_token": "abc", "password": "xyz"}
+        redacted = masker.redact(test_data)
+        assert redacted["bearer_token"] == "*CENSORED*"
+        assert redacted["password"] == "*CENSORED*"
+
+    def test_sensitive_fields_empty_list_behaves_like_none(self):
+        """sensitive_fields=[] and sensitive_fields=None produce identical results."""
+        masker_none = SecretsMasker(sensitive_fields=None)
+        masker_empty = SecretsMasker(sensitive_fields=[])
+        test_data = {"api_key": "secret123", "name": "alice"}
+        assert masker_none.redact(test_data) == masker_empty.redact(test_data)
+
+    def test_default_fields_always_present_with_sensitive_fields(self):
+        """Passing sensitive_fields does not remove any DEFAULT_FIELDS entry."""
+        masker = SecretsMasker(sensitive_fields=["custom_field"])
+        for field_name in SecretsMasker.DEFAULT_FIELDS:
+            data = {field_name: "should_be_censored"}
+            redacted = masker.redact(data)
+            assert redacted[field_name] == "*CENSORED*", f"{field_name} was not censored"
 
     def test_redact_all_dict(self, masker):
         """Test _redact_all censors all string values in a dict."""

@@ -1,6 +1,6 @@
 """Custom Click classes for pyclif."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from time import perf_counter
 from typing import Any
@@ -274,3 +274,6 @@ class GroupConfig:
 
     # Error handling
     unhandled_exception_log_level: str = "error"
+
+    # Security
+    sensitive_fields: list[str] = field(default_factory=list)

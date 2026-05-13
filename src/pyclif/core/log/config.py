@@ -88,6 +88,7 @@ def configure_rich_logging(
     use_rich: bool = True,
     rich_tracebacks: bool = True,
     enable_secrets_filter: bool = True,
+    sensitive_fields: list[str] | None = None,
     force_reconfigure: bool = False,
 ) -> None:
     """Configure the Rich logging system once and centrally.
@@ -101,6 +102,8 @@ def configure_rich_logging(
         use_rich: Enable Rich logging capabilities.
         rich_tracebacks: Enable Rich tracebacks for exceptions.
         enable_secrets_filter: Enable automatic secrets filtering.
+        sensitive_fields: Additional field names to mask on top of the defaults.
+                          Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
         force_reconfigure: Force reconfiguration even if already configured.
     """
     # Check if Rich configuration is already active
@@ -122,6 +125,7 @@ def configure_rich_logging(
         shared_handler = RichExtraStreamHandler(
             rich_tracebacks=rich_tracebacks,
             enable_secrets_filter=enable_secrets_filter,
+            sensitive_fields=sensitive_fields,
         )
         shared_handler.setFormatter(RichExtraFormatter())
 
@@ -181,6 +185,7 @@ def setup_file_logging(
     interval: int = 1,
     backup_count: int = 7,
     enable_secrets_filter: bool = True,
+    sensitive_fields: list[str] | None = None,
 ) -> None:
     """Configure a time-based rotating file handler for logging.
 
@@ -191,6 +196,8 @@ def setup_file_logging(
         interval: Interval value.
         backup_count: Number of historical files to keep.
         enable_secrets_filter: Apply the secret filter to the file logs.
+        sensitive_fields: Additional field names to mask on top of the defaults.
+                          Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
     """
     root_logger = logging.getLogger()
     abs_log_file = str(Path(log_file).resolve())
@@ -254,7 +261,7 @@ def setup_file_logging(
     if enable_secrets_filter:
         from .filters import SecretsMasker
 
-        handler.addFilter(SecretsMasker())
+        handler.addFilter(SecretsMasker(sensitive_fields=sensitive_fields))
 
     root_logger.addHandler(handler)
 
@@ -269,6 +276,7 @@ def create_log_file_callback(
     interval: int = 1,
     backup_count: int = 7,
     enable_secrets_filter: bool = True,
+    sensitive_fields: list[str] | None = None,
 ):
     """Create a Click callback for the log file option."""
 
@@ -285,6 +293,7 @@ def create_log_file_callback(
                 interval=interval,
                 backup_count=backup_count,
                 enable_secrets_filter=enable_secrets_filter,
+                sensitive_fields=sensitive_fields,
             )
         return value
 
