@@ -11,6 +11,6 @@ repos:
       - id: mkdocs-build
         name: mkdocs build --strict
         language: system
-        entry: mkdocs build --strict --quiet
+        entry: .venv/bin/mkdocs build --strict --quiet
         files: ^(docs/.*\.md|mkdocs\.yml)$
         pass_filenames: false
