@@ -110,72 +110,133 @@ class TestPrintResultFallbackRenderer:
 
 
 # ---------------------------------------------------------------------------
-# TestExtractFilterValue
+# TestResolveFilterPath
 # ---------------------------------------------------------------------------
 
 
-class TestExtractFilterValue:
-    """Tests for _extract_filter_value."""
+class TestResolveFilterPath:
+    """Tests for _resolve_filter_path."""
 
-    # --- single key ---
+    def test_key_found_returns_value_and_true(self) -> None:
+        data = {"results": [{"id": 42}]}
+        value, found = OutputFormatMixin._resolve_filter_path(data, "results")
+        assert found is True
+        assert value == [{"id": 42}]
 
-    def test_key_in_data_sub_dict(self) -> None:
-        data = {"success": True, "data": {"results": [{"id": 42}]}}
-        assert OutputFormatMixin._extract_filter_value(data, "results") == [{"id": 42}]
+    def test_missing_key_returns_none_and_false(self) -> None:
+        data = {"results": []}
+        value, found = OutputFormatMixin._resolve_filter_path(data, "nonexistent")
+        assert found is False
+        assert value is None
 
-    def test_key_at_top_level(self) -> None:
-        data = {"success": True, "message": "done", "data": {}}
-        assert OutputFormatMixin._extract_filter_value(data, "message") == "done"
-
-    def test_data_sub_dict_takes_priority_over_top_level(self) -> None:
-        data = {"message": "top", "data": {"message": "nested"}}
-        assert OutputFormatMixin._extract_filter_value(data, "message") == "nested"
-
-    def test_missing_key_returns_none(self) -> None:
-        data = {"success": True, "data": {}}
-        assert OutputFormatMixin._extract_filter_value(data, "nonexistent") is None
-
-    def test_null_value_is_returned_not_skipped(self) -> None:
-        data = {"data": {"key": None}}
-        assert OutputFormatMixin._extract_filter_value(data, "key") is None
-
-    def test_data_sub_not_a_dict_falls_back_to_top_level(self) -> None:
-        data = {"data": ["list", "not", "dict"], "message": "found"}
-        assert OutputFormatMixin._extract_filter_value(data, "message") == "found"
-
-    # --- dotted path ---
+    def test_null_value_returns_none_and_true(self) -> None:
+        data = {"key": None}
+        value, found = OutputFormatMixin._resolve_filter_path(data, "key")
+        assert found is True
+        assert value is None
 
     def test_dotted_path_into_nested_dict(self) -> None:
-        data = {"data": {"article": {"id": 7, "title": "hello"}}}
-        assert OutputFormatMixin._extract_filter_value(data, "article.title") == "hello"
+        data = {"article": {"id": 7, "title": "hello"}}
+        value, found = OutputFormatMixin._resolve_filter_path(data, "article.title")
+        assert found is True
+        assert value == "hello"
 
     def test_dotted_path_with_list_index(self) -> None:
-        data = {"data": {"results": [{"id": 1}, {"id": 2}]}}
-        assert OutputFormatMixin._extract_filter_value(data, "results.0.id") == 1
+        data = {"results": [{"id": 1}, {"id": 2}]}
+        value, found = OutputFormatMixin._resolve_filter_path(data, "results.0.id")
+        assert found is True
+        assert value == 1
 
-    def test_dotted_path_second_list_item(self) -> None:
-        data = {"data": {"results": [{"id": 1}, {"id": 2}]}}
-        assert OutputFormatMixin._extract_filter_value(data, "results.1.id") == 2
+    def test_negative_index_resolves_from_end(self) -> None:
+        data = {"results": [{"id": 1}, {"id": 2}, {"id": 3}]}
+        value, found = OutputFormatMixin._resolve_filter_path(data, "results.-1.id")
+        assert found is True
+        assert value == 3
 
-    def test_dotted_path_out_of_bounds_returns_none(self) -> None:
-        data = {"data": {"results": [{"id": 1}]}}
-        assert OutputFormatMixin._extract_filter_value(data, "results.5.id") is None
+    def test_list_index_out_of_bounds_returns_false(self) -> None:
+        data = {"results": [{"id": 1}]}
+        value, found = OutputFormatMixin._resolve_filter_path(data, "results.5.id")
+        assert found is False
+        assert value is None
 
-    def test_dotted_path_non_numeric_list_index_returns_none(self) -> None:
-        data = {"data": {"results": [{"id": 1}]}}
-        assert OutputFormatMixin._extract_filter_value(data, "results.x.id") is None
+    def test_non_numeric_list_index_returns_false(self) -> None:
+        data = {"results": [{"id": 1}]}
+        value, found = OutputFormatMixin._resolve_filter_path(data, "results.x.id")
+        assert found is False
+        assert value is None
 
-    def test_dotted_path_falls_back_to_top_level(self) -> None:
-        data = {"message": "top", "data": {"other": 1}}
-        assert OutputFormatMixin._extract_filter_value(data, "message") == "top"
+    def test_missing_intermediate_key_returns_false(self) -> None:
+        data = {"results": [{"id": 1}]}
+        value, found = OutputFormatMixin._resolve_filter_path(data, "results.0.missing")
+        assert found is False
+        assert value is None
 
-    def test_dotted_path_missing_intermediate_key_returns_none(self) -> None:
-        data = {"data": {"results": [{"id": 1}]}}
-        assert OutputFormatMixin._extract_filter_value(data, "results.0.missing") is None
+    def test_traverse_scalar_with_remaining_segments_returns_false(self) -> None:
+        data = {"leaf": "scalar"}
+        value, found = OutputFormatMixin._resolve_filter_path(data, "leaf.nested")
+        assert found is False
+        assert value is None
 
-    def test_traverse_scalar_with_remaining_segments_returns_none(self) -> None:
-        data = {"data": {"leaf": "scalar"}}
-        assert OutputFormatMixin._extract_filter_value(data, "leaf.nested") is None
+
+# ---------------------------------------------------------------------------
+# TestApplyOutputFilter
+# ---------------------------------------------------------------------------
+
+
+class TestApplyOutputFilter:
+    """Tests for _apply_output_filter."""
+
+    def test_valid_path_in_data_sub_dict(self) -> None:
+        ctx = DummyOutputContext(output_format="json")
+        data = {"success": True, "data": {"results": [{"id": 42}]}}
+        assert ctx._apply_output_filter(data, "results") == [{"id": 42}]
+
+    def test_valid_path_at_top_level(self) -> None:
+        ctx = DummyOutputContext(output_format="json")
+        data = {"success": True, "message": "done", "data": {}}
+        assert ctx._apply_output_filter(data, "message") == "done"
+
+    def test_data_sub_dict_takes_priority_over_top_level(self) -> None:
+        ctx = DummyOutputContext(output_format="json")
+        data = {"message": "top", "data": {"message": "nested"}}
+        assert ctx._apply_output_filter(data, "message") == "nested"
+
+    def test_data_sub_not_a_dict_falls_back_to_top_level(self) -> None:
+        ctx = DummyOutputContext(output_format="json")
+        data = {"data": ["list", "not", "dict"], "message": "found"}
+        assert ctx._apply_output_filter(data, "message") == "found"
+
+    def test_invalid_path_calls_print_result_with_failure_response(self) -> None:
+        ctx = DummyOutputContext(output_format="json")
+        ctx.print_result_based_on_format = MagicMock()  # type: ignore[method-assign]
+        data = {"success": True, "data": {"results": []}}
+        with pytest.raises(SystemExit) as exc_info:
+            ctx._apply_output_filter(data, "nonexistent.path")
+        assert exc_info.value.code == 2
+        ctx.print_result_based_on_format.assert_called_once()
+        error_response = ctx.print_result_based_on_format.call_args[0][0]
+        assert isinstance(error_response, Response)
+        assert error_response.success is False
+
+    def test_invalid_path_error_message_contains_path(self) -> None:
+        ctx = DummyOutputContext(output_format="json")
+        ctx.print_result_based_on_format = MagicMock()  # type: ignore[method-assign]
+        data = {"success": True, "data": {}}
+        with pytest.raises(SystemExit):
+            ctx._apply_output_filter(data, "bad.path")
+        error_response = ctx.print_result_based_on_format.call_args[0][0]
+        assert "bad.path" in error_response.message
+
+    def test_invalid_path_error_includes_available_keys(self) -> None:
+        ctx = DummyOutputContext(output_format="json")
+        ctx.print_result_based_on_format = MagicMock()  # type: ignore[method-assign]
+        data = {"success": True, "data": {"alpha": 1, "beta": 2}}
+        with pytest.raises(SystemExit):
+            ctx._apply_output_filter(data, "nonexistent")
+        error_response = ctx.print_result_based_on_format.call_args[0][0]
+        result = error_response.data["results"][0]
+        assert isinstance(result, OperationResult)
+        assert result.data["available_keys"] == ["alpha", "beta"]
 
 
 # ---------------------------------------------------------------------------
@@ -206,11 +267,13 @@ class TestPrintRawDict:
         ctx._print_raw_dict(data, "message")
         ctx.console.print.assert_called_once_with("done")
 
-    def test_filter_missing_key_prints_none(self) -> None:
+    def test_filter_missing_key_raises_system_exit(self) -> None:
         ctx = DummyOutputContext()
+        ctx.print_result_based_on_format = MagicMock()  # type: ignore[method-assign]
         data = {"success": True, "data": {}}
-        ctx._print_raw_dict(data, "nonexistent")
-        ctx.console.print.assert_called_once_with(None)
+        with pytest.raises(SystemExit) as exc_info:
+            ctx._print_raw_dict(data, "nonexistent")
+        assert exc_info.value.code == 2
 
 
 # ---------------------------------------------------------------------------

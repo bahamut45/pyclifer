@@ -146,14 +146,14 @@ class OutputFormatMixin:
         def _json() -> None:
             serialized = renderer.serialize(result)
             if filter_key:
-                self._print_json(self._extract_filter_value(serialized, filter_key))
+                self._print_json(self._apply_output_filter(serialized, filter_key))
             else:
                 self._print_json(serialized)
 
         def _yaml() -> None:
             serialized = renderer.serialize(result)
             if filter_key:
-                self._print_yaml(self._extract_filter_value(serialized, filter_key))
+                self._print_yaml(self._apply_output_filter(serialized, filter_key))
             else:
                 self._print_yaml(serialized)
 
@@ -168,51 +168,77 @@ class OutputFormatMixin:
         dispatch.get(output_format or "table", dispatch["table"])()
 
     @staticmethod
-    def _extract_filter_value(data: dict, filter_key: str) -> Any:
-        """Extract a dotted-path key from a serialized response dict.
-
-        Traverses data["data"] first (the structured payload), then falls back
-        to the top-level response dict. Each segment of a dotted path is
-        resolved in order; numeric segments are treated as list indices.
-
-        Examples:
-            "status"         -> data["data"]["status"]
-            "results.0.id"   -> data["data"]["results"][0]["id"]
-            "message"        -> data["message"]  (fallback when not in data)
+    def _resolve_filter_path(data: dict, path: str) -> tuple[Any, bool]:
+        """Traverse a dotted path in a nested dict or list.
 
         Args:
-            data: Serialized response dict.
-            filter_key: Dotted key path to extract (e.g. "results.0.id").
+            data: The dict to traverse.
+            path: Dotted path — numeric segments are treated as list indices,
+                  negative indices are supported (e.g. 'results.-1.id').
 
         Returns:
-            The extracted value, or None when the path cannot be resolved.
+            A tuple of (resolved value, found). If the path does not exist,
+            found is False and value is None.
         """
-        _MISSING = object()
-        segments = filter_key.split(".")
+        segments = path.split(".")
+        node: Any = data
+        for segment in segments:
+            if isinstance(node, list):
+                if not segment.lstrip("-").isdigit():
+                    return None, False
+                idx = int(segment)
+                if idx >= len(node) or idx < -len(node):
+                    return None, False
+                node = node[idx]
+            elif isinstance(node, dict):
+                if segment not in node:
+                    return None, False
+                node = node[segment]
+            else:
+                return None, False
+        return node, True
 
-        def _traverse(obj: Any, segs: list[str]) -> Any:
-            for seg in segs:
-                if isinstance(obj, dict):
-                    if seg not in obj:
-                        return _MISSING
-                    obj = obj[seg]
-                elif isinstance(obj, list):
-                    try:
-                        obj = obj[int(seg)]
-                    except (ValueError, IndexError):
-                        return _MISSING
-                else:
-                    return _MISSING
-            return obj
+    def _apply_output_filter(self, serialized: dict, filter_path: str) -> Any:
+        """Resolve a dotted filter path in a serialized response, or exit with an error.
 
-        sub = data.get("data")
+        Traverses data["data"] first (the structured payload), then falls back
+        to the top-level dict. On failure, prints an error Response and raises
+        SystemExit(2).
+
+        Args:
+            serialized: Serialized response dict.
+            filter_path: Dotted path to resolve (e.g. "results.0.id").
+
+        Returns:
+            The resolved value.
+
+        Raises:
+            SystemExit: With code 2 when the path cannot be resolved.
+        """
+        sub = serialized.get("data")
         if isinstance(sub, dict):
-            result = _traverse(sub, segments)
-            if result is not _MISSING:
-                return result
+            value, found = self._resolve_filter_path(sub, filter_path)
+            if found:
+                return value
 
-        result = _traverse(data, segments)
-        return result if result is not _MISSING else None
+        value, found = self._resolve_filter_path(serialized, filter_path)
+        if found:
+            return value
+
+        available_keys = sorted(sub.keys() if isinstance(sub, dict) else serialized.keys())
+        message = f"filter path '{filter_path}' not found in response."
+        err_result = OperationResult(
+            success=False,
+            item="output-filter",
+            message=message,
+            error_code=2,
+            data={"available_keys": available_keys},
+        )
+        error_response = Response.from_results(
+            [err_result], message=message, renderer=_ExceptionRenderer()
+        )
+        self.print_result_based_on_format(error_response)
+        raise SystemExit(2)
 
     def _print_raw_dict(self, data: dict, filter_key: str | None) -> None:
         """Print a serialized dict as compact JSON, or extract and print a raw value.
@@ -227,7 +253,7 @@ class OutputFormatMixin:
             filter_key: Key to extract, or None to print the full dict.
         """
         if filter_key:
-            self.console.print(self._extract_filter_value(data, filter_key))  # type: ignore[attr-defined]
+            self.console.print(self._apply_output_filter(data, filter_key))  # type: ignore[attr-defined]
         else:
             self.console.print(json.dumps(data, cls=_FallbackEncoder))  # type: ignore[attr-defined]
 

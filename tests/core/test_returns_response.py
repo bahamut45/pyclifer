@@ -364,8 +364,8 @@ class TestOutputFilterOption:
         assert "Hello" in result.output
         assert "ok" in result.output
 
-    def test_filter_missing_key_returns_none(self):
-        """Filtering a non-existent key returns None (no crash)."""
+    def test_filter_missing_key_exits_with_error(self):
+        """Filtering a non-existent key prints an error and exits with code 2."""
 
         app = _make_app(output_format_default="raw")
 
@@ -383,8 +383,8 @@ class TestOutputFilterOption:
 
         runner = CliRunner()
         result = runner.invoke(app, ["greet", "-f", "nonexistent"])
-        assert result.exit_code == 0
-        assert "None" in result.output
+        assert result.exit_code == 2
+        assert "nonexistent" in result.output
 
 
 # ---------------------------------------------------------------------------
