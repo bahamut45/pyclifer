@@ -632,6 +632,46 @@ def output_filter_option(
     return option(*param_decls, show_envvar=show_envvar, **kwargs)
 
 
+def pagination_options(
+    default_limit: int = 20,
+    max_limit: int = 100,
+) -> Callable[[_F], _F]:
+    """Inject --page and --limit options into a command.
+
+    Options are stored in ctx.meta under the keys 'pyclif.page' and
+    'pyclif.limit' via store_in_meta.
+
+    Args:
+        default_limit: Default number of results per page.
+        max_limit: Maximum allowed value for --limit (enforced via IntRange).
+
+    Returns:
+        A decorator that adds --page and --limit to the decorated function.
+    """
+
+    def decorator(f: _F) -> _F:
+        """Add --page and --limit options to the command."""
+        f = option(
+            "--limit",
+            "-l",
+            default=default_limit,
+            type=click_extra.IntRange(1, max_limit),
+            help=f"Results per page (max {max_limit}).",
+            store_in_meta=True,
+        )(f)
+        f = option(
+            "--page",
+            "-p",
+            default=1,
+            type=click_extra.IntRange(min=1),
+            help="Page number (1-indexed).",
+            store_in_meta=True,
+        )(f)
+        return f
+
+    return decorator
+
+
 def output_format_option(
     *param_decls: str,
     default_output_format: str = "table",

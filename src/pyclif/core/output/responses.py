@@ -197,3 +197,31 @@ class Response:
                 else:
                     serialized_dict[key] = value
             self.data = serialized_dict
+
+
+@dataclasses.dataclass
+class PaginatedResponse(Response):
+    """Response carrying pagination metadata in its serialized output.
+
+    Extends Response with page, limit, and total fields that are included
+    as a 'pagination' block in JSON and YAML output.
+
+    Attributes:
+        page: Current page number (1-indexed).
+        limit: Number of results per page.
+        total: Total number of results across all pages, or None if unknown.
+    """
+
+    page: int = 1
+    limit: int = 20
+    total: int | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Include a 'pagination' block in the serialized output.
+
+        Returns:
+            Dictionary with all Response fields plus a 'pagination' block.
+        """
+        base = super().to_dict()
+        base["pagination"] = {"page": self.page, "limit": self.limit, "total": self.total}
+        return base

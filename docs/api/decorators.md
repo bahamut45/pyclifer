@@ -52,3 +52,12 @@ Applied automatically when `handle_response=True` on `@app_group`.
 ::: pyclif.returns_response
 
 ---
+
+## pagination_options
+
+Injects `--page` and `--limit` options into a command. Values are stored in
+`ctx.meta["pyclif.page"]` and `ctx.meta["pyclif.limit"]` via `store_in_meta`.
+
+::: pyclif.pagination_options
+
+---

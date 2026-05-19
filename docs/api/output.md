@@ -18,6 +18,15 @@ message, optional structured data, and an error code.
 
 ---
 
+## PaginatedResponse
+
+Extends `Response` with pagination metadata (`page`, `limit`, `total`). Includes a
+`pagination` block in JSON and YAML output automatically.
+
+::: pyclif.PaginatedResponse
+
+---
+
 ## CliTable
 
 Wrapper around Rich `Table` for consistent tabular output.

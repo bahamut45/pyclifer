@@ -14,6 +14,7 @@ from pyclif.core.decorators import (
     option,
     output_filter_option,
     output_format_option,
+    pagination_options,
     verbosity_option,
 )
 
@@ -335,3 +336,105 @@ class TestOptionFactoryCustomParamDecls:
         opt_names = [n for p in app.params for n in p.opts]
         assert "--fmt" in opt_names
         assert "--output-format" not in opt_names
+
+
+# ---------------------------------------------------------------------------
+# pagination_options
+# ---------------------------------------------------------------------------
+
+
+class TestPaginationOptions:
+    """Test suite for the pagination_options decorator."""
+
+    def _make_cmd(self, **kwargs):
+        """Build a command decorated with pagination_options."""
+
+        @app_group()
+        @click.pass_context
+        def app(ctx):
+            """App"""
+
+        @app.command()
+        @pagination_options(**kwargs)
+        @click.pass_context
+        def cmd(ctx):
+            """Cmd"""
+
+        return cmd
+
+    def test_injects_page_and_limit_options(self):
+        """pagination_options adds --page and --limit to the command."""
+        cmd = self._make_cmd()
+        opt_names = [n for p in cmd.params for n in p.opts]
+        assert "--page" in opt_names
+        assert "--limit" in opt_names
+
+    def test_page_short_flag(self):
+        """--page has the -p short flag."""
+        cmd = self._make_cmd()
+        opt_names = [n for p in cmd.params for n in p.opts]
+        assert "-p" in opt_names
+
+    def test_limit_short_flag(self):
+        """--limit has the -l short flag."""
+        cmd = self._make_cmd()
+        opt_names = [n for p in cmd.params for n in p.opts]
+        assert "-l" in opt_names
+
+    def test_default_limit(self):
+        """--limit default is 20 when not overridden."""
+        cmd = self._make_cmd()
+        limit_param = next(p for p in cmd.params if "--limit" in p.opts)
+        assert limit_param.default == 20
+
+    def test_custom_default_limit(self):
+        """default_limit overrides the --limit default."""
+        cmd = self._make_cmd(default_limit=50)
+        limit_param = next(p for p in cmd.params if "--limit" in p.opts)
+        assert limit_param.default == 50
+
+    def test_default_page(self):
+        """--page default is 1."""
+        cmd = self._make_cmd()
+        page_param = next(p for p in cmd.params if "--page" in p.opts)
+        assert page_param.default == 1
+
+    def test_max_limit_enforced(self):
+        """--limit rejects values above max_limit."""
+        runner = CliRunner()
+
+        @app_group()
+        @click.pass_context
+        def app(ctx):
+            """App"""
+
+        @app.command()
+        @pagination_options(max_limit=10)
+        @click.pass_context
+        def cmd(ctx):
+            """Cmd"""
+
+        result = runner.invoke(app, ["cmd", "--limit", "11"])
+        assert result.exit_code != 0
+
+    def test_values_stored_in_meta(self):
+        """--page and --limit values are stored in ctx.meta."""
+        runner = CliRunner()
+        captured: dict = {}
+
+        @app_group()
+        @click.pass_context
+        def app(ctx):
+            """App"""
+
+        @app.command()
+        @pagination_options()
+        @click.pass_context
+        def cmd(ctx):
+            """Cmd"""
+            captured["page"] = ctx.meta.get("pyclif.page")
+            captured["limit"] = ctx.meta.get("pyclif.limit")
+
+        runner.invoke(app, ["cmd", "--page", "3", "--limit", "5"])
+        assert captured["page"] == 3
+        assert captured["limit"] == 5

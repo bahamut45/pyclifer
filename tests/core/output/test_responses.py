@@ -4,7 +4,12 @@ from unittest.mock import MagicMock
 
 from pyclif.core.mixins.output import OutputFormatMixin
 from pyclif.core.output.renderer import BaseRenderer
-from pyclif.core.output.responses import NON_SERIALIZABLE_FIELDS, OperationResult, Response
+from pyclif.core.output.responses import (
+    NON_SERIALIZABLE_FIELDS,
+    OperationResult,
+    PaginatedResponse,
+    Response,
+)
 
 
 class TestOperationResult:
@@ -327,3 +332,41 @@ class TestMaterialiseStream:
         response = Response.from_stream(gen, renderer=renderer)
         OutputFormatMixin._materialise_stream(response)
         assert response.message == "stream failed"
+
+
+class TestPaginatedResponse:
+    """Test suite for PaginatedResponse."""
+
+    def test_to_dict_includes_pagination_block(self) -> None:
+        """to_dict includes a 'pagination' key with page, limit, and total."""
+        response = PaginatedResponse(success=True, message="ok", page=2, limit=10, total=42)
+        result = response.to_dict()
+        assert result["pagination"] == {"page": 2, "limit": 10, "total": 42}
+
+    def test_to_dict_total_none_is_serialized(self) -> None:
+        """to_dict includes total=None when total is not known."""
+        response = PaginatedResponse(success=True, message="ok")
+        result = response.to_dict()
+        assert result["pagination"]["total"] is None
+
+    def test_default_values(self) -> None:
+        """PaginatedResponse defaults are page=1, limit=20, total=None."""
+        response = PaginatedResponse(success=True, message="ok")
+        assert response.page == 1
+        assert response.limit == 20
+        assert response.total is None
+
+    def test_inherits_response_fields(self) -> None:
+        """PaginatedResponse carries all base Response fields."""
+        response = PaginatedResponse(success=False, message="error", data={"x": 1}, error_code=3)
+        result = response.to_dict()
+        assert result["success"] is False
+        assert result["message"] == "error"
+        assert result["error_code"] == 3
+
+    def test_from_results_returns_paginated_response(self) -> None:
+        """from_results can be called on PaginatedResponse."""
+        results = [OperationResult.ok("a")]
+        response = PaginatedResponse.from_results(results, message="done")
+        assert isinstance(response, Response)
+        assert response.success is True

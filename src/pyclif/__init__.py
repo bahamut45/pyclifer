@@ -47,6 +47,7 @@ from .core.decorators import (
     group,
     option,
     output_filter_option,
+    pagination_options,
     returns_response,
 )
 from .core.interfaces import BaseInterface
@@ -74,6 +75,7 @@ from .core.output import (
     CliTableColumn,
     ExceptionTable,
     OperationResult,
+    PaginatedResponse,
     Response,
     ResponseRenderer,
 )
@@ -119,6 +121,7 @@ __all__ = [
     "confirmation_option",
     "password_option",
     "output_filter_option",
+    "pagination_options",
     "returns_response",
     "get_logger",
     "logger",
@@ -128,6 +131,7 @@ __all__ = [
     # class
     "BaseContext",
     "OperationResult",
+    "PaginatedResponse",
     "Response",
     "BaseInterface",
     "BaseRenderer",
