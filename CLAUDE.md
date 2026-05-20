@@ -29,7 +29,7 @@ framework logic has been ported over with the following improvements:
 
 ```bash
 # Install dev dependencies
-uv sync --dev
+uv sync --extra dev,docs
 
 # Run all tests
 python -m pytest tests/ -v
