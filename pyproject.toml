@@ -157,7 +157,7 @@ allow_dirty = false
 commit = true
 message = "🚀 RELEASE: {current_version} → {new_version}"
 commit_args = ""
-pre_commit_hooks = ["uv sync", "git add uv.lock", "git-cliff --tag v$(grep -m1 '^version = ' pyproject.toml | cut -d'\"' -f2) --output CHANGELOG.md", "git add CHANGELOG.md"]
+pre_commit_hooks = ["uv sync --extra dev,docs", "git add uv.lock", "git-cliff --tag v$(grep -m1 '^version = ' pyproject.toml | cut -d'\"' -f2) --output CHANGELOG.md", "git add CHANGELOG.md"]
 
 [[tool.bumpversion.files]]
 filename = "pyproject.toml"
