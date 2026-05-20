@@ -53,6 +53,7 @@ nav:
       - Core Classes: api/classes.md
       - Mixins: api/mixins.md
       - Interfaces: api/interfaces.md
+      - Models: api/models.md
 
 not_in_nav: |
   versions.json

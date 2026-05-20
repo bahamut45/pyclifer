@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from rich.console import Console
 from rich.panel import Panel
 
-from pyclif import OperationResult
+from pyclif import BaseModel, OperationResult
 from pyclif.core.output.renderer import BaseRenderer
 from pyclif.core.output.responses import Response
 
@@ -44,6 +44,17 @@ class _NoColumnsRenderer(BaseRenderer):
     fields = ["item", "success"]
 
 
+class _ArticleModel(BaseModel):
+    id: int
+    title: str
+    status: str
+
+
+class _ModelClassRenderer(BaseRenderer):
+    model_class = _ArticleModel
+    columns = ["id", "title"]
+
+
 # ---------------------------------------------------------------------------
 # TestGetFields
 # ---------------------------------------------------------------------------
@@ -59,6 +70,16 @@ class TestGetFields:
 
     def test_empty_by_default(self) -> None:
         assert BaseRenderer().get_fields() == []
+
+    def test_falls_back_to_model_class_field_names(self) -> None:
+        assert _ModelClassRenderer().get_fields() == ["id", "title", "status"]
+
+    def test_explicit_fields_take_priority_over_model_class(self) -> None:
+        class _Override(BaseRenderer):
+            model_class = _ArticleModel
+            fields = ["id"]
+
+        assert _Override().get_fields() == ["id"]
 
 
 # ---------------------------------------------------------------------------
@@ -111,6 +132,18 @@ class TestResultToRow:
         row = BaseRenderer()._result_to_row(result, ["item"])
         assert row == {"item": "file.py"}
 
+    def test_base_model_data_is_serialized(self) -> None:
+        article = _ArticleModel(id=1, title="Hello", status="draft")
+        result = OperationResult.ok("1", data=article)
+        row = BaseRenderer()._result_to_row(result, ["id", "title", "status"])
+        assert row == {"id": 1, "title": "Hello", "status": "draft"}
+
+    def test_base_model_data_takes_priority_over_attributes(self) -> None:
+        article = _ArticleModel(id=99, title="Override", status="published")
+        result = OperationResult.ok("1", data=article)
+        row = BaseRenderer()._result_to_row(result, ["id"])
+        assert row == {"id": 99}
+
 
 # ---------------------------------------------------------------------------
 # TestSerialize
@@ -142,6 +175,24 @@ class TestSerialize:
         row = serialized["data"]["results"][0]
         assert row["item"] == "x"
         assert row["success"] is True
+
+    def test_base_model_in_result_data_is_serialized(self) -> None:
+        article = _ArticleModel(id=1, title="Hello", status="draft")
+        result = OperationResult.ok("1", data=article)
+        response = _response([result], renderer=_ModelClassRenderer())
+        serialized = _ModelClassRenderer().serialize(response)
+        rows = serialized["data"]["results"]
+        assert len(rows) == 1
+        assert rows[0]["id"] == 1
+        assert rows[0]["title"] == "Hello"
+
+    def test_base_model_fields_via_model_class(self) -> None:
+        article = _ArticleModel(id=2, title="World", status="published")
+        result = OperationResult.ok("2", data=article)
+        response = _response([result], renderer=_ModelClassRenderer())
+        serialized = _ModelClassRenderer().serialize(response)
+        row = serialized["data"]["results"][0]
+        assert set(row.keys()) == {"id", "title", "status"}
 
 
 # ---------------------------------------------------------------------------

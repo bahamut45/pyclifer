@@ -2,6 +2,7 @@
 
 from unittest.mock import MagicMock
 
+from pyclif import BaseModel
 from pyclif.core.mixins.output import OutputFormatMixin
 from pyclif.core.output.renderer import BaseRenderer
 from pyclif.core.output.responses import (
@@ -213,6 +214,18 @@ class TestResponse:
         response = Response(success=True, message="ok", data=["a", "b"])
         response._serialize_data()
         assert response.data == ["a", "b"]
+
+    def test_serialize_data_with_base_model_value(self) -> None:
+        """_serialize_data calls to_dict() on BaseModel values in the data dict."""
+
+        class _Item(BaseModel):
+            id: int
+            name: str
+
+        item = _Item(id=1, name="test")
+        response = Response(success=True, message="ok", data={"item": item})
+        result = response.to_json()
+        assert result["data"]["item"] == {"id": 1, "name": "test"}
 
 
 class TestResponseFromStream:

@@ -8,6 +8,8 @@ from rich.console import Console
 from rich.panel import Panel
 
 if TYPE_CHECKING:
+    from pyclif.core.models import BaseModel
+
     from .responses import OperationResult, Response
     from .tables import CliTable, CliTableColumn
 
@@ -87,10 +89,22 @@ class BaseRenderer:
     rich_title: ClassVar[str] = ""
     success_message: ClassVar[str] = ""
     failure_message: ClassVar[str] = ""
+    model_class: ClassVar[type[BaseModel] | None] = None
 
     def get_fields(self) -> list[str]:
-        """Return a copy of the declared fields list."""
-        return list(self.fields)
+        """Return the effective field list.
+
+        Resolution order: explicit fields declaration, then model_class.field_names(),
+        then empty list.
+
+        Returns:
+            Field name strings in declaration order.
+        """
+        if self.fields:
+            return list(self.fields)
+        if self.model_class is not None:
+            return self.model_class.field_names()
+        return []
 
     def get_columns(self) -> list[str]:
         """Return a copy of the declared columns list, falling back to fields."""
@@ -101,6 +115,7 @@ class BaseRenderer:
 
         Checks result.data first (domain payload), then falls back to top-level
         OperationResult attributes (item, success, message, error_code).
+        If result.data is a BaseModel, it is serialized via to_dict() before lookup.
 
         Args:
             result: The operation result to extract data from.
@@ -109,10 +124,13 @@ class BaseRenderer:
         Returns:
             Dict mapping each column name to its value.
         """
+        data = result.data
+        if hasattr(data, "to_dict") and callable(data.to_dict):
+            data = data.to_dict()
         row = {}
         for col in columns:
-            if isinstance(result.data, dict) and col in result.data:
-                row[col] = result.data[col]
+            if isinstance(data, dict) and col in data:
+                row[col] = data[col]
             else:
                 row[col] = getattr(result, col, None)
         return row
@@ -134,15 +152,16 @@ class BaseRenderer:
             return response.to_json()
 
         results = response.data.get("results", [])
-        serialized = [
-            {
-                f: (r.data.get(f) if isinstance(r.data, dict) else None)
-                if isinstance(r.data, dict) and f in r.data
-                else getattr(r, f, None)
+        serialized = []
+        for r in results:
+            data = r.data
+            if hasattr(data, "to_dict") and callable(data.to_dict):
+                data = data.to_dict()
+            row = {
+                f: data.get(f) if isinstance(data, dict) and f in data else getattr(r, f, None)
                 for f in fields
             }
-            for r in results
-        ]
+            serialized.append(row)
         return {
             "success": response.success,
             "message": response.message,

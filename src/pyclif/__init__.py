@@ -69,6 +69,7 @@ from .core.mixins import (
     OutputFormatMixin,
     RichHelpersMixin,
 )
+from .core.models import BaseModel
 from .core.output import (
     BaseRenderer,
     CliTable,
@@ -130,6 +131,7 @@ __all__ = [
     "configure_rich_logging",
     # class
     "BaseContext",
+    "BaseModel",
     "OperationResult",
     "PaginatedResponse",
     "Response",

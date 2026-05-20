@@ -2,11 +2,13 @@
 
 from pyclif import BaseInterface, BaseRenderer, OperationResult
 
+from .models import {{ name_pascal }}
+
 
 class {{ name_pascal }}Renderer(BaseRenderer):
     """Output renderer for {{ name_pascal }} commands."""
 
-    fields = ["item", "success", "message"]
+    model_class = {{ name_pascal }}
     columns = ["item", "success"]
     success_message = "{{ name_pascal }} operation completed."
     failure_message = "{{ name_pascal }} operation failed."
