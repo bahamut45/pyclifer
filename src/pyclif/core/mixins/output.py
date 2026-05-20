@@ -37,7 +37,7 @@ class _ExceptionRenderer(BaseRenderer):
     Renders error details across all output formats. Not part of the public API.
     """
 
-    fields = ["success", "error_code", "message"]
+    fields = ["available_keys"]
 
     def table(self, response: Response) -> Any:
         """Build an ExceptionTable from the first result's error data."""

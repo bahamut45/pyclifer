@@ -139,7 +139,8 @@ def list_articles(ctx):
 ```
 
 Resolution order: `data["data"]` first, then top-level response fields (`success`, `message`,
-`error_code`). Numeric path segments are treated as list indices.
+`error_code`). Numeric path segments are treated as list indices. Negative indices are
+supported — `results.-1.id` points to the last element.
 
 The output format determines how the extracted value is printed:
 
@@ -147,6 +148,7 @@ The output format determines how the extracted value is printed:
 # raw: value as-is — best for shell scripting and piping
 myapp -o raw list-articles -f results           # [{"id": 1, ...}, {"id": 2, ...}]
 myapp -o raw list-articles -f results.0.title   # Hello pyclif
+myapp -o raw list-articles -f results.-1.title  # Advanced usage  (last element)
 myapp -o raw list-articles -f message           # 2 articles retrieved
 
 # json: value re-serialized as valid JSON
@@ -156,6 +158,32 @@ myapp -o json list-articles -f results.0.id     # 1
 # yaml: value re-serialized as valid YAML
 myapp -o yaml list-articles -f results.0.title  # 'Hello pyclif'\n
 ```
+
+### Invalid filter paths
+
+When the path cannot be resolved, pyclif prints an error in the **active output format**
+with the available keys at the last valid node, then exits with code 2.
+
+With `-o json`:
+
+```bash
+myapp -o json list-articles -f results.0.nonexistent
+```
+
+```json
+{
+  "success": false,
+  "message": "filter path 'results.0.nonexistent' not found in response.",
+  "error_code": 2,
+  "data": {
+    "results": [
+      {"available_keys": ["author", "id", "title"]}
+    ]
+  }
+}
+```
+
+Exit code is always `2` regardless of format.
 
 ## The Response Object
 
@@ -441,6 +469,67 @@ table = CliTable(fields=fields, rows=[
     {"id": 2, "name": "Bob", "active": False},
 ])
 ```
+
+## Paginated Commands — `pagination_options()` and `PaginatedResponse`
+
+For commands that list resources, `pagination_options()` injects `--page` / `-p` and
+`--limit` / `-l` in a single decorator. Values are stored in `ctx.meta` and read by the
+command without being passed as function arguments.
+
+```python
+from pyclif import app_group, command, pagination_options, PaginatedResponse, pass_context
+
+
+@app_group(handle_response=True)
+@pass_context
+def app(ctx):
+    """My CLI."""
+
+
+@app.command()
+@pagination_options(default_limit=50, max_limit=200)
+@pass_context
+def list_articles(ctx):
+    """List articles."""
+    page = ctx.meta["pyclif.page"]
+    limit = ctx.meta["pyclif.limit"]
+    results, total = ArticleService.list(page=page, limit=limit)
+    return PaginatedResponse(
+        success=True,
+        message=f"{len(results)} articles retrieved.",
+        data={"results": results},
+        page=page,
+        limit=limit,
+        total=total,
+    )
+```
+
+```bash
+myapp list-articles --page 2 --limit 25
+myapp list-articles -p 2 -l 25
+```
+
+`PaginatedResponse` extends `Response` with a `pagination` block in JSON and YAML output:
+
+```json
+{
+  "success": true,
+  "message": "25 articles retrieved.",
+  "pagination": {"page": 2, "limit": 25, "total": 142},
+  "data": {"results": [...]}
+}
+```
+
+When `total` is unknown (`total=None`), it is serialized as `null`. The `table`, `rich`, and
+`text` formats are unaffected — `PaginatedResponse` behaves identically to `Response` for
+those formats.
+
+`pagination_options()` parameters:
+
+| Parameter       | Default | Description                                    |
+|-----------------|---------|------------------------------------------------|
+| `default_limit` | `20`    | Default value for `--limit`                    |
+| `max_limit`     | `100`   | Maximum value enforced by `IntRange`           |
 
 ## See Also
 
