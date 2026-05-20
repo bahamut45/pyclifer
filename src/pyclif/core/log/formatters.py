@@ -2,8 +2,7 @@
 
 import logging
 
-import click
-from click_extra.colorize import default_theme
+from click_extra import get_default_theme, style
 from click_extra.logging import ExtraFormatter
 from rich.text import Text
 
@@ -29,11 +28,11 @@ class RichExtraFormatter(ExtraFormatter):
         # Handle TRACE level coloring
         if record.levelno == TRACE:
             # Style TRACE level with a custom color (dim blue, for example)
-            record.levelname = click.style("TRACE", fg="blue", dim=True)
+            record.levelname = style("TRACE", fg="blue", dim=True)
         else:
             # Let the parent handle click-extra's standard colorization
             level = record.levelname.lower()
-            level_style = getattr(default_theme, level, None)
+            level_style = getattr(get_default_theme(), level, None)
             if level_style:
                 record.levelname = level_style(record.levelname.upper())
 

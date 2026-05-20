@@ -38,7 +38,7 @@ class PyclifTimerOption(TimerOption):
     """
 
     # noinspection PyAttributeOutsideInit
-    def register_timer_on_close(
+    def init_timer(
         self, ctx: click_extra.Context, param: click_extra.Parameter, value: bool
     ) -> None:
         """Register the timer and store the context for deferred format check."""

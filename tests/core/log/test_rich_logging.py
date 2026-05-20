@@ -275,7 +275,7 @@ class TestRichExtraFormatter:
         record.levelname = "TRACE"
         record.message = "trace message"
 
-        with patch("click.style") as mock_style:
+        with patch("pyclif.core.log.formatters.style") as mock_style:
             mock_style.return_value = "STYLED_TRACE"
             result = formatter.formatMessage(record)
             mock_style.assert_called_once_with("TRACE", fg="blue", dim=True)
@@ -298,7 +298,9 @@ class TestRichExtraFormatter:
         record.levelname = "INFO"
         record.message = "info message"
 
-        with patch("pyclif.core.log.formatters.default_theme") as mock_theme:
+        with patch("pyclif.core.log.formatters.get_default_theme") as mock_get_theme:
+            mock_theme = Mock()
+            mock_get_theme.return_value = mock_theme
             mock_info_style = Mock(return_value="STYLED_INFO")
             mock_theme.info = mock_info_style
 
@@ -323,9 +325,9 @@ class TestRichExtraFormatter:
         record.levelname = "CUSTOMBAD"
         record.message = "custom message"
 
-        with patch("pyclif.core.log.formatters.default_theme") as mock_theme:
-            # No attribute matching "custombad" → getattr returns None
-            del mock_theme.custombad
+        with patch("pyclif.core.log.formatters.get_default_theme") as mock_get_theme:
+            mock_theme = Mock()
+            mock_get_theme.return_value = mock_theme
             mock_theme.configure_mock(**{"custombad": None})
 
             result = formatter.formatMessage(record)
