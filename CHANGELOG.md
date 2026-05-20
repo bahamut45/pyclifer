@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.15] - 2026-05-20
+
+### Features
+
+- **models**: Introduce BaseModel for core domain modeling
+
+### Miscellaneous
+
+- **pre-commit**: Update `uv sync` command with additional dependency groups
+
 ## [0.0.14] - 2026-05-20
 
 ### Features
