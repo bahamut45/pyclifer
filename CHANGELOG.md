@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.14] - 2026-05-20
+
+### Features
+
+- **logging**: Add support for custom sensitive field masking
+- **logging**: Enhance sensitive data masking and extend documentation
+- **output**: Add pagination support to responses and commands
+- **output**: Enhance filter path support and error handling
+
+### Miscellaneous
+
+- **pre-commit**: Update mkdocs build entry to use virtual environment
+- **pre-commit**: Update `uv sync` hook with additional groups
+
+### Refactoring
+
+- **output**: Improve filter path resolution and error handling
+
 ## [0.0.13] - 2026-04-23
 
 ### Documentation
