@@ -248,6 +248,34 @@ class TestAddCommand:
         assert "already exists" in results[0].message
 
 
+class TestAddCommands:
+    """Test suite for add_commands (multi-name variant)."""
+
+    def test_creates_multiple_commands(self, project) -> None:
+        """add_commands creates one command file per name."""
+        list(project.add_app("repos"))
+        results = list(project.add_commands(("list", "show"), "repos"))
+        assert any("commands/list.py" in r.item for r in results)
+        assert any("commands/show.py" in r.item for r in results)
+
+    def test_continues_after_partial_error(self, project) -> None:
+        """add_commands proceeds past a duplicate error and yields remaining results."""
+        list(project.add_app("repos"))
+        list(project.add_commands(("list",), "repos"))
+        results = list(project.add_commands(("list", "show"), "repos"))
+        failed = [r for r in results if not r.success]
+        succeeded = [r for r in results if r.success]
+        assert failed
+        assert succeeded
+
+    def test_single_name_equivalent_to_add_command(self, project) -> None:
+        """add_commands with one name produces the same results as add_command."""
+        list(project.add_app("repos"))
+        results = list(project.add_commands(("list",), "repos"))
+        assert any("commands/list.py" in r.item for r in results)
+        assert all(r.success for r in results)
+
+
 class TestAddCommandNested:
     """Test suite for add_command with dotted app paths."""
 

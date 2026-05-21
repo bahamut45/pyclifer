@@ -1,4 +1,4 @@
-"""pyclif project add command <name> --app <app>."""
+"""pyclif project add command <names…> --app <app>."""
 
 from pyclif import Response, argument, command, option, pass_context
 
@@ -6,14 +6,14 @@ from ...interfaces import ScaffoldingInterface
 
 
 @command()
-@argument("name")
+@argument("names", nargs=-1, required=True)
 @option(
     "--app",
     "app_name",
     required=True,
-    help="App that owns this command. Use dotted notation for nested groups (e.g. demo.tasks).",
+    help="App that owns these commands. Use dotted notation for nested groups (e.g. demo.tasks).",
 )
 @pass_context
-def command_(ctx, name: str, app_name: str) -> Response:
-    """Add a command to an existing app."""
-    return ScaffoldingInterface(ctx).respond("add_command", name, app_name)
+def command_(ctx, names: tuple[str, ...], app_name: str) -> Response:
+    """Add one or more commands to an existing app."""
+    return ScaffoldingInterface(ctx).respond("add_commands", names, app_name)

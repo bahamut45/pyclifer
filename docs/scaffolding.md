@@ -151,8 +151,7 @@ Result: `my-project status`, `my-project ping`, … — no intermediate group le
 **Adding commands to a flat app works exactly the same way:**
 
 ```bash
-pyclif project add command status --app health
-pyclif project add command ping   --app health
+pyclif project add command status ping --app health
 ```
 
 ### Mixing grouped and flat apps
@@ -181,17 +180,22 @@ my-project ping
 ## Adding a command
 
 A _command_ belongs to an existing app (grouped or flat). It gets its own file and is
-immediately reachable on the CLI.
+immediately reachable on the CLI. Pass one or more names to create several commands in one call.
 
 ```bash
+# Single command
 pyclif project add command list --app users
+
+# Multiple commands at once
+pyclif project add command list get create --app users
 ```
 
 **Options**
 
 | Option | Required | Description |
 |---|---|---|
-| `--app` | yes | App that owns this command |
+| `NAMES…` | yes | One or more command names to create |
+| `--app` | yes | App that owns the commands |
 
 **What gets created**
 
@@ -312,9 +316,7 @@ uv sync --extra dev
 pyclif project add app users
 
 # 3. Add commands to it
-pyclif project add command list   --app users
-pyclif project add command get    --app users
-pyclif project add command create --app users
+pyclif project add command list get create --app users
 
 # 4. Wrap an external service
 pyclif project add integration github --package
@@ -336,9 +338,7 @@ uv sync --extra dev
 pyclif project add app deploy --no-group
 
 # 3. Add commands
-pyclif project add command up     --app deploy
-pyclif project add command down   --app deploy
-pyclif project add command status --app deploy
+pyclif project add command up down status --app deploy
 
 # 4. Run the CLI — no group level
 uv run deploy-tool up

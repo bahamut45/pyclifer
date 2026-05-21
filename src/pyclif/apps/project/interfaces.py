@@ -28,6 +28,7 @@ class ScaffoldingInterface(BaseInterface):
         "add_app": ScaffoldingRenderer,
         "add_group": ScaffoldingRenderer,
         "add_command": ScaffoldingRenderer,
+        "add_commands": ScaffoldingRenderer,
         "add_integration": ScaffoldingRenderer,
     }
 
@@ -172,6 +173,19 @@ class ScaffoldingInterface(BaseInterface):
             yield self._write_rendered(dest, tmpl, ns)
 
         yield from self._wire_subgroup(ns["name_snake"], app)
+
+    def add_commands(self, names: tuple[str, ...], app: str) -> Iterator[OperationResult]:
+        """Create command files for multiple command names in a single call.
+
+        Args:
+            names: Command names to create.
+            app: App name to add the commands to.
+
+        Yields:
+            OperationResult for each file created or modified, across all names.
+        """
+        for name in names:
+            yield from self.add_command(name, app)
 
     def add_command(self, name: str, app: str) -> Iterator[OperationResult]:
         """Create a command file inside an app's commands/ directory.
