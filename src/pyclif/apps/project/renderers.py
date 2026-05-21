@@ -24,7 +24,7 @@ class ScaffoldingRenderer(BaseRenderer):
     Rich output shows a live spinner per file during execution, then a summary panel.
     """
 
-    fields = ["item", "action", "success"]
+    fields = ["item", "action", "success", "message"]
     columns = ["item", "action"]
     rich_title = "Scaffolding"
 
