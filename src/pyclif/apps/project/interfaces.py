@@ -126,8 +126,7 @@ class ScaffoldingInterface(BaseInterface):
             OperationResult for each file created or modified.
         """
         ns = self._names(name)
-        pkg = self._detect_package()
-        app_dir = self._root / "src" / pkg / "apps" / app
+        app_dir = self._resolve_app_dir(app)
         if not app_dir.exists():
             yield OperationResult.error(
                 str(app_dir),
@@ -185,8 +184,7 @@ class ScaffoldingInterface(BaseInterface):
             OperationResult for each file created or modified.
         """
         ns = self._names(name)
-        pkg = self._detect_package()
-        commands_dir = self._root / "src" / pkg / "apps" / app / "commands"
+        commands_dir = self._resolve_app_dir(app) / "commands"
         if not commands_dir.exists():
             yield OperationResult.error(
                 str(commands_dir),
@@ -310,8 +308,7 @@ class ScaffoldingInterface(BaseInterface):
         Yields:
             OperationResult for the modified file.
         """
-        pkg = self._detect_package()
-        parent_init = self._root / "src" / pkg / "apps" / app / "__init__.py"
+        parent_init = self._resolve_app_dir(app) / "__init__.py"
         content = parent_init.read_text()
         new_import = f"from .apps.{name_snake} import {name_snake}\n"
 
@@ -363,8 +360,7 @@ class ScaffoldingInterface(BaseInterface):
         Yields:
             OperationResult for the modified file.
         """
-        pkg = self._detect_package()
-        commands_init = self._root / "src" / pkg / "apps" / app / "commands" / "__init__.py"
+        commands_init = self._resolve_app_dir(app) / "commands" / "__init__.py"
         yield from self._append_to_init(
             commands_init,
             f"\nfrom .{name_snake} import {name_snake}\ncommands.append({name_snake})\n",
@@ -396,15 +392,15 @@ class ScaffoldingInterface(BaseInterface):
         Yields:
             OperationResult for the modified file.
         """
-        pkg = self._detect_package()
-        interfaces_file = self._root / "src" / pkg / "apps" / app / "interfaces.py"
+        interfaces_file = self._resolve_app_dir(app) / "interfaces.py"
         if not interfaces_file.exists():
             yield OperationResult.error(
                 str(interfaces_file), f"File '{interfaces_file}' not found."
             )
             return
 
-        app_pascal = "".join(w.capitalize() for w in app.split("_"))
+        app_leaf = app.split(".")[-1]
+        app_pascal = "".join(w.capitalize() for w in app_leaf.split("_"))
         renderer_cls = f"{app_pascal}Renderer"
         content = interfaces_file.read_text()
 
@@ -544,3 +540,19 @@ class ScaffoldingInterface(BaseInterface):
         if not candidates:
             raise RuntimeError("No package found under src/.")
         return candidates[0].name
+
+    def _resolve_app_dir(self, app_path: str) -> Path:
+        """Resolve a dotted app path to an absolute directory.
+
+        Args:
+            app_path: App path, either a simple name ("tasks") or dotted
+                ("demo.tasks", "a.b.c") for nested groups.
+
+        Returns:
+            Absolute path to the app directory.
+        """
+        parts = app_path.split(".")
+        path = self._root / "src" / self._detect_package() / "apps" / parts[0]
+        for part in parts[1:]:
+            path = path / "apps" / part
+        return path

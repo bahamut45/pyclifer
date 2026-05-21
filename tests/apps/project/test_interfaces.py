@@ -248,6 +248,60 @@ class TestAddCommand:
         assert "already exists" in results[0].message
 
 
+class TestAddCommandNested:
+    """Test suite for add_command with dotted app paths."""
+
+    def test_creates_command_in_nested_group(self, project, tmp_path) -> None:
+        """add_command with dotted path creates the file in the subgroup's commands/ dir."""
+        list(project.add_app("demo"))
+        list(project.add_group("tasks", "demo"))
+        results = list(project.add_command("list", "demo.tasks"))
+        assert any("demo/apps/tasks/commands/list.py" in r.item for r in results)
+
+    def test_wires_command_in_nested_group(self, project, tmp_path) -> None:
+        """commands/__init__.py of the subgroup receives the new import."""
+        list(project.add_app("demo"))
+        list(project.add_group("tasks", "demo"))
+        list(project.add_command("list", "demo.tasks"))
+        path = (
+            tmp_path
+            / "my-app"
+            / "src"
+            / "my_app"
+            / "apps"
+            / "demo"
+            / "apps"
+            / "tasks"
+            / "commands"
+            / "__init__.py"
+        )
+        content = path.read_text()
+        assert "from .list import list" in content
+        assert "commands.append(list)" in content
+
+    def test_three_levels_deep(self, project, tmp_path) -> None:
+        """Three-level dotted path a.b.c resolves to apps/a/apps/b/apps/c/."""
+        list(project.add_app("a"))
+        list(project.add_group("b", "a"))
+        list(project.add_group("c", "a.b"))
+        results = list(project.add_command("run", "a.b.c"))
+        assert any("a/apps/b/apps/c/commands/run.py" in r.item for r in results)
+
+    def test_simple_app_unchanged(self, project) -> None:
+        """Single-segment --app still resolves to a top-level app (no regression)."""
+        list(project.add_app("repos"))
+        results = list(project.add_command("list", "repos"))
+        assert any("repos/commands/list.py" in r.item for r in results)
+
+    def test_error_intermediate_not_found(self, project) -> None:
+        """Dotted path where an intermediate segment does not exist returns an error."""
+        list(project.add_app("demo"))
+        results = list(project.add_command("list", "demo.unknown"))
+        assert len(results) == 1
+        assert not results[0].success
+        assert "App 'demo.unknown' not found" in results[0].message
+
+
 class TestAddIntegration:
     """Test suite for add_integration."""
 
