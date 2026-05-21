@@ -13,6 +13,8 @@ from pyclif import OperationResult
 from pyclif.apps.project.renderers import ScaffoldingRenderer
 from pyclif.core.interfaces import BaseInterface
 
+_PLURAL_COMMANDS = frozenset({"list", "search", "sync", "fetch", "index"})
+
 
 class ScaffoldingInterface(BaseInterface):
     """Renders templates and manages generated project files.
@@ -268,30 +270,37 @@ class ScaffoldingInterface(BaseInterface):
 
         yield from self._wire_integration(ns["name_snake"], ns["name_pascal"])
 
-    def _wire_app_grouped(self, name_snake: str) -> Iterator[OperationResult]:
-        """Insert import and expand the group list in apps/__init__.py for a grouped app.
+    @staticmethod
+    def _wire_list_var(
+        init_file: Path,
+        list_var: str,
+        import_stmt: str,
+        item_name: str,
+    ) -> Iterator[OperationResult]:
+        """Insert an import and expand a list variable in an __init__.py.
 
-        Produces idiomatic code: all imports are grouped together above the
-        `groups = [...]` list, and the new name is added inline to that list
-        rather than via a separate `.append()` call.
+        Used by every wiring helper that follows the `from .X import X` +
+        `<list_var> = [...]` convention (groups, subgroups, commands). The
+        import is inserted after the existing local-import block or just
+        before the list assignment when no other local imports exist. The
+        list is then expanded inline to include the new name.
 
         Args:
-            name_snake: Snake-case app name.
+            init_file: The __init__.py file to modify.
+            list_var: Name of the list variable to expand.
+            import_stmt: Full import statement to insert (without trailing newline).
+            item_name: Name to add inside the list.
 
         Yields:
             OperationResult for the modified file.
         """
-        pkg = self._detect_package()
-        apps_init = self._root / "src" / pkg / "apps" / "__init__.py"
-        if not apps_init.exists():
-            yield OperationResult.error(str(apps_init), f"File '{apps_init}' not found.")
+        if not init_file.exists():
+            yield OperationResult.error(str(init_file), f"File '{init_file}' not found.")
             return
 
-        content = apps_init.read_text()
-        new_import = f"from .{name_snake} import {name_snake}\n"
+        content = init_file.read_text()
+        new_import = f"{import_stmt}\n"
 
-        # Insert import after the last existing `from .` block, or just before
-        # `groups =` when the file has no local imports yet.
         if re.search(r"^from \.", content, re.MULTILINE):
             content = re.sub(
                 r"((?:^from \.[^\n]*\n)+)",
@@ -301,18 +310,31 @@ class ScaffoldingInterface(BaseInterface):
                 flags=re.MULTILINE,
             )
         else:
-            content = re.sub(r"(groups\s*=\s*\[)", new_import + r"\1", content, count=1)
+            content = re.sub(rf"(\b{list_var}\s*=\s*\[)", new_import + r"\1", content, count=1)
 
-        # Expand groups = [...] to include the new name inline.
         def _expand(m: re.Match) -> str:
             existing = m.group(1).strip()
             if existing:
-                return f"groups = [{existing}, {name_snake}]"
-            return f"groups = [{name_snake}]"
+                return f"{list_var} = [{existing}, {item_name}]"
+            return f"{list_var} = [{item_name}]"
 
-        content = re.sub(r"groups\s*=\s*\[(.*?)]", _expand, content)
-        apps_init.write_text(content)
-        yield OperationResult.ok(str(apps_init), message="modified", data={"action": "modified"})
+        content = re.sub(rf"\b{list_var}\s*=\s*\[(.*?)]", _expand, content)
+        init_file.write_text(content)
+        yield OperationResult.ok(str(init_file), message="modified", data={"action": "modified"})
+
+    def _wire_app_grouped(self, name_snake: str) -> Iterator[OperationResult]:
+        """Insert import and expand the group list in apps/__init__.py.
+
+        Args:
+            name_snake: Snake-case app name.
+
+        Yields:
+            OperationResult for the modified file.
+        """
+        apps_init = self._root / "src" / self._detect_package() / "apps" / "__init__.py"
+        yield from self._wire_list_var(
+            apps_init, "groups", f"from .{name_snake} import {name_snake}", name_snake
+        )
 
     def _wire_subgroup(self, name_snake: str, app: str) -> Iterator[OperationResult]:
         """Insert import and expand subgroups list in the parent app's __init__.py.
@@ -325,29 +347,12 @@ class ScaffoldingInterface(BaseInterface):
             OperationResult for the modified file.
         """
         parent_init = self._resolve_app_dir(app) / "__init__.py"
-        content = parent_init.read_text()
-        new_import = f"from .apps.{name_snake} import {name_snake}\n"
-
-        if re.search(r"^from \.", content, re.MULTILINE):
-            content = re.sub(
-                r"((?:^from \.[^\n]*\n)+)",
-                lambda m: m.group(0) + new_import,
-                content,
-                count=1,
-                flags=re.MULTILINE,
-            )
-        else:
-            content = re.sub(r"(subgroups\s*=\s*\[)", new_import + r"\1", content, count=1)
-
-        def _expand(m: re.Match) -> str:
-            existing = m.group(1).strip()
-            if existing:
-                return f"subgroups = [{existing}, {name_snake}]"
-            return f"subgroups = [{name_snake}]"
-
-        content = re.sub(r"subgroups\s*=\s*\[(.*?)]", _expand, content)
-        parent_init.write_text(content)
-        yield OperationResult.ok(str(parent_init), message="modified", data={"action": "modified"})
+        yield from self._wire_list_var(
+            parent_init,
+            "subgroups",
+            f"from .apps.{name_snake} import {name_snake}",
+            name_snake,
+        )
 
     def _wire_app_flat(self, name_snake: str) -> Iterator[OperationResult]:
         """Append import and exports.extend call to apps/__init__.py for a flat app.
@@ -367,10 +372,7 @@ class ScaffoldingInterface(BaseInterface):
         )
 
     def _wire_command(self, name_snake: str, app: str) -> Iterator[OperationResult]:
-        """Insert import and expand commands list in the app's commands/__init__.py.
-
-        Produces idiomatic code: all imports are grouped together above the
-        `commands = [...]` list, and the new name is added inline to that list.
+        """Insert import and expand the command list in the app's commands/__init__.py.
 
         Args:
             name_snake: Snake-case command name.
@@ -380,34 +382,11 @@ class ScaffoldingInterface(BaseInterface):
             OperationResult for the modified file.
         """
         commands_init = self._resolve_app_dir(app) / "commands" / "__init__.py"
-        if not commands_init.exists():
-            yield OperationResult.error(str(commands_init), f"File '{commands_init}' not found.")
-            return
-
-        content = commands_init.read_text()
-        new_import = f"from .{name_snake} import {name_snake}\n"
-
-        if re.search(r"^from \.", content, re.MULTILINE):
-            content = re.sub(
-                r"((?:^from \.[^\n]*\n)+)",
-                lambda m: m.group(0) + new_import,
-                content,
-                count=1,
-                flags=re.MULTILINE,
-            )
-        else:
-            content = re.sub(r"(commands\s*=\s*\[)", new_import + r"\1", content, count=1)
-
-        def _expand(m: re.Match) -> str:
-            existing = m.group(1).strip()
-            if existing:
-                return f"commands = [{existing}, {name_snake}]"
-            return f"commands = [{name_snake}]"
-
-        content = re.sub(r"commands\s*=\s*\[(.*?)]", _expand, content)
-        commands_init.write_text(content)
-        yield OperationResult.ok(
-            str(commands_init), message="modified", data={"action": "modified"}
+        yield from self._wire_list_var(
+            commands_init,
+            "commands",
+            f"from .{name_snake} import {name_snake}",
+            name_snake,
         )
 
     def _append_to_init(self, path: Path, content: str) -> Iterator[OperationResult]:
@@ -444,8 +423,7 @@ class ScaffoldingInterface(BaseInterface):
             return
 
         app_leaf = app.split(".")[-1]
-        app_pascal = "".join(w.capitalize() for w in app_leaf.split("_"))
-        renderer_cls = f"{app_pascal}Renderer"
+        renderer_cls = f"{self._names(app_leaf)['name_pascal']}Renderer"
         noun = app_leaf.replace("_", " ")
         content = interfaces_file.read_text()
 
@@ -475,7 +453,6 @@ class ScaffoldingInterface(BaseInterface):
             sentinel_renderers,
             f'        "{name_snake}": {renderer_cls},\n{sentinel_renderers}',
         )
-        _PLURAL_COMMANDS = {"list", "search", "sync", "fetch", "index"}
         if name_snake not in _PLURAL_COMMANDS:
             singular = singularize(noun)
             if pluralize(singular) == noun:
