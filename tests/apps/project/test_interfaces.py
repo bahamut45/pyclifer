@@ -231,6 +231,16 @@ class TestAddCommand:
         assert "from .list import list" in content
         assert "commands = [list]" in content
 
+    def test_commands_init_has_blank_line_between_imports_and_list(self, project, tmp_path) -> None:
+        """commands/__init__.py keeps a blank line between imports and commands = [...]."""
+        list(project.add_app("repos"))
+        list(project.add_command("list", "repos"))
+        path = (
+            tmp_path / "my-app" / "src" / "my_app" / "apps" / "repos" / "commands" / "__init__.py"
+        )
+        content = path.read_text()
+        assert "from .list import list\n\ncommands = [list]" in content
+
     def test_returns_error_if_app_not_found(self, project) -> None:
         """add_command returns an error result when the app does not exist."""
         results = list(project.add_command("list", "unknown"))

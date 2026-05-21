@@ -310,7 +310,9 @@ class ScaffoldingInterface(BaseInterface):
                 flags=re.MULTILINE,
             )
         else:
-            content = re.sub(rf"(\b{list_var}\s*=\s*\[)", new_import + r"\1", content, count=1)
+            content = re.sub(
+                rf"(\b{list_var}\s*=\s*\[)", f"{import_stmt}\n\n" + r"\1", content, count=1
+            )
 
         def _expand(m: re.Match) -> str:
             existing = m.group(1).strip()
