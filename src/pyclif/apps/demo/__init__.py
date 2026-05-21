@@ -2,9 +2,11 @@
 
 from pyclif import group
 
+from .apps.tasks import tasks
+from .apps.users import users
 from .commands import commands
 
-subgroups = []
+subgroups = [tasks, users]
 
 
 @group()
