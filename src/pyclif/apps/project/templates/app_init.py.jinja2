@@ -1,11 +1,16 @@
 from pyclif import group
 from .commands import commands
 
+subgroups = []
+
 
 @group()
 def {{ name_snake }}():
     """{{ name_pascal }} group."""
 
+
+for grp in subgroups:
+    {{ name_snake }}.add_command(grp)
 
 for cmd in commands:
     {{ name_snake }}.add_command(cmd)

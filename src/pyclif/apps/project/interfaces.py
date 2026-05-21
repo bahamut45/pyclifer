@@ -26,6 +26,7 @@ class ScaffoldingInterface(BaseInterface):
     renderers = {
         "init_project": ScaffoldingRenderer,
         "add_app": ScaffoldingRenderer,
+        "add_group": ScaffoldingRenderer,
         "add_command": ScaffoldingRenderer,
         "add_integration": ScaffoldingRenderer,
     }
@@ -113,6 +114,65 @@ class ScaffoldingInterface(BaseInterface):
             yield from self._wire_app_flat(ns["name_snake"])
         else:
             yield from self._wire_app_grouped(ns["name_snake"])
+
+    def add_group(self, name: str, app: str) -> Iterator[OperationResult]:
+        """Create a subgroup skeleton inside an existing app's apps/ directory.
+
+        Args:
+            name: Subgroup name (snake_case).
+            app: Parent app name (must exist under apps/).
+
+        Yields:
+            OperationResult for each file created or modified.
+        """
+        ns = self._names(name)
+        pkg = self._detect_package()
+        app_dir = self._root / "src" / pkg / "apps" / app
+        if not app_dir.exists():
+            yield OperationResult.error(
+                str(app_dir),
+                f"App '{app}' not found. Run `pyclif project add app {app}` first.",
+            )
+            return
+
+        # Validate parent __init__.py before creating any files.
+        parent_init = app_dir / "__init__.py"
+        if not parent_init.exists():
+            yield OperationResult.error(str(parent_init), f"File '{parent_init}' not found.")
+            return
+        if "subgroups = [" not in parent_init.read_text():
+            yield OperationResult.error(
+                str(parent_init),
+                f"No `subgroups = [` found in {parent_init} — is it a grouped app?",
+            )
+            return
+
+        group_dir = app_dir / "apps" / ns["name_snake"]
+        if group_dir.exists():
+            yield OperationResult.error(
+                str(group_dir),
+                f"Group '{name}' already exists at {group_dir}.",
+                error_code=2,
+            )
+            return
+
+        apps_pkg = app_dir / "apps" / "__init__.py"
+        if not apps_pkg.exists():
+            apps_pkg.parent.mkdir(parents=True, exist_ok=True)
+            apps_pkg.write_text("")
+            yield OperationResult.ok(str(apps_pkg), message="created", data={"action": "created"})
+
+        files = [
+            (group_dir / "__init__.py", "app_init.py.jinja2"),
+            (group_dir / "interfaces.py", "app_interfaces.py.jinja2"),
+            (group_dir / "models.py", "app_models.py.jinja2"),
+            (group_dir / "tables.py", "app_tables.py.jinja2"),
+            (group_dir / "commands/__init__.py", "app_commands_init.py.jinja2"),
+        ]
+        for dest, tmpl in files:
+            yield self._write_rendered(dest, tmpl, ns)
+
+        yield from self._wire_subgroup(ns["name_snake"], app)
 
     def add_command(self, name: str, app: str) -> Iterator[OperationResult]:
         """Create a command file inside an app's commands/ directory.
@@ -239,6 +299,42 @@ class ScaffoldingInterface(BaseInterface):
         content = re.sub(r"groups\s*=\s*\[(.*?)]", _expand, content)
         apps_init.write_text(content)
         yield OperationResult.ok(str(apps_init), message="modified", data={"action": "modified"})
+
+    def _wire_subgroup(self, name_snake: str, app: str) -> Iterator[OperationResult]:
+        """Insert import and expand subgroups list in the parent app's __init__.py.
+
+        Args:
+            name_snake: Snake-case subgroup name.
+            app: Parent app name.
+
+        Yields:
+            OperationResult for the modified file.
+        """
+        pkg = self._detect_package()
+        parent_init = self._root / "src" / pkg / "apps" / app / "__init__.py"
+        content = parent_init.read_text()
+        new_import = f"from .apps.{name_snake} import {name_snake}\n"
+
+        if re.search(r"^from \.", content, re.MULTILINE):
+            content = re.sub(
+                r"((?:^from \.[^\n]*\n)+)",
+                lambda m: m.group(0) + new_import,
+                content,
+                count=1,
+                flags=re.MULTILINE,
+            )
+        else:
+            content = re.sub(r"(subgroups\s*=\s*\[)", new_import + r"\1", content, count=1)
+
+        def _expand(m: re.Match) -> str:
+            existing = m.group(1).strip()
+            if existing:
+                return f"subgroups = [{existing}, {name_snake}]"
+            return f"subgroups = [{name_snake}]"
+
+        content = re.sub(r"subgroups\s*=\s*\[(.*?)]", _expand, content)
+        parent_init.write_text(content)
+        yield OperationResult.ok(str(parent_init), message="modified", data={"action": "modified"})
 
     def _wire_app_flat(self, name_snake: str) -> Iterator[OperationResult]:
         """Append import and exports.extend call to apps/__init__.py for a flat app.

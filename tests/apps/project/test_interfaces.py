@@ -124,11 +124,11 @@ class TestAddApp:
         assert any("repos/commands/__init__.py" in p for p in paths)
 
     def test_wires_app_in_apps_init(self, project, tmp_path) -> None:
-        """apps/__init__.py is updated with the new group import."""
+        """apps/__init__.py is updated with the new group import and list entry."""
         list(project.add_app("repos"))
         content = (tmp_path / "my-app" / "src" / "my_app" / "apps" / "__init__.py").read_text()
         assert "from .repos import repos" in content
-        assert "exports.append(repos)" in content
+        assert "groups = [repos]" in content
 
     def test_modified_action_for_apps_init(self, project) -> None:
         """The apps/__init__.py entry is marked as modified."""
@@ -174,13 +174,13 @@ class TestAddFlatApp:
         list(project.add_app("status", flat=True))
         content = (tmp_path / "my-app" / "src" / "my_app" / "apps" / "__init__.py").read_text()
         assert "from .status import commands as status_commands" in content
-        assert "exports.extend(status_commands)" in content
+        assert "groups.extend(status_commands)" in content
 
     def test_flat_does_not_use_append(self, project, tmp_path) -> None:
-        """Flat app wiring never uses exports.append."""
+        """Flat app wiring never uses groups.append."""
         list(project.add_app("status", flat=True))
         content = (tmp_path / "my-app" / "src" / "my_app" / "apps" / "__init__.py").read_text()
-        assert "exports.append" not in content
+        assert "groups.append" not in content
 
     def test_returns_error_if_app_exists(self, project) -> None:
         """Second add_app with same name returns a single error result."""
@@ -207,8 +207,8 @@ class TestAddFlatApp:
         list(project.add_app("repos"))
         list(project.add_app("status", flat=True))
         content = (tmp_path / "my-app" / "src" / "my_app" / "apps" / "__init__.py").read_text()
-        assert "exports.append(repos)" in content
-        assert "exports.extend(status_commands)" in content
+        assert "groups = [repos]" in content
+        assert "groups.extend(status_commands)" in content
 
 
 class TestAddCommand:
@@ -279,3 +279,96 @@ class TestAddIntegration:
         assert len(results) == 1
         assert not results[0].success
         assert "already exists" in results[0].message
+
+
+class TestAddGroup:
+    """Test suite for add_group."""
+
+    def test_creates_subgroup_files(self, project, tmp_path) -> None:
+        """All five subgroup skeleton files are created under apps/<app>/apps/<name>/."""
+        list(project.add_app("demo"))
+        results = list(project.add_group("tasks", "demo"))
+        paths = {r.item for r in results}
+
+        assert any("demo/apps/tasks/__init__.py" in p for p in paths)
+        assert any("demo/apps/tasks/interfaces.py" in p for p in paths)
+        assert any("demo/apps/tasks/models.py" in p for p in paths)
+        assert any("demo/apps/tasks/tables.py" in p for p in paths)
+        assert any("demo/apps/tasks/commands/__init__.py" in p for p in paths)
+
+    def test_creates_apps_package_if_absent(self, project, tmp_path) -> None:
+        """apps/<app>/apps/__init__.py is created when the apps/ directory does not exist yet."""
+        list(project.add_app("demo"))
+        list(project.add_group("tasks", "demo"))
+        pkg_init = tmp_path / "my-app" / "src" / "my_app" / "apps" / "demo" / "apps" / "__init__.py"
+        assert pkg_init.exists()
+
+    def test_does_not_recreate_apps_package(self, project) -> None:
+        """Adding a second group does not error on the already-existing apps/__init__.py."""
+        list(project.add_app("demo"))
+        list(project.add_group("tasks", "demo"))
+        results = list(project.add_group("users", "demo"))
+        assert all(r.success for r in results)
+
+    def test_wires_import_in_parent_init(self, project, tmp_path) -> None:
+        """Parent app __init__.py receives the from .apps.<name> import statement."""
+        list(project.add_app("demo"))
+        list(project.add_group("tasks", "demo"))
+        content = (
+            tmp_path / "my-app" / "src" / "my_app" / "apps" / "demo" / "__init__.py"
+        ).read_text()
+        assert "from .apps.tasks import tasks" in content
+
+    def test_expands_subgroups_list(self, project, tmp_path) -> None:
+        """subgroups = [] in parent __init__.py is expanded to include the new name."""
+        list(project.add_app("demo"))
+        list(project.add_group("tasks", "demo"))
+        content = (
+            tmp_path / "my-app" / "src" / "my_app" / "apps" / "demo" / "__init__.py"
+        ).read_text()
+        assert "subgroups = [tasks]" in content
+
+    def test_second_group_expands_list_correctly(self, project, tmp_path) -> None:
+        """Adding a second group appends to the existing subgroups list."""
+        list(project.add_app("demo"))
+        list(project.add_group("tasks", "demo"))
+        list(project.add_group("users", "demo"))
+        content = (
+            tmp_path / "my-app" / "src" / "my_app" / "apps" / "demo" / "__init__.py"
+        ).read_text()
+        assert "subgroups = [tasks, users]" in content
+
+    def test_error_app_not_found(self, project) -> None:
+        """add_group returns an error when the parent app does not exist."""
+        results = list(project.add_group("tasks", "unknown"))
+        assert len(results) == 1
+        assert not results[0].success
+        assert "App 'unknown' not found" in results[0].message
+
+    def test_error_group_already_exists(self, project) -> None:
+        """Second add_group with same name returns an error with error_code=2."""
+        list(project.add_app("demo"))
+        list(project.add_group("tasks", "demo"))
+        results = list(project.add_group("tasks", "demo"))
+        assert len(results) == 1
+        assert not results[0].success
+        assert results[0].error_code == 2
+        assert "already exists" in results[0].message
+
+    def test_error_parent_init_missing(self, project, tmp_path) -> None:
+        """add_group returns an error when the parent app __init__.py is absent."""
+        list(project.add_app("demo"))
+        parent_init = tmp_path / "my-app" / "src" / "my_app" / "apps" / "demo" / "__init__.py"
+        parent_init.unlink()
+        results = list(project.add_group("tasks", "demo"))
+        assert not results[0].success
+        assert "__init__.py" in results[0].message
+
+    def test_error_no_subgroups_sentinel(self, project, tmp_path) -> None:
+        """add_group returns an error when subgroups = [ is absent from parent __init__.py."""
+        list(project.add_app("demo"))
+        parent_init = tmp_path / "my-app" / "src" / "my_app" / "apps" / "demo" / "__init__.py"
+        parent_init.write_text("# no subgroups sentinel here\n")
+        results = list(project.add_group("tasks", "demo"))
+        assert not results[0].success
+        assert "subgroups = [" in results[0].message

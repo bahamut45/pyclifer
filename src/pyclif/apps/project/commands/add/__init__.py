@@ -4,6 +4,7 @@ from pyclif import group
 
 from .app import app
 from .command import command_
+from .group_cmd import group_
 from .integration import integration
 
 
@@ -14,4 +15,5 @@ def add():
 
 add.add_command(app)
 add.add_command(command_, name="command")
+add.add_command(group_, name="group")
 add.add_command(integration)
