@@ -200,7 +200,7 @@ class TestAddFlatApp:
         )
         content = path.read_text()
         assert "from .check import check" in content
-        assert "commands.append(check)" in content
+        assert "commands = [check]" in content
 
     def test_mixed_grouped_and_flat(self, project, tmp_path) -> None:
         """Grouped and flat apps can coexist in apps/__init__.py."""
@@ -229,7 +229,7 @@ class TestAddCommand:
         )
         content = path.read_text()
         assert "from .list import list" in content
-        assert "commands.append(list)" in content
+        assert "commands = [list]" in content
 
     def test_returns_error_if_app_not_found(self, project) -> None:
         """add_command returns an error result when the app does not exist."""
@@ -305,7 +305,7 @@ class TestAddCommandNested:
         )
         content = path.read_text()
         assert "from .list import list" in content
-        assert "commands.append(list)" in content
+        assert "commands = [list]" in content
 
     def test_three_levels_deep(self, project, tmp_path) -> None:
         """Three-level dotted path a.b.c resolves to apps/a/apps/b/apps/c/."""

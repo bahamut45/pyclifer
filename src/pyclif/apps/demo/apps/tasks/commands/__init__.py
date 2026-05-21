@@ -1,3 +1,10 @@
-# Import each command here so the group __init__ can wire them.
-# Updated automatically by `pyclif project add command`.
-commands = []
+"""Commands for the Tasks app."""
+
+from .add import add
+from .complete import complete
+from .delete import delete
+from .list import list
+from .show import show
+from .sync import sync
+
+commands = [add, complete, delete, list, show, sync]

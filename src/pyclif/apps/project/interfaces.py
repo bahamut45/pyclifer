@@ -6,6 +6,7 @@ import re
 from collections.abc import Iterator
 from pathlib import Path
 
+from boltons.strutils import pluralize, singularize
 from jinja2 import Environment, FileSystemLoader
 
 from pyclif import OperationResult
@@ -197,7 +198,8 @@ class ScaffoldingInterface(BaseInterface):
         Yields:
             OperationResult for each file created or modified.
         """
-        ns = self._names(name)
+        app_leaf = app.split(".")[-1]
+        ns = {**self._names(name), "app_pascal": self._names(app_leaf)["name_pascal"]}
         commands_dir = self._resolve_app_dir(app) / "commands"
         if not commands_dir.exists():
             yield OperationResult.error(
@@ -365,7 +367,10 @@ class ScaffoldingInterface(BaseInterface):
         )
 
     def _wire_command(self, name_snake: str, app: str) -> Iterator[OperationResult]:
-        """Append import and commands.append call to the app's commands/__init__.py.
+        """Insert import and expand commands list in the app's commands/__init__.py.
+
+        Produces idiomatic code: all imports are grouped together above the
+        `commands = [...]` list, and the new name is added inline to that list.
 
         Args:
             name_snake: Snake-case command name.
@@ -375,9 +380,34 @@ class ScaffoldingInterface(BaseInterface):
             OperationResult for the modified file.
         """
         commands_init = self._resolve_app_dir(app) / "commands" / "__init__.py"
-        yield from self._append_to_init(
-            commands_init,
-            f"\nfrom .{name_snake} import {name_snake}\ncommands.append({name_snake})\n",
+        if not commands_init.exists():
+            yield OperationResult.error(str(commands_init), f"File '{commands_init}' not found.")
+            return
+
+        content = commands_init.read_text()
+        new_import = f"from .{name_snake} import {name_snake}\n"
+
+        if re.search(r"^from \.", content, re.MULTILINE):
+            content = re.sub(
+                r"((?:^from \.[^\n]*\n)+)",
+                lambda m: m.group(0) + new_import,
+                content,
+                count=1,
+                flags=re.MULTILINE,
+            )
+        else:
+            content = re.sub(r"(commands\s*=\s*\[)", new_import + r"\1", content, count=1)
+
+        def _expand(m: re.Match) -> str:
+            existing = m.group(1).strip()
+            if existing:
+                return f"commands = [{existing}, {name_snake}]"
+            return f"commands = [{name_snake}]"
+
+        content = re.sub(r"commands\s*=\s*\[(.*?)]", _expand, content)
+        commands_init.write_text(content)
+        yield OperationResult.ok(
+            str(commands_init), message="modified", data={"action": "modified"}
         )
 
     def _append_to_init(self, path: Path, content: str) -> Iterator[OperationResult]:
@@ -416,7 +446,17 @@ class ScaffoldingInterface(BaseInterface):
         app_leaf = app.split(".")[-1]
         app_pascal = "".join(w.capitalize() for w in app_leaf.split("_"))
         renderer_cls = f"{app_pascal}Renderer"
+        noun = app_leaf.replace("_", " ")
         content = interfaces_file.read_text()
+
+        # Inject OperationResult import if the file was generated from an older template.
+        if "OperationResult" not in content:
+            content = re.sub(
+                r"(from pyclif import\b[^\n]+)",
+                lambda m: m.group(0) + ", OperationResult",
+                content,
+                count=1,
+            )
 
         if "# --- renderers ---" not in content or "# --- commands ---" not in content:
             yield OperationResult.error(
@@ -435,9 +475,15 @@ class ScaffoldingInterface(BaseInterface):
             sentinel_renderers,
             f'        "{name_snake}": {renderer_cls},\n{sentinel_renderers}',
         )
+        _PLURAL_COMMANDS = {"list", "search", "sync", "fetch", "index"}
+        if name_snake not in _PLURAL_COMMANDS:
+            singular = singularize(noun)
+            if pluralize(singular) == noun:
+                noun = singular
+
         method = (
             f"\n    def {name_snake}(self) -> list[OperationResult]:\n"
-            f'        """{name_snake.replace("_", " ").title()}.\n\n'
+            f'        """{name_snake.replace("_", " ").capitalize()} {noun}.\n\n'
             f"        Returns:\n"
             f"            List of OperationResult objects.\n"
             f'        """\n'

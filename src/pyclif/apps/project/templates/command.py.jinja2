@@ -1,10 +1,11 @@
-from pyclif import command, Response
+from pyclif import Response, command
+
 from ....core.context import pass_cli_context
-from ..interfaces import {{ name_pascal }}Interface
+from ..interfaces import {{ app_pascal }}Interface
 
 
 @command()
 @pass_cli_context
 def {{ name_snake }}(ctx) -> Response:
     """{{ name_pascal }} description."""
-    return {{ name_pascal }}Interface(ctx).respond("{{ name_snake }}")
+    return {{ app_pascal }}Interface(ctx).respond("{{ name_snake }}")
