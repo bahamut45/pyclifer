@@ -96,9 +96,11 @@ Chaque commande `add app` / `add group` / `add command` doit générer :
             → `name_singular_pascal` ajouté dans `_names()` via `boltons.strutils.singularize` ;
                templates `app_models` et `app_interfaces` mis à jour.
 
-✅ CORRIGÉ  `add app` ne génère pas `core/` (context.py, constants.py, options.py, storage.py)
-            → `add app` génère désormais `core/` complet par défaut (batteries included).
-               Le dev supprime ce qu'il ne veut pas.
+✅ CORRIGÉ  `add app` ne génère pas `core/` (context.py, constants.py, options.py)
+            → flag `--with-core` ajouté à `add app` ; génère core/ en opt-in.
+               Sans le flag, l'app reste simple (pas de core/). Avec `--with-core` :
+               context.py (AppContext + pass decorator), constants.py, options.py, __init__.py.
+               storage.py est spécifique à la démo et n'est pas dans le scaffold générique.
 
 ✗ ABANDONNÉ `add renderer NAME --app APP`
             → Les renderers simples vivent dans `interfaces.py` (pattern scaffolding par défaut).
