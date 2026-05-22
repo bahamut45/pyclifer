@@ -44,6 +44,13 @@ nav:
       - Error Handling: error-handling.md
       - Scaffolding: scaffolding.md
   - Examples: examples.md
+  - How-to Guides:
+      - how-to/index.md
+      - how-to/response-patterns.md
+      - how-to/rich-progressive-output.md
+      - how-to/multi-integration-commands.md
+      - how-to/error-handling.md
+      - how-to/output-format.md
   - Development: development.md
   - API Reference:
       - Decorators: api/decorators.md
