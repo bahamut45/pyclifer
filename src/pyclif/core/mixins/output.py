@@ -253,9 +253,9 @@ class OutputFormatMixin:
             filter_key: Key to extract, or None to print the full dict.
         """
         if filter_key:
-            self.console.print(self._apply_output_filter(data, filter_key))  # type: ignore[attr-defined]
+            self.console.print(self._apply_output_filter(data, filter_key), soft_wrap=True)  # type: ignore[attr-defined]
         else:
-            self.console.print(json.dumps(data, cls=_FallbackEncoder))  # type: ignore[attr-defined]
+            self.console.print(json.dumps(data, cls=_FallbackEncoder), soft_wrap=True)  # type: ignore[attr-defined]
 
     def _print_json(self, data: Any) -> None:
         """Print a value as syntax-highlighted JSON.
