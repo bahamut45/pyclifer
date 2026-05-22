@@ -201,9 +201,6 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-# Internal specs — not for publication
-.claude/specs/
-
 # Marimo
 marimo/_static/
 marimo/_lsp/
