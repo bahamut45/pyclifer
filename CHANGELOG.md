@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0] - 2026-05-22
+
+### Documentation
+
+- **demo**: Add comprehensive CLI demo specifications
+- **project**: Add working style guidelines to CLAUDE.md
+
+### Features
+
+- **demo**: Introduce new Demo app scaffolding
+- **cli**: Introduce `add_group` command for managing subgroups
+- **cli**: Support nested app paths in `add_command`
+- **project**: Improve app group initialization and renderer fields
+- **demo**: Add Tasks and Users app groups with scaffolding
+- **cli**: Support adding multiple commands in a single call
+- **tasks**: Add core commands to the Tasks app
+- **users**: Add `list` and `whoami` commands to Users app
+- **demo**: Implement core functionality for Tasks and Users apps
+- **apps**: Add scaffolding for apps with core utilities
+
+### Miscellaneous
+
+- **demo**: Archive demo CLI spec
+
+### Refactoring
+
+- **project**: Modularize list variable wiring logic
+
 ## [0.0.15] - 2026-05-20
 
 ### Features
