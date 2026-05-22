@@ -17,8 +17,17 @@ with zero boilerplate.
 
 ## Installation
 
+> **Note:** PyPI release is pending ([pypi/support#10302](https://github.com/pypi/support/issues/10302)). In the meantime, install directly from GitHub:
+
 ```bash
-pip install pyclif
+# pip
+pip install git+https://github.com/bahamut45/pyclif.git
+
+# uv
+uv add git+https://github.com/bahamut45/pyclif.git
+
+# poetry
+poetry add git+https://github.com/bahamut45/pyclif.git
 ```
 
 Requires Python 3.10+.
