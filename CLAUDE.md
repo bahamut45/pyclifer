@@ -25,6 +25,15 @@ framework logic has been ported over with the following improvements:
 - Built-in scaffolding CLI (`pyclif project init / add app / add command / add integration`)
 - Framework dogfoods its own pattern — scaffolding lives in `src/pyclif/apps/project/`
 
+## Working Style
+
+Before modifying any file, state in one or two sentences:
+- **What** you are about to write or change (the substance, not just "update X")
+- **Why** — what problem it solves or what behaviour it enables
+
+Do this even for small edits. Skip it only when the change was explicitly dictated by the
+user (e.g., "replace line 12 with …") and there is nothing non-obvious to explain.
+
 ## Commands
 
 ```bash
