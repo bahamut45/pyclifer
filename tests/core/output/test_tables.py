@@ -1,5 +1,7 @@
 """Unit tests for the tables module in the output package."""
 
+import datetime
+
 import pytest
 from rich.table import Table
 
@@ -137,13 +139,27 @@ class TestCliTable:
 
         assert columns[3] == "Admin,User,N/A"
 
-    def test_rich_field_formatting(self) -> None:
-        """Test the internal __rich_field__ static method directly for all data types."""
-        assert CliTable.__rich_field__(True) == "[green]:heavy_check_mark:[/]"
-        assert CliTable.__rich_field__(False) == "[red]:heavy_multiplication_x:[/]"
-        assert CliTable.__rich_field__(123) == "123"
-        assert CliTable.__rich_field__(None) == "N/A"
-        assert CliTable.__rich_field__("Plain String") == "Plain String"
+    def test_rich_field_formatting(self, sample_fields: dict) -> None:
+        """Test the __rich_field__ instance method for all supported data types."""
+        t = CliTable(fields=sample_fields, rows=[])
+        assert t.__rich_field__(True) == "[green]:heavy_check_mark:[/]"
+        assert t.__rich_field__(False) == "[red]:heavy_multiplication_x:[/]"
+        assert t.__rich_field__(123) == "123"
+        assert t.__rich_field__(None) == "N/A"
+        assert t.__rich_field__("Plain String") == "Plain String"
+        assert t.__rich_field__(datetime.datetime(2024, 6, 1, 14, 30)) == "2024-06-01 14:30"
+        assert t.__rich_field__(datetime.date(2024, 6, 1)) == "2024-06-01"
+
+    def test_rich_field_custom_formats(self, sample_fields: dict) -> None:
+        """Test that datetime_format and date_format are honoured."""
+        t = CliTable(
+            fields=sample_fields,
+            rows=[],
+            datetime_format="%d/%m/%Y %H:%M",
+            date_format="%d/%m/%Y",
+        )
+        assert t.__rich_field__(datetime.datetime(2024, 6, 1, 14, 30)) == "01/06/2024 14:30"
+        assert t.__rich_field__(datetime.date(2024, 6, 1)) == "01/06/2024"
 
 
 class TestExceptionTable:

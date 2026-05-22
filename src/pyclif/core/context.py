@@ -2,6 +2,7 @@
 
 import sys
 
+import click_extra
 from rich.console import Console
 
 from pyclif.core.mixins import OutputFormatMixin, RichHelpersMixin
@@ -19,3 +20,15 @@ class BaseContext(RichHelpersMixin, OutputFormatMixin):
         self.console = Console()
         self.is_atty = sys.stdout.isatty()
         self.output_format = None
+
+    @property
+    def click(self) -> click_extra.Context:
+        """Return the current Click context.
+
+        Provides access to the full Click context (meta, params, info_name, etc.)
+        from any BaseContext subclass without importing Click in command files.
+
+        Returns:
+            The active Click context for the running command.
+        """
+        return click_extra.get_current_context()

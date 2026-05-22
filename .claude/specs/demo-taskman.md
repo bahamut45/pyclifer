@@ -19,7 +19,7 @@ autant que possible. L'objectif est double : produire le code de la démo ET aud
 scaffolding en conditions réelles pour identifier ce qui manque ou ce qui doit être
 amélioré.
 
-### Processus cible — ✅ COMPLÉTÉ
+### Processus cible — ✅ COMPLÉTÉ (étapes 1–9)
 
 ```bash
 # Depuis la racine du projet pyclif
@@ -83,6 +83,18 @@ Chaque commande `add app` / `add group` / `add command` doit générer :
 ✅ CORRIGÉ  `_wire_list_var` n'ajoutait pas de ligne vide entre le premier import injecté
             et `commands = [...]`, provoquant des violations ruff.
             → branche `else` corrigée pour utiliser `\n\n` avant l'assignation.
+
+✅ CORRIGÉ  templates généraient `TasksInterface` / `TasksRenderer` (pluriel) au lieu de
+            `TaskInterface` / `TaskRenderer` — même principe que les modèles, une interface
+            opère sur une entité, pas une collection.
+            → `name_singular_pascal` utilisé dans `app_interfaces.py.jinja2` pour les classes
+               Interface et Renderer ; `renderer_cls` dans `interfaces.py` mis à jour ;
+               doc `scaffolding.md` corrigée.
+
+✅ CORRIGÉ  template `app_models.py.jinja2` générait `Tasks` / `Users` (pluriel) au lieu de
+            de `Task` / `User` — un model représente une instance, pas une collection.
+            → `name_singular_pascal` ajouté dans `_names()` via `boltons.strutils.singularize` ;
+               templates `app_models` et `app_interfaces` mis à jour.
 
 - [ ] `add app` ne génère pas `core/` (context.py, constants.py, options.py, storage.py)
       → la démo doit créer ce répertoire manuellement.
@@ -157,8 +169,8 @@ le groupe `demo` et automatiquement propagée à chaque sous-commande.
 | `Response.from_results()` | `list`, `add`, `complete`, `delete` |
 | `Response.from_stream()` | `sync` |
 | `PaginatedResponse` | `tasks list` |
-| `BaseRenderer` (déclaratif) | `TaskListRenderer`, `TaskDetailRenderer` |
-| `ResponseRenderer` Protocol | `UserWhoamiRenderer` |
+| `BaseRenderer` (déclaratif) | `TaskListRenderer`, `TaskDetailRenderer`, `UserWhoamiRenderer` |
+| `BaseRenderer` hook `rich()` | `UserWhoamiRenderer` — panel custom, tous les autres formats via `BaseRenderer` |
 | `CliTable` + `CliTableColumn` | sortie table dans les renderers list |
 | `RichHelpersMixin` — panel | `tasks show` |
 | `RichHelpersMixin` — rule | résumé de `tasks sync` |
@@ -200,13 +212,18 @@ src/pyclif/apps/demo/
     └── users/
         ├── __init__.py
         ├── models.py           # User(BaseModel)
-        ├── interfaces.py       # UserInterface(BaseInterface)
-        ├── renderers.py        # UserListRenderer, UserWhoamiRenderer
+        ├── interfaces.py       # UserInterface(BaseInterface) + UserListRenderer + UserWhoamiRenderer
         └── commands/
             ├── __init__.py
             ├── list.py
             └── whoami.py
 ```
+
+> **Deux patterns de renderer côte à côte :**
+> `tasks/` utilise un `renderers.py` séparé (renderers complexes — hooks streaming,
+> Panel custom). `users/` garde tout dans `interfaces.py` (renderers simples — cohérent
+> avec ce que génère `pyclif project add`). Ce contraste est intentionnel : la démo
+> montre les deux approches valides et quand choisir l'une ou l'autre.
 
 ---
 
@@ -376,7 +393,27 @@ logger.debug("Syncing from %s", self._mask(source))
 
 ### `UserInterface` (`users/interfaces.py`)
 
+Les renderers **restent dans `interfaces.py`** pour `users` — pattern scaffolding par
+défaut, adapté à des renderers simples sans hooks streaming.
+
 ```python
+class UserListRenderer(BaseRenderer):
+    fields      = ["username", "email", "role"]
+    columns     = ["username", "email", "role"]
+    rich_title  = "Users"
+    success_message = "Users retrieved successfully."
+    model_class = User
+
+
+class UserWhoamiRenderer(BaseRenderer):
+    """Override uniquement rich() — JSON, table, text, raw fonctionnent via BaseRenderer."""
+    fields      = ["username", "email", "role", "created_at"]
+    columns     = ["username", "email", "role", "created_at"]
+    model_class = User
+    rich_title  = "Whoami"
+    success_message = "User identified."
+
+
 class UserInterface(BaseInterface):
     renderers = {
         "list_users": UserListRenderer,
@@ -448,21 +485,17 @@ Démontre `Response.from_stream()` + le cycle de vie complet du streaming Rich.
 
 ### `UserWhoamiRenderer`
 
-Implémente le **Protocol** `ResponseRenderer` directement (sans héritage `BaseRenderer`)
-pour montrer que le chemin Protocol fonctionne :
+Hérite `BaseRenderer` et override uniquement `rich()` pour un panel personnalisé.
+Démontre qu'un seul override suffit — tout le reste (JSON, YAML, table, text) est géré
+par `BaseRenderer` sans code supplémentaire.
 
 ```python
-class UserWhoamiRenderer:
-    def serialize(self, response): ...
-    def table(self, response): ...
-    def text(self, response): ...
-    def raw(self, response): ...
-    def rich(self, response, console): ...
-    def rich_setup(self): ...
-    def rich_on_item(self, result, all_so_far): ...
-    def rich_summary(self, response, console): ...
-    def get_success_message(self, results): ...
-    def get_failure_message(self, results): ...
+class UserWhoamiRenderer(BaseRenderer):
+    model_class = User
+    rich_title = "Whoami"
+    success_message = "User identified."
+
+    def rich(self, response, console): ...  # panel avec username/email/role/since
 ```
 
 ---
@@ -595,20 +628,82 @@ Panel Rich avec les infos de l'utilisateur courant.
 
 ---
 
-## Tests
+## Plan d'implémentation — ✅ COMPLÉTÉ
 
-Les tests vivent dans `tests/apps/demo/` et reflètent la structure source. Cibles de
-couverture :
+Toutes les étapes sont livrées. Résumé de ce qui a été fait.
 
-| Fichier | Ce qui est testé |
-|---|---|
-| `core/storage.py` | round-trip lecture/écriture, création si fichier absent |
-| `tasks/models.py` | rejet par le validateur de priority/status invalides |
-| `tasks/interfaces.py` | chaque méthode ; `Storage` mocké ; générateur stream |
-| `tasks/renderers.py` | `serialize()`, `table()`, `rich()`, hooks streaming |
-| `tasks/commands/*.py` | invocation CLI via `CliRunner` ; chemins succès et erreur |
-| `users/` | même structure que tasks |
+### Étape 1 — `core/` (fondation) ✅
 
-Tous les tests utilisent `click.testing.CliRunner` avec `mix_stderr=False`.
-`Storage` est patché au niveau de l'interface pour que les tests ne touchent jamais
-le filesystem.
+- `core/constants.py` — `PRIORITIES`, `STATUSES`, `PRIORITY_CHOICE`, `STATUS_CHOICE`
+- `core/storage.py` — classe `Storage` (lecture/écriture `~/.config/pyclif/demo.json`)
+- `core/options.py` — `project_option` (`is_global=True`, `store_in_meta=True`)
+- `core/context.py` — `DemoContext.storage` property lazy + `pass_demo_context`
+
+### Étape 2 — `demo/__init__.py` (câblage racine) ✅
+
+`@project_option` + `@pass_demo_context` sur le groupe `demo`.
+`store_in_meta=True` sur `project_option` pour éviter la propagation comme paramètre de fonction.
+
+### Étape 3 — Modèles ✅
+
+- `tasks/models.py` — `Task` avec tous ses champs + `field_validator` sur `priority`/`status`
+- `users/models.py` — `User` avec ses champs
+
+### Étape 4 — Renderers tasks (`tasks/renderers.py` — fichier séparé) ✅
+
+- `TaskListRenderer` — déclaratif `BaseRenderer`, colonnes + pagination
+- `TaskDetailRenderer` — override `rich()` avec `Panel` + badge statut coloré
+- `TaskAddRenderer`, `TaskCompleteRenderer`, `TaskDeleteRenderer` — renderers minimaux
+- `TaskSyncRenderer` — override `rich_setup` / `rich_on_item` / `rich_summary` (streaming)
+
+### Étape 5 — Interface tasks (`tasks/interfaces.py`) ✅
+
+Méthodes : `list_tasks`, `add_task`, `show_task`, `complete_task`, `delete_task`, `sync_tasks`.
+`sync_tasks` est un générateur (`yield`).
+
+### Étape 6 — Renderers + Interface users (`users/interfaces.py` — tout en un) ✅
+
+`UserListRenderer`, `UserWhoamiRenderer` (override `rich()` uniquement), `UserInterface`.
+
+### Étape 7 — Commandes tasks ✅
+
+Toutes les commandes câblées avec leurs `@option` / `@argument`.
+Pagination via `ctx.click.meta` (accès au Click context depuis `BaseContext`).
+
+### Étape 8 — Commandes users ✅
+
+`list` et `whoami` câblés.
+
+### Étape 9 — Tests ✅
+
+Cf. section Tests ci-dessous.
+
+### Correctifs framework découverts en cours de route
+
+- `BaseContext.click` property — accès au Click context depuis pyclif (`ctx.click.meta`)
+- `CliTable.__rich_field__` — support des types `datetime.datetime` et `datetime.date`
+- `BaseRenderer.datetime_format` / `date_format` — formats configurables par renderer
+- `BaseRenderer._first_result()` / `_detail_grid()` — helpers partagés pour les `rich()` custom
+
+---
+
+## Tests — ✅ LIVRÉS (497 tests, 100 % coverage)
+
+Les tests vivent dans `tests/apps/demo/` et reflètent la structure source.
+
+| Fichier de test | Ce qui est testé |
+| --- | --- |
+| `core/test_storage.py` | round-trip lecture/écriture, création si fichier absent, upsert-replace, delete |
+| `apps/tasks/test_models.py` | rejet par le validateur de priority/status invalides, valeurs par défaut |
+| `apps/tasks/test_interfaces.py` | chaque méthode ; `Storage` mocké ; filtres ; générateur stream |
+| `apps/tasks/test_renderers.py` | `serialize()`, `table()`, `rich()` custom, hooks streaming Progress |
+| `apps/tasks/test_commands.py` | toutes les commandes via `CliRunner` ; JSON assertions ; confirmation prompts |
+| `apps/users/test_models.py` | construction, rôle par défaut |
+| `apps/users/test_interfaces.py` | list avec/sans seed, whoami crée ou récupère l'utilisateur |
+| `apps/users/test_commands.py` | list et whoami via `CliRunner` ; JSON assertions |
+
+**Patterns clés :**
+
+- `Storage` est patché via `patch.object(importlib.import_module("pyclif.apps.demo.core.context"), "Storage", return_value=mock)` — contourne la collision de nom entre le package `pyclif.apps.demo` et la variable `demo` exportée par `pyclif.apps`.
+- Les commandes sont invoquées via le groupe racine `pyclif.cli.app` pour que `handle_response=True` soit actif.
+- `time.sleep` est patché via `patch.object(interfaces_mod.time, "sleep")` pour les tests du générateur `sync_tasks`.

@@ -1,11 +1,11 @@
 from pyclif import Response, command
 
-from ....core.context import pass_cli_context
-from ..interfaces import UsersInterface
+from ....core.context import pass_demo_context
+from ..interfaces import UserInterface
 
 
 @command()
-@pass_cli_context
+@pass_demo_context
 def whoami(ctx) -> Response:
-    """Whoami description."""
-    return UsersInterface(ctx).respond("whoami")
+    """Show the current user profile."""
+    return UserInterface(ctx).respond("whoami")

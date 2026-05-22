@@ -1,11 +1,12 @@
-from pyclif import Response, command
+from pyclif import Response, argument, command
 
-from ....core.context import pass_cli_context
-from ..interfaces import TasksInterface
+from ....core.context import pass_demo_context
+from ..interfaces import TaskInterface
 
 
 @command()
-@pass_cli_context
-def show(ctx) -> Response:
-    """Show description."""
-    return TasksInterface(ctx).respond("show")
+@argument("task_id")
+@pass_demo_context
+def show(ctx, task_id) -> Response:
+    """Show details of a specific task."""
+    return TaskInterface(ctx).respond("show_task", task_id=task_id)

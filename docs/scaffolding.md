@@ -91,7 +91,7 @@ pyclif project add app users
 ```
 src/my_project/apps/users/
 ├── __init__.py         # @group() decorator + add_command loop
-├── interfaces.py       # UsersInterface + UsersRenderer stubs
+├── interfaces.py       # UserInterface + UserRenderer stubs
 ├── models.py
 ├── tables.py
 └── commands/
@@ -206,13 +206,13 @@ src/my_project/apps/users/commands/list.py
 ```python
 from pyclif import command, Response
 from ....core.context import pass_cli_context
-from ..interfaces import UsersInterface
+from ..interfaces import UserInterface
 
 @command()
 @pass_cli_context
 def list(ctx) -> Response:
     """List description."""
-    return UsersInterface(ctx).respond("list")
+    return UserInterface(ctx).respond("list")
 ```
 
 **What gets wired**

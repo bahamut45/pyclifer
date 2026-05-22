@@ -425,7 +425,7 @@ class ScaffoldingInterface(BaseInterface):
             return
 
         app_leaf = app.split(".")[-1]
-        renderer_cls = f"{self._names(app_leaf)['name_pascal']}Renderer"
+        renderer_cls = f"{self._names(app_leaf)['name_singular_pascal']}Renderer"
         noun = app_leaf.replace("_", " ")
         content = interfaces_file.read_text()
 
@@ -557,11 +557,18 @@ class ScaffoldingInterface(BaseInterface):
             name: Raw name (kebab-case or snake_case).
 
         Returns:
-            Dict with keys: name, name_snake, name_pascal.
+            Dict with keys: name, name_snake, name_pascal, name_singular_pascal.
         """
         snake = name.replace("-", "_")
         pascal = "".join(word.capitalize() for word in snake.split("_"))
-        return {"name": name, "name_snake": snake, "name_pascal": pascal}
+        singular = singularize(snake)
+        singular_pascal = "".join(word.capitalize() for word in singular.split("_"))
+        return {
+            "name": name,
+            "name_snake": snake,
+            "name_pascal": pascal,
+            "name_singular_pascal": singular_pascal,
+        }
 
     def _detect_package(self) -> str:
         """Detect the Python package name from the src/ directory.

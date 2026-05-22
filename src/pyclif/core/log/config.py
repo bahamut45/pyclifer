@@ -224,7 +224,9 @@ def setup_file_logging(
     # Ensure stream handlers don't spam if we lower the root logger level
     for h in root_logger.handlers:
         if isinstance(h, RichExtraStreamHandler) and h.level == logging.NOTSET:
-            h.setLevel(console_level_int)
+            h.setLevel(
+                console_level_int
+            )  # pragma: no cover — requires a pre-existing handler at NOTSET
 
     click_extra_logger = logging.getLogger("click_extra")
 

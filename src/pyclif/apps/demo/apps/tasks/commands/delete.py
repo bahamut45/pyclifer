@@ -1,11 +1,15 @@
-from pyclif import Response, command
+from pyclif import Abort, Response, argument, command, option
 
-from ....core.context import pass_cli_context
-from ..interfaces import TasksInterface
+from ....core.context import pass_demo_context
+from ..interfaces import TaskInterface
 
 
 @command()
-@pass_cli_context
-def delete(ctx) -> Response:
-    """Delete description."""
-    return TasksInterface(ctx).respond("delete")
+@argument("task_id")
+@option("--yes", "-y", is_flag=True, default=False, help="Skip confirmation prompt.")
+@pass_demo_context
+def delete(ctx, task_id, yes) -> Response:
+    """Delete a task permanently."""
+    if not yes and not ctx.ask_confirmation(f"Delete task '{task_id}'?"):
+        raise Abort()
+    return TaskInterface(ctx).respond("delete_task", task_id=task_id)

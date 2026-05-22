@@ -4,19 +4,19 @@ from __future__ import annotations
 
 from pyclif import BaseInterface, BaseRenderer, OperationResult
 
-from .models import {{ name_pascal }}
+from .models import {{ name_singular_pascal }}
 
 
-class {{ name_pascal }}Renderer(BaseRenderer):
+class {{ name_singular_pascal }}Renderer(BaseRenderer):
     """Output renderer for {{ name_pascal }} commands."""
 
-    model_class = {{ name_pascal }}
+    model_class = {{ name_singular_pascal }}
     columns = ["item", "success"]
     success_message = "{{ name_pascal }} operation completed."
     failure_message = "{{ name_pascal }} operation failed."
 
 
-class {{ name_pascal }}Interface(BaseInterface):
+class {{ name_singular_pascal }}Interface(BaseInterface):
     """Interface for {{ name_pascal }} business logic."""
 
     renderers = {

@@ -77,6 +77,8 @@ class BaseRenderer:
         rich_title: Panel title used by the default rich() and table() display.
         success_message: Static success message returned by get_success_message().
         failure_message: Static failure message returned by get_failure_message().
+        datetime_format: strftime format for datetime values in table output.
+        date_format: strftime format for date values in table output.
 
     Implementation note — class-level lists: fields and columns are ClassVar.
     Subclasses override them as plain class attributes (never mutated at runtime).
@@ -90,6 +92,8 @@ class BaseRenderer:
     success_message: ClassVar[str] = ""
     failure_message: ClassVar[str] = ""
     model_class: ClassVar[type[BaseModel] | None] = None
+    datetime_format: ClassVar[str] = "%Y-%m-%d %H:%M"
+    date_format: ClassVar[str] = "%Y-%m-%d"
 
     def get_fields(self) -> list[str]:
         """Return the effective field list.
@@ -194,6 +198,8 @@ class BaseRenderer:
             fields=fields_dict,
             rows=rows,
             table_style={"title": title} if title else None,
+            datetime_format=self.datetime_format,
+            date_format=self.date_format,
         )
 
     # noinspection PyMethodMayBeStatic
@@ -220,6 +226,37 @@ class BaseRenderer:
             Serialized dict suitable for compact JSON output.
         """
         return self.serialize(response)
+
+    @staticmethod
+    def _detail_grid() -> Any:
+        """Return a two-column key-value grid for detail panels.
+
+        Returns:
+            A Table configured as a key-value grid with a bold-cyan label column.
+        """
+        from rich.table import Table  # noqa: PLC0415
+
+        grid = Table.grid(padding=(0, 2))
+        grid.add_column(style="bold cyan", no_wrap=True)
+        grid.add_column()
+        return grid
+
+    def _first_result(self, response: Response, console: Console) -> OperationResult | None:
+        """Return the first successful result, printing an error panel when absent.
+
+        Args:
+            response: The command response to inspect.
+            console: The Rich console to print an error panel to on failure.
+
+        Returns:
+            The first OperationResult, or None when results are empty or the first
+            result is a failure.
+        """
+        results = response.data.get("results", [])
+        if not results or not results[0].success:
+            console.print(Panel(response.message, title=self.rich_title or None))
+            return None
+        return results[0]
 
     def rich(self, response: Response, console: Console) -> None:
         """Display a panel with the response message.

@@ -27,17 +27,32 @@ class TestNames:
     def test_kebab_case(self) -> None:
         """Convert kebab-case to snake and pascal variants."""
         result = ScaffoldingInterface._names("ship-cli")
-        assert result == {"name": "ship-cli", "name_snake": "ship_cli", "name_pascal": "ShipCli"}
+        assert result == {
+            "name": "ship-cli",
+            "name_snake": "ship_cli",
+            "name_pascal": "ShipCli",
+            "name_singular_pascal": "ShipCli",
+        }
 
     def test_snake_case(self) -> None:
         """Snake-case input passes through unchanged."""
         result = ScaffoldingInterface._names("my_app")
-        assert result == {"name": "my_app", "name_snake": "my_app", "name_pascal": "MyApp"}
+        assert result == {
+            "name": "my_app",
+            "name_snake": "my_app",
+            "name_pascal": "MyApp",
+            "name_singular_pascal": "MyApp",
+        }
 
     def test_single_word(self) -> None:
         """Single word produces identical snake and lowercase pascal."""
         result = ScaffoldingInterface._names("github")
-        assert result == {"name": "github", "name_snake": "github", "name_pascal": "Github"}
+        assert result == {
+            "name": "github",
+            "name_snake": "github",
+            "name_pascal": "Github",
+            "name_singular_pascal": "Github",
+        }
 
 
 class TestInitProject:

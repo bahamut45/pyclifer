@@ -1,6 +1,7 @@
 """Utility functions and classes for creating and formatting rich tables."""
 
 import dataclasses
+import datetime
 from operator import attrgetter
 from typing import Any
 
@@ -74,16 +75,27 @@ class CliTable:
         "box": box.ROUNDED,
     }
 
-    def __init__(self, fields: dict, rows: list | dict, table_style: dict | None = None):
+    def __init__(
+        self,
+        fields: dict,
+        rows: list | dict,
+        table_style: dict | None = None,
+        datetime_format: str = "%Y-%m-%d %H:%M",
+        date_format: str = "%Y-%m-%d",
+    ):
         """Initialize the CLI table with columns and rows.
 
         Args:
             fields: Dictionary of field names to CliTableColumn objects.
             rows: Single dictionary or list of dictionaries representing rows.
             table_style: Optional dictionary to override default table styling.
+            datetime_format: strftime format string for datetime values.
+            date_format: strftime format string for date values.
         """
         if isinstance(table_style, dict):
             self.table_style |= table_style
+        self.datetime_format = datetime_format
+        self.date_format = date_format
         # noinspection PyArgumentList
         self.table = Table(**self.table_style)
         self.update_columns(fields)
@@ -161,12 +173,12 @@ class CliTable:
                 columns.append(self.__rich_field__(row.get(field)))
         return columns
 
-    @staticmethod
-    def __rich_field__(field: Any) -> str | Any:
+    def __rich_field__(self, field: Any) -> str | Any:
         """Format a field value for rich table output.
 
         Converts booleans to emoji representations, integers to strings,
-        and None values to "N/A".
+        and None values to "N/A". Formats datetime and date values using
+        the instance's datetime_format and date_format strings.
 
         Args:
             field: The field value to format.
@@ -180,6 +192,10 @@ class CliTable:
             return str(field)
         if isinstance(field, type(None)):
             return "N/A"
+        if isinstance(field, datetime.datetime):
+            return field.strftime(self.datetime_format)
+        if isinstance(field, datetime.date):
+            return field.strftime(self.date_format)
         return field
 
 
