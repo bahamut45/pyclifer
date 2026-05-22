@@ -34,6 +34,11 @@ Before modifying any file, state in one or two sentences:
 Do this even for small edits. Skip it only when the change was explicitly dictated by the
 user (e.g., "replace line 12 with …") and there is nothing non-obvious to explain.
 
+## Spec lifecycle
+
+Specs live in `.claude/specs/`. When a spec is fully implemented, move it to
+`.claude/specs/archived/` immediately — do not ask for confirmation.
+
 ## Commands
 
 ```bash
