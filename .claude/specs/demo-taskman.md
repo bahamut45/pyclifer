@@ -96,12 +96,17 @@ Chaque commande `add app` / `add group` / `add command` doit générer :
             → `name_singular_pascal` ajouté dans `_names()` via `boltons.strutils.singularize` ;
                templates `app_models` et `app_interfaces` mis à jour.
 
-- [ ] `add app` ne génère pas `core/` (context.py, constants.py, options.py, storage.py)
-      → la démo doit créer ce répertoire manuellement.
-      Fix : `add app` pourrait accepter `--with-core` pour générer le squelette core/.
+✅ CORRIGÉ  `add app` ne génère pas `core/` (context.py, constants.py, options.py, storage.py)
+            → `add app` génère désormais `core/` complet par défaut (batteries included).
+               Le dev supprime ce qu'il ne veut pas.
 
-- [ ] aucune commande pour scaffolder `renderers.py` → à créer manuellement.
-      Fix : `add renderer NAME --app APP` à spec-er.
+✗ ABANDONNÉ `add renderer NAME --app APP`
+            → Les renderers simples vivent dans `interfaces.py` (pattern scaffolding par défaut).
+               Les renderers complexes migrent manuellement dans `renderers.py` quand l'app grandit.
+               La démo illustre les deux patterns côte à côte — c'est suffisant comme référence.
+               Un `add renderer` standalone sans mise à jour de `add command` n'apporterait pas
+               grand chose. À re-spec-er si `add command` est un jour mis à jour pour écrire
+               dans `renderers.py` par défaut.
 ```
 
 ## Câblage dans la CLI pyclif

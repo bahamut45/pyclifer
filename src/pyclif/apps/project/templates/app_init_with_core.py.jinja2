@@ -3,12 +3,14 @@
 from pyclif import group
 
 from .commands import commands
+from .core.context import pass_{{ name_snake }}_context
 
 subgroups = []
 
 
 @group()
-def {{ name_snake }}():
+@pass_{{ name_snake }}_context
+def {{ name_snake }}(ctx):
     """{{ name_pascal }} group."""
 
 

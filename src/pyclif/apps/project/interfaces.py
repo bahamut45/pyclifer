@@ -85,13 +85,17 @@ class ScaffoldingInterface(BaseInterface):
         for dest, tmpl in files:
             yield self._write_rendered(dest, tmpl, ns)
 
-    def add_app(self, name: str, flat: bool = False) -> Iterator[OperationResult]:
+    def add_app(
+        self, name: str, flat: bool = False, with_core: bool = False
+    ) -> Iterator[OperationResult]:
         """Create an app skeleton inside the current project's apps/ directory.
 
         Args:
             name: App name (snake_case).
             flat: When True, skip the @group wrapper and expose commands directly
                 on the app_group. Defaults to False.
+            with_core: When True, generate a core/ directory with context, constants,
+                and options modules. Ignored when flat is True. Defaults to False.
 
         Yields:
             OperationResult for each file created or modified.
@@ -104,14 +108,31 @@ class ScaffoldingInterface(BaseInterface):
             )
             return
 
-        init_tmpl = "app_init_flat.py.jinja2" if flat else "app_init.py.jinja2"
+        use_core = with_core and not flat
+        if flat:
+            init_tmpl = "app_init_flat.py.jinja2"
+            interfaces_tmpl = "app_interfaces.py.jinja2"
+        elif use_core:
+            init_tmpl = "app_init_with_core.py.jinja2"
+            interfaces_tmpl = "app_interfaces_with_core.py.jinja2"
+        else:
+            init_tmpl = "app_init.py.jinja2"
+            interfaces_tmpl = "app_interfaces.py.jinja2"
+
         files = [
             (app_dir / "__init__.py", init_tmpl),
-            (app_dir / "interfaces.py", "app_interfaces.py.jinja2"),
+            (app_dir / "interfaces.py", interfaces_tmpl),
             (app_dir / "models.py", "app_models.py.jinja2"),
             (app_dir / "tables.py", "app_tables.py.jinja2"),
             (app_dir / "commands/__init__.py", "app_commands_init.py.jinja2"),
         ]
+        if use_core:
+            files += [
+                (app_dir / "core/__init__.py", "app_core_init.py.jinja2"),
+                (app_dir / "core/context.py", "app_core_context.py.jinja2"),
+                (app_dir / "core/constants.py", "app_core_constants.py.jinja2"),
+                (app_dir / "core/options.py", "app_core_options.py.jinja2"),
+            ]
         for dest, tmpl in files:
             yield self._write_rendered(dest, tmpl, ns)
         if flat:

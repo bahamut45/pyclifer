@@ -161,6 +161,65 @@ class TestAddApp:
         assert "already exists" in results[0].message
 
 
+class TestAddAppWithCore:
+    """Test suite for add_app with with_core=True."""
+
+    def test_creates_core_files(self, project, tmp_path) -> None:
+        """core/ directory files are written alongside the app skeleton."""
+        results = list(project.add_app("repos", with_core=True))
+        paths = {r.item for r in results}
+
+        assert any("repos/core/__init__.py" in p for p in paths)
+        assert any("repos/core/context.py" in p for p in paths)
+        assert any("repos/core/constants.py" in p for p in paths)
+        assert any("repos/core/options.py" in p for p in paths)
+
+    def test_init_imports_pass_decorator(self, project, tmp_path) -> None:
+        """Non-flat __init__.py imports and applies pass_<name>_context."""
+        list(project.add_app("repos", with_core=True))
+        content = (
+            tmp_path / "my-app" / "src" / "my_app" / "apps" / "repos" / "__init__.py"
+        ).read_text()
+        assert "from .core.context import pass_repos_context" in content
+        assert "@pass_repos_context" in content
+
+    def test_interfaces_has_context_annotation(self, project, tmp_path) -> None:
+        """interfaces.py has ctx type annotation from the app context."""
+        list(project.add_app("repos", with_core=True))
+        content = (
+            tmp_path / "my-app" / "src" / "my_app" / "apps" / "repos" / "interfaces.py"
+        ).read_text()
+        assert "from .core.context import ReposContext" in content
+        assert "ctx: ReposContext" in content
+
+    def test_no_core_by_default(self, project, tmp_path) -> None:
+        """core/ is not generated when with_core is omitted."""
+        results = list(project.add_app("repos"))
+        paths = {r.item for r in results}
+        assert not any("/core/" in p for p in paths)
+
+    def test_flat_ignores_with_core(self, project, tmp_path) -> None:
+        """with_core has no effect when flat=True — no core/ is generated."""
+        results = list(project.add_app("status", flat=True, with_core=True))
+        paths = {r.item for r in results}
+        assert not any("/core/" in p for p in paths)
+
+    def test_wires_app_in_apps_init(self, project, tmp_path) -> None:
+        """apps/__init__.py wiring is identical to the plain add_app case."""
+        list(project.add_app("repos", with_core=True))
+        content = (tmp_path / "my-app" / "src" / "my_app" / "apps" / "__init__.py").read_text()
+        assert "from .repos import repos" in content
+        assert "groups = [repos]" in content
+
+    def test_returns_error_if_app_exists(self, project) -> None:
+        """Second add_app --with-core with same name returns a single error result."""
+        list(project.add_app("repos", with_core=True))
+        results = list(project.add_app("repos", with_core=True))
+        assert len(results) == 1
+        assert not results[0].success
+        assert "already exists" in results[0].message
+
+
 class TestAddFlatApp:
     """Test suite for add_app with flat=True."""
 

@@ -79,6 +79,13 @@ An _app_ is a self-contained feature area with its own commands, interfaces, mod
 By default it creates a Click group, giving you `my-project app command`. Use `--no-group` when
 you want commands to appear directly on the root CLI instead.
 
+**Options**
+
+| Option | Default | Description |
+|---|---|---|
+| `--no-group` | off | Skip the `@group` wrapper — expose commands directly on the root app |
+| `--with-core` | off | Generate a `core/` directory with `context.py`, `constants.py`, and `options.py` |
+
 ### Grouped app (default)
 
 ```bash
@@ -109,21 +116,69 @@ exports.append(users)
 
 Result: `my-project users list`, `my-project users create`, …
 
+### Grouped app with its own context (--with-core)
+
+Use `--with-core` when the app needs to carry its own state — a shared client, a config
+object, or anything that commands should access via `ctx`.
+
+```bash
+pyclif project add app repos --with-core
+```
+
+**What gets created**
+
+```
+src/my_project/apps/repos/
+├── __init__.py         # @group() + @pass_repos_context
+├── interfaces.py       # RepoInterface (ctx: ReposContext) + RepoRenderer
+├── models.py
+├── tables.py
+├── commands/
+│   └── __init__.py
+└── core/
+    ├── __init__.py
+    ├── context.py      # ReposContext(BaseContext) + pass_repos_context
+    ├── constants.py
+    └── options.py
+```
+
+`context.py` gives you a typed context and a pass decorator ready to use:
+
+```python
+from pyclif import BaseContext, make_pass_decorator
+
+class ReposContext(BaseContext):
+    """Application context for Repos."""
+
+pass_repos_context = make_pass_decorator(ReposContext, ensure=True)
+```
+
+Commands in this app receive the typed context automatically:
+
+```python
+@command()
+@pass_repos_context
+def list(ctx) -> Response:
+    ...
+```
+
+And the interface gains a typed `ctx` annotation:
+
+```python
+class RepoInterface(BaseInterface):
+    ctx: ReposContext  # type narrowing — full autocompletion on ctx
+```
+
 ### Flat app — commands without a group layer
 
 Use `--no-group` when you want commands to appear directly on the root CLI
 (`my-project status`, not `my-project health status`). The internal structure under
 `apps/health/` is identical — only the `__init__.py` and the wiring differ.
+`--with-core` has no effect when combined with `--no-group`.
 
 ```bash
 pyclif project add app health --no-group
 ```
-
-**Options**
-
-| Option | Default | Description |
-|---|---|---|
-| `--no-group` | off | Skip the `@group` wrapper — expose commands directly on the root app |
 
 **What gets created**
 
@@ -304,7 +359,7 @@ the other variants automatically:
 
 ## Typical workflow
 
-### Grouped app
+### Grouped app (simple)
 
 ```bash
 # 1. Bootstrap
@@ -324,6 +379,27 @@ pyclif project add integration github --package
 # 5. Run the CLI
 uv run my-project --help
 uv run my-project users list
+```
+
+### Grouped app with its own context
+
+```bash
+# 1. Bootstrap
+pyclif project init my-project
+cd my-project
+uv sync --extra dev
+
+# 2. Add an app that carries its own state (repos client, config, …)
+pyclif project add app repos --with-core
+
+# 3. Add commands — they automatically receive ReposContext
+pyclif project add command list show create --app repos
+
+# 4. Wire your state into ReposContext (edit core/context.py)
+#    then access it from any command via ctx.<your_attr>
+
+# 5. Run the CLI
+uv run my-project repos list
 ```
 
 ### Flat app

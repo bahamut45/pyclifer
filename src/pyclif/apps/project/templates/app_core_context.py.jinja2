@@ -1,0 +1,10 @@
+"""{{ name_pascal }} context and pass decorator."""
+
+from pyclif import BaseContext, make_pass_decorator
+
+
+class {{ name_pascal }}Context(BaseContext):
+    """Application context for {{ name_pascal }}."""
+
+
+pass_{{ name_snake }}_context = make_pass_decorator({{ name_pascal }}Context, ensure=True)
