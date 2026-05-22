@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-05-22
+
+### Documentation
+
+- **README**: Update installation instructions with GitHub link
+- **how-to**: Add comprehensive guides for pyclif patterns
+
+### Miscellaneous
+
+- **specs**: Archive how-to guides specification
+
+### Style
+
+- **output**: Enable `soft_wrap` for console printing
+
 ## [0.1.0] - 2026-05-22
 
 ### Documentation
