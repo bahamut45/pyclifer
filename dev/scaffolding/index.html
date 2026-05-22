@@ -727,6 +727,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#grouped-app-with-its-own-context-with-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grouped app with its own context (--with-core)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#flat-app-commands-without-a-group-layer" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -810,10 +821,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#grouped-app" class="md-nav__link">
+  <a href="#grouped-app-simple" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Grouped app
+        Grouped app (simple)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#grouped-app-with-its-own-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grouped app with its own context
       
     </span>
   </a>
@@ -1267,6 +1289,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#grouped-app-with-its-own-context-with-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grouped app with its own context (--with-core)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#flat-app-commands-without-a-group-layer" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1350,10 +1383,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#grouped-app" class="md-nav__link">
+  <a href="#grouped-app-simple" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Grouped app
+        Grouped app (simple)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#grouped-app-with-its-own-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grouped app with its own context
       
     </span>
   </a>
@@ -1474,31 +1518,6 @@ automatically:</p>
 <p>An <em>app</em> is a self-contained feature area with its own commands, interfaces, models, and tables.
 By default it creates a Click group, giving you <code>my-project app command</code>. Use <code>--no-group</code> when
 you want commands to appear directly on the root CLI instead.</p>
-<h3 id="grouped-app-default">Grouped app (default)<a class="headerlink" href="#grouped-app-default" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Run from the project root</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>app<span class="w"> </span>users
-</code></pre></div>
-<p><strong>What gets created</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>src/my_project/apps/users/
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>├── __init__.py         # @group() decorator + add_command loop
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>├── interfaces.py       # UsersInterface + UsersRenderer stubs
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>├── models.py
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>├── tables.py
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>└── commands/
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    └── __init__.py     # commands = []
-</code></pre></div>
-<p><strong>What gets wired</strong></p>
-<p><code>apps/__init__.py</code> is updated automatically:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.users</span><span class="w"> </span><span class="kn">import</span> <span class="n">users</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">exports</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">users</span><span class="p">)</span>
-</code></pre></div>
-<p>Result: <code>my-project users list</code>, <code>my-project users create</code>, …</p>
-<h3 id="flat-app-commands-without-a-group-layer">Flat app — commands without a group layer<a class="headerlink" href="#flat-app-commands-without-a-group-layer" title="Permanent link">&para;</a></h3>
-<p>Use <code>--no-group</code> when you want commands to appear directly on the root CLI
-(<code>my-project status</code>, not <code>my-project health status</code>). The internal structure under
-<code>apps/health/</code> is identical — only the <code>__init__.py</code> and the wiring differ.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>app<span class="w"> </span>health<span class="w"> </span>--no-group
-</code></pre></div>
 <p><strong>Options</strong></p>
 <table>
 <thead>
@@ -1514,48 +1533,119 @@ you want commands to appear directly on the root CLI instead.</p>
 <td>off</td>
 <td>Skip the <code>@group</code> wrapper — expose commands directly on the root app</td>
 </tr>
+<tr>
+<td><code>--with-core</code></td>
+<td>off</td>
+<td>Generate a <code>core/</code> directory with <code>context.py</code>, <code>constants.py</code>, and <code>options.py</code></td>
+</tr>
 </tbody>
 </table>
+<h3 id="grouped-app-default">Grouped app (default)<a class="headerlink" href="#grouped-app-default" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Run from the project root</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>app<span class="w"> </span>users
+</code></pre></div>
 <p><strong>What gets created</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>src/my_project/apps/health/
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>├── __init__.py         # imports commands — no @group decorator
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>├── interfaces.py       # HealthInterface + HealthRenderer stubs
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>src/my_project/apps/users/
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>├── __init__.py         # @group() decorator + add_command loop
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>├── interfaces.py       # UserInterface + UserRenderer stubs
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>├── models.py
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>├── tables.py
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>└── commands/
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    └── __init__.py     # commands = []
+</code></pre></div>
+<p><strong>What gets wired</strong></p>
+<p><code>apps/__init__.py</code> is updated automatically:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.users</span><span class="w"> </span><span class="kn">import</span> <span class="n">users</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">exports</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">users</span><span class="p">)</span>
+</code></pre></div>
+<p>Result: <code>my-project users list</code>, <code>my-project users create</code>, …</p>
+<h3 id="grouped-app-with-its-own-context-with-core">Grouped app with its own context (--with-core)<a class="headerlink" href="#grouped-app-with-its-own-context-with-core" title="Permanent link">&para;</a></h3>
+<p>Use <code>--with-core</code> when the app needs to carry its own state — a shared client, a config
+object, or anything that commands should access via <code>ctx</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>app<span class="w"> </span>repos<span class="w"> </span>--with-core
+</code></pre></div>
+<p><strong>What gets created</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>src/my_project/apps/repos/
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>├── __init__.py         # @group() + @pass_repos_context
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>├── interfaces.py       # RepoInterface (ctx: ReposContext) + RepoRenderer
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>├── models.py
 <a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>├── tables.py
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>└── commands/
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    └── __init__.py     # commands = []
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>├── commands/
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>│   └── __init__.py
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>└── core/
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    ├── __init__.py
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    ├── context.py      # ReposContext(BaseContext) + pass_repos_context
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>    ├── constants.py
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>    └── options.py
+</code></pre></div>
+<p><code>context.py</code> gives you a typed context and a pass decorator ready to use:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pyclif</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseContext</span><span class="p">,</span> <span class="n">make_pass_decorator</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">ReposContext</span><span class="p">(</span><span class="n">BaseContext</span><span class="p">):</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Application context for Repos.&quot;&quot;&quot;</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">pass_repos_context</span> <span class="o">=</span> <span class="n">make_pass_decorator</span><span class="p">(</span><span class="n">ReposContext</span><span class="p">,</span> <span class="n">ensure</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<p>Commands in this app receive the typed context automatically:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nd">@command</span><span class="p">()</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nd">@pass_repos_context</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="o">...</span>
+</code></pre></div>
+<p>And the interface gains a typed <code>ctx</code> annotation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">RepoInterface</span><span class="p">(</span><span class="n">BaseInterface</span><span class="p">):</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>    <span class="n">ctx</span><span class="p">:</span> <span class="n">ReposContext</span>  <span class="c1"># type narrowing — full autocompletion on ctx</span>
+</code></pre></div>
+<h3 id="flat-app-commands-without-a-group-layer">Flat app — commands without a group layer<a class="headerlink" href="#flat-app-commands-without-a-group-layer" title="Permanent link">&para;</a></h3>
+<p>Use <code>--no-group</code> when you want commands to appear directly on the root CLI
+(<code>my-project status</code>, not <code>my-project health status</code>). The internal structure under
+<code>apps/health/</code> is identical — only the <code>__init__.py</code> and the wiring differ.
+<code>--with-core</code> has no effect when combined with <code>--no-group</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>app<span class="w"> </span>health<span class="w"> </span>--no-group
+</code></pre></div>
+<p><strong>What gets created</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>src/my_project/apps/health/
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>├── __init__.py         # imports commands — no @group decorator
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>├── interfaces.py       # HealthInterface + HealthRenderer stubs
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>├── models.py
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>├── tables.py
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>└── commands/
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>    └── __init__.py     # commands = []
 </code></pre></div>
 <p><strong>What gets wired</strong></p>
 <p><code>apps/__init__.py</code> uses <code>extend</code> instead of <code>append</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.health</span><span class="w"> </span><span class="kn">import</span> <span class="n">commands</span> <span class="k">as</span> <span class="n">health_commands</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">exports</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">health_commands</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.health</span><span class="w"> </span><span class="kn">import</span> <span class="n">commands</span> <span class="k">as</span> <span class="n">health_commands</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">exports</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">health_commands</span><span class="p">)</span>
 </code></pre></div>
 <p>Result: <code>my-project status</code>, <code>my-project ping</code>, … — no intermediate group level.</p>
 <p><strong>Adding commands to a flat app works exactly the same way:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>status<span class="w"> </span>--app<span class="w"> </span>health
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>ping<span class="w">   </span>--app<span class="w"> </span>health
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>status<span class="w"> </span>ping<span class="w"> </span>--app<span class="w"> </span>health
 </code></pre></div>
 <h3 id="mixing-grouped-and-flat-apps">Mixing grouped and flat apps<a class="headerlink" href="#mixing-grouped-and-flat-apps" title="Permanent link">&para;</a></h3>
 <p>Both styles coexist freely. <code>cli.py</code> calls <code>add_command()</code> on every item in <code>exports</code>,
 whether it is a Click <code>Group</code> (grouped app) or a Click <code>Command</code> (flat app):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># apps/__init__.py after adding both:</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">exports</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.users</span><span class="w"> </span><span class="kn">import</span> <span class="n">users</span>                              <span class="c1"># grouped</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">exports</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">users</span><span class="p">)</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.health</span><span class="w"> </span><span class="kn">import</span> <span class="n">commands</span> <span class="k">as</span> <span class="n">health_commands</span>       <span class="c1"># flat</span>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="n">exports</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">health_commands</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># apps/__init__.py after adding both:</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">exports</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.users</span><span class="w"> </span><span class="kn">import</span> <span class="n">users</span>                              <span class="c1"># grouped</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="n">exports</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">users</span><span class="p">)</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.health</span><span class="w"> </span><span class="kn">import</span> <span class="n">commands</span> <span class="k">as</span> <span class="n">health_commands</span>       <span class="c1"># flat</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="n">exports</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">health_commands</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>my-project users list      # grouped app
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>my-project users create
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>my-project status          # flat app
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>my-project ping
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>my-project users list      # grouped app
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>my-project users create
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>my-project status          # flat app
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>my-project ping
 </code></pre></div>
 <h2 id="adding-a-command">Adding a command<a class="headerlink" href="#adding-a-command" title="Permanent link">&para;</a></h2>
 <p>A <em>command</em> belongs to an existing app (grouped or flat). It gets its own file and is
-immediately reachable on the CLI.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>list<span class="w"> </span>--app<span class="w"> </span>users
+immediately reachable on the CLI. Pass one or more names to create several commands in one call.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Single command</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>list<span class="w"> </span>--app<span class="w"> </span>users
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># Multiple commands at once</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>list<span class="w"> </span>get<span class="w"> </span>create<span class="w"> </span>--app<span class="w"> </span>users
 </code></pre></div>
 <p><strong>Options</strong></p>
 <table>
@@ -1568,38 +1658,43 @@ immediately reachable on the CLI.</p>
 </thead>
 <tbody>
 <tr>
+<td><code>NAMES…</code></td>
+<td>yes</td>
+<td>One or more command names to create</td>
+</tr>
+<tr>
 <td><code>--app</code></td>
 <td>yes</td>
-<td>App that owns this command</td>
+<td>App that owns the commands</td>
 </tr>
 </tbody>
 </table>
 <p><strong>What gets created</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>src/my_project/apps/users/commands/list.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>src/my_project/apps/users/commands/list.py
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pyclif</span><span class="w"> </span><span class="kn">import</span> <span class="n">command</span><span class="p">,</span> <span class="n">Response</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">....core.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">pass_cli_context</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">..interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">UsersInterface</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="nd">@command</span><span class="p">()</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="nd">@pass_cli_context</span>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;List description.&quot;&quot;&quot;</span>
-<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>    <span class="k">return</span> <span class="n">UsersInterface</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span><span class="o">.</span><span class="n">respond</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pyclif</span><span class="w"> </span><span class="kn">import</span> <span class="n">command</span><span class="p">,</span> <span class="n">Response</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">....core.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">pass_cli_context</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">..interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">UserInterface</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="nd">@command</span><span class="p">()</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="nd">@pass_cli_context</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;List description.&quot;&quot;&quot;</span>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>    <span class="k">return</span> <span class="n">UserInterface</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span><span class="o">.</span><span class="n">respond</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">)</span>
 </code></pre></div>
 <p><strong>What gets wired</strong></p>
 <p><code>apps/users/commands/__init__.py</code> is updated automatically:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.list</span><span class="w"> </span><span class="kn">import</span> <span class="nb">list</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">commands</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.list</span><span class="w"> </span><span class="kn">import</span> <span class="nb">list</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="n">commands</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="adding-an-integration">Adding an integration<a class="headerlink" href="#adding-an-integration" title="Permanent link">&para;</a></h2>
 <p>An <em>integration</em> wraps an external library or service and is attached to the application
 context so every command can access it via <code>ctx</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Single-file integration</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>integration<span class="w"> </span>github
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="c1"># Package integration (client + helpers + models)</span>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>integration<span class="w"> </span>github<span class="w"> </span>--package
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1"># Single-file integration</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>integration<span class="w"> </span>github
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="c1"># Package integration (client + helpers + models)</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>integration<span class="w"> </span>github<span class="w"> </span>--package
 </code></pre></div>
 <p><strong>Options</strong></p>
 <table>
@@ -1619,30 +1714,30 @@ context so every command can access it via <code>ctx</code>.</p>
 </tbody>
 </table>
 <p><strong>Single-file layout</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>src/my_project/core/integrations/github.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>src/my_project/core/integrations/github.py
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">GithubIntegration</span><span class="p">:</span>
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Integration for Github.&quot;&quot;&quot;</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>        <span class="k">pass</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">GithubIntegration</span><span class="p">:</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Integration for Github.&quot;&quot;&quot;</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>        <span class="k">pass</span>
 </code></pre></div>
 <p><strong>Package layout</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>src/my_project/core/integrations/github/
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>├── __init__.py     # exposes GithubIntegration, wires GithubClient
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>├── client.py       # GithubClient stub
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>├── helpers.py
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>└── models.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>src/my_project/core/integrations/github/
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>├── __init__.py     # exposes GithubIntegration, wires GithubClient
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>├── client.py       # GithubClient stub
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>├── helpers.py
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>└── models.py
 </code></pre></div>
 <p><strong>What gets wired</strong></p>
 <p><code>core/context.py</code> is updated in two places — an import is injected after the existing imports,
 and <code>__init__</code> gets the instance assigned:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.integrations.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GithubIntegration</span>   <span class="c1"># ← injected</span>
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyProjectContext</span><span class="p">(</span><span class="n">BaseContext</span><span class="p">):</span>
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">github</span> <span class="o">=</span> <span class="n">GithubIntegration</span><span class="p">()</span>             <span class="c1"># ← injected</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.integrations.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GithubIntegration</span>   <span class="c1"># ← injected</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyProjectContext</span><span class="p">(</span><span class="n">BaseContext</span><span class="p">):</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">github</span> <span class="o">=</span> <span class="n">GithubIntegration</span><span class="p">()</span>             <span class="c1"># ← injected</span>
 </code></pre></div>
 <p>Every command with a typed context can then reach the integration via <code>ctx.github</code>.</p>
 <h2 id="name-conventions">Name conventions<a class="headerlink" href="#name-conventions" title="Permanent link">&para;</a></h2>
@@ -1683,44 +1778,58 @@ the other variants automatically:</p>
   current directory is not a pyclif project root.</li>
 </ul>
 <h2 id="typical-workflow">Typical workflow<a class="headerlink" href="#typical-workflow" title="Permanent link">&para;</a></h2>
-<h3 id="grouped-app">Grouped app<a class="headerlink" href="#grouped-app" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1"># 1. Bootstrap</span>
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>pyclif<span class="w"> </span>project<span class="w"> </span>init<span class="w"> </span>my-project
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="nb">cd</span><span class="w"> </span>my-project
-<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>dev
-<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>
-<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="c1"># 2. Add a feature area</span>
-<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>app<span class="w"> </span>users
-<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>
-<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="c1"># 3. Add commands to it</span>
-<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>list<span class="w">   </span>--app<span class="w"> </span>users
-<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>get<span class="w">    </span>--app<span class="w"> </span>users
-<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>create<span class="w"> </span>--app<span class="w"> </span>users
-<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a>
-<a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a><span class="c1"># 4. Wrap an external service</span>
-<a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>integration<span class="w"> </span>github<span class="w"> </span>--package
-<a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a>
-<a id="__codelineno-23-17" name="__codelineno-23-17" href="#__codelineno-23-17"></a><span class="c1"># 5. Run the CLI</span>
-<a id="__codelineno-23-18" name="__codelineno-23-18" href="#__codelineno-23-18"></a>uv<span class="w"> </span>run<span class="w"> </span>my-project<span class="w"> </span>--help
-<a id="__codelineno-23-19" name="__codelineno-23-19" href="#__codelineno-23-19"></a>uv<span class="w"> </span>run<span class="w"> </span>my-project<span class="w"> </span>users<span class="w"> </span>list
+<h3 id="grouped-app-simple">Grouped app (simple)<a class="headerlink" href="#grouped-app-simple" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="c1"># 1. Bootstrap</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>pyclif<span class="w"> </span>project<span class="w"> </span>init<span class="w"> </span>my-project
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="nb">cd</span><span class="w"> </span>my-project
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>dev
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="c1"># 2. Add a feature area</span>
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>app<span class="w"> </span>users
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a>
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="c1"># 3. Add commands to it</span>
+<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>list<span class="w"> </span>get<span class="w"> </span>create<span class="w"> </span>--app<span class="w"> </span>users
+<a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>
+<a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a><span class="c1"># 4. Wrap an external service</span>
+<a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>integration<span class="w"> </span>github<span class="w"> </span>--package
+<a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a>
+<a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a><span class="c1"># 5. Run the CLI</span>
+<a id="__codelineno-28-16" name="__codelineno-28-16" href="#__codelineno-28-16"></a>uv<span class="w"> </span>run<span class="w"> </span>my-project<span class="w"> </span>--help
+<a id="__codelineno-28-17" name="__codelineno-28-17" href="#__codelineno-28-17"></a>uv<span class="w"> </span>run<span class="w"> </span>my-project<span class="w"> </span>users<span class="w"> </span>list
+</code></pre></div>
+<h3 id="grouped-app-with-its-own-context">Grouped app with its own context<a class="headerlink" href="#grouped-app-with-its-own-context" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1"># 1. Bootstrap</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>pyclif<span class="w"> </span>project<span class="w"> </span>init<span class="w"> </span>my-project
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="nb">cd</span><span class="w"> </span>my-project
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>dev
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="c1"># 2. Add an app that carries its own state (repos client, config, …)</span>
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>app<span class="w"> </span>repos<span class="w"> </span>--with-core
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>
+<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="c1"># 3. Add commands — they automatically receive ReposContext</span>
+<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>list<span class="w"> </span>show<span class="w"> </span>create<span class="w"> </span>--app<span class="w"> </span>repos
+<a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a>
+<a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a><span class="c1"># 4. Wire your state into ReposContext (edit core/context.py)</span>
+<a id="__codelineno-29-13" name="__codelineno-29-13" href="#__codelineno-29-13"></a><span class="c1">#    then access it from any command via ctx.&lt;your_attr&gt;</span>
+<a id="__codelineno-29-14" name="__codelineno-29-14" href="#__codelineno-29-14"></a>
+<a id="__codelineno-29-15" name="__codelineno-29-15" href="#__codelineno-29-15"></a><span class="c1"># 5. Run the CLI</span>
+<a id="__codelineno-29-16" name="__codelineno-29-16" href="#__codelineno-29-16"></a>uv<span class="w"> </span>run<span class="w"> </span>my-project<span class="w"> </span>repos<span class="w"> </span>list
 </code></pre></div>
 <h3 id="flat-app">Flat app<a class="headerlink" href="#flat-app" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1"># 1. Bootstrap</span>
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>pyclif<span class="w"> </span>project<span class="w"> </span>init<span class="w"> </span>deploy-tool
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="nb">cd</span><span class="w"> </span>deploy-tool
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>dev
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>
-<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="c1"># 2. Add a flat app — commands appear directly on the root</span>
-<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>app<span class="w"> </span>deploy<span class="w"> </span>--no-group
-<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>
-<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="c1"># 3. Add commands</span>
-<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>up<span class="w">     </span>--app<span class="w"> </span>deploy
-<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>down<span class="w">   </span>--app<span class="w"> </span>deploy
-<a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>status<span class="w"> </span>--app<span class="w"> </span>deploy
-<a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a>
-<a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a><span class="c1"># 4. Run the CLI — no group level</span>
-<a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a>uv<span class="w"> </span>run<span class="w"> </span>deploy-tool<span class="w"> </span>up
-<a id="__codelineno-24-16" name="__codelineno-24-16" href="#__codelineno-24-16"></a>uv<span class="w"> </span>run<span class="w"> </span>deploy-tool<span class="w"> </span>status
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="c1"># 1. Bootstrap</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>pyclif<span class="w"> </span>project<span class="w"> </span>init<span class="w"> </span>deploy-tool
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="nb">cd</span><span class="w"> </span>deploy-tool
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>dev
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>
+<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="c1"># 2. Add a flat app — commands appear directly on the root</span>
+<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span>app<span class="w"> </span>deploy<span class="w"> </span>--no-group
+<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a>
+<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="c1"># 3. Add commands</span>
+<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a>pyclif<span class="w"> </span>project<span class="w"> </span>add<span class="w"> </span><span class="nb">command</span><span class="w"> </span>up<span class="w"> </span>down<span class="w"> </span>status<span class="w"> </span>--app<span class="w"> </span>deploy
+<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a>
+<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a><span class="c1"># 4. Run the CLI — no group level</span>
+<a id="__codelineno-30-13" name="__codelineno-30-13" href="#__codelineno-30-13"></a>uv<span class="w"> </span>run<span class="w"> </span>deploy-tool<span class="w"> </span>up
+<a id="__codelineno-30-14" name="__codelineno-30-14" href="#__codelineno-30-14"></a>uv<span class="w"> </span>run<span class="w"> </span>deploy-tool<span class="w"> </span>status
 </code></pre></div>
 
 
