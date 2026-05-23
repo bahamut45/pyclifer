@@ -6,6 +6,12 @@ tasks:
     cmds:
       - uv sync --extra dev,docs
 
+  update:
+    desc: Upgrade all dependencies and sync
+    cmds:
+      - uv lock --upgrade
+      - task: install
+
   test:
     desc: Run test suite
     cmds:
@@ -27,8 +33,9 @@ tasks:
       - uv run ruff format src/ tests/
 
   check:
-    desc: Lint then test
+    desc: Format, lint then test
     cmds:
+      - task: format
       - task: lint
       - task: test
 
