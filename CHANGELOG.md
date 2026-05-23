@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2026-05-23
+
+### Miscellaneous
+
+- **deps**: Update `pydantic` and `pydantic-core` to latest versions
+
 ## [0.1.2] - 2026-05-23
 
 ### Style
