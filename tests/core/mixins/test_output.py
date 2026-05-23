@@ -259,13 +259,13 @@ class TestPrintRawDict:
         ctx = DummyOutputContext()
         data = {"success": True, "data": {"status": "running"}}
         ctx._print_raw_dict(data, "status")
-        ctx.console.print.assert_called_once_with("running")
+        ctx.console.print.assert_called_once_with("running", soft_wrap=True)
 
     def test_filter_top_level_prints_raw_value(self) -> None:
         ctx = DummyOutputContext()
         data = {"success": True, "message": "done", "data": {}}
         ctx._print_raw_dict(data, "message")
-        ctx.console.print.assert_called_once_with("done")
+        ctx.console.print.assert_called_once_with("done", soft_wrap=True)
 
     def test_filter_missing_key_raises_system_exit(self) -> None:
         ctx = DummyOutputContext()
@@ -375,7 +375,7 @@ class TestRendererPathBatchDispatch:
         response = _response_with_renderer()
         response.message = "filtered"
         ctx.print_result_based_on_format(response, options={"filter_value": "message"})
-        ctx.console.print.assert_called_once_with("filtered")
+        ctx.console.print.assert_called_once_with("filtered", soft_wrap=True)
 
     def test_rich_format_calls_renderer_rich(self) -> None:
         ctx = self._ctx("rich")
