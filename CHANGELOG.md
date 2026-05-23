@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2026-05-23
+
+### Style
+
+- **tests**: Update tests to reflect `soft_wrap` changes in console printing
+
 ## [0.1.1] - 2026-05-22
 
 ### Documentation
