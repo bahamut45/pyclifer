@@ -1,0 +1,68 @@
+version: '3'
+
+tasks:
+  install:
+    desc: Install dev and docs dependencies
+    cmds:
+      - uv sync --extra dev,docs
+
+  test:
+    desc: Run test suite
+    cmds:
+      - uv run python -m pytest tests/ -v
+
+  tox:
+    desc: Run tests across all supported Python versions (3.10–3.13)
+    cmds:
+      - tox
+
+  lint:
+    desc: Lint source and tests with ruff
+    cmds:
+      - uv run ruff check src/ tests/
+
+  format:
+    desc: Format source and tests with ruff
+    cmds:
+      - uv run ruff format src/ tests/
+
+  check:
+    desc: Lint then test
+    cmds:
+      - task: lint
+      - task: test
+
+  docs:serve:
+    desc: Serve documentation locally
+    cmds:
+      - uv run mkdocs serve
+
+  docs:build:
+    desc: Build documentation
+    cmds:
+      - uv run mkdocs build
+
+  _release:
+    internal: true
+    cmds:
+      - bump-my-version bump {{.PART}}
+      - git push
+      - git push --tags
+
+  release:patch:
+    desc: Bump patch version, commit, tag and push
+    cmds:
+      - task: _release
+        vars: { PART: patch }
+
+  release:minor:
+    desc: Bump minor version, commit, tag and push
+    cmds:
+      - task: _release
+        vars: { PART: minor }
+
+  release:major:
+    desc: Bump major version, commit, tag and push
+    cmds:
+      - task: _release
+        vars: { PART: major }

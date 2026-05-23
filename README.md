@@ -32,14 +32,28 @@ poetry add git+https://github.com/bahamut45/pyclif.git
 
 Requires Python 3.10+.
 
-## Contributing
+## Development
+
+Requires [Task](https://taskfile.dev/#/installation).
 
 ```bash
-uv sync --dev
-pre-commit install
+task install       # install dev + docs dependencies
+pre-commit install # activate git hooks (ruff check + format on every commit)
 ```
 
-`pre-commit install` activates the git hooks (ruff check + format) that run automatically on every commit.
+```bash
+task check         # lint + test
+task test          # run test suite
+task tox           # run tests across Python 3.10–3.13
+```
+
+```bash
+task release:patch # bump patch version, commit, tag and push
+task release:minor
+task release:major
+```
+
+Run `task --list` to see all available tasks.
 
 ## Quick Start
 
