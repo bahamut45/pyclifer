@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from pyclif import ExitCode
 from pyclif.apps.demo.apps.tasks.interfaces import _FAKE_SYNC_TITLES, TaskInterface
 from pyclif.apps.demo.apps.tasks.models import Task
 from pyclif.apps.demo.core.context import DemoContext
@@ -108,7 +109,7 @@ class TestShowTask:
         storage.get_task.return_value = None
         results = iface.show_task("missing")
         assert not results[0].success
-        assert results[0].error_code == 404
+        assert results[0].error_code == ExitCode.NOT_FOUND
 
 
 class TestCompleteTask:
@@ -127,7 +128,7 @@ class TestCompleteTask:
         storage.get_task.return_value = None
         results = iface.complete_task("missing")
         assert not results[0].success
-        assert results[0].error_code == 404
+        assert results[0].error_code == ExitCode.NOT_FOUND
 
 
 class TestDeleteTask:
@@ -141,7 +142,7 @@ class TestDeleteTask:
         storage.delete_task.return_value = False
         results = iface.delete_task("missing")
         assert not results[0].success
-        assert results[0].error_code == 404
+        assert results[0].error_code == ExitCode.NOT_FOUND
 
 
 class TestSyncTasks:

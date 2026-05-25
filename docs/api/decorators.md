@@ -47,7 +47,7 @@ Adds `--output-format` to a command (JSON, YAML, Table, Rich, Raw).
 ## returns_response
 
 Decorator that intercepts a `Response` return value and dispatches it to the formatter.
-Applied automatically when `handle_response=True` on `@app_group`.
+Applied automatically for all commands under `@app_group` (on by default). Use `handle_response=False` on the group or individual commands to opt out.
 
 ::: pyclif.returns_response
 

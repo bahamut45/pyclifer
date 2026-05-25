@@ -2,7 +2,7 @@
 
 import pytest
 
-from pyclif import OperationResult
+from pyclif import ExitCode, OperationResult
 from pyclif.apps.project.interfaces import ScaffoldingInterface
 
 
@@ -14,7 +14,7 @@ def iface(tmp_path):
 
 @pytest.fixture
 def project(tmp_path, monkeypatch):
-    """A freshly initialised project in tmp_path."""
+    """A freshly initialized project in tmp_path."""
     monkeypatch.chdir(tmp_path)
     iface = ScaffoldingInterface(ctx=None)
     list(iface.init_project("my-app"))
@@ -512,13 +512,13 @@ class TestAddGroup:
         assert "App 'unknown' not found" in results[0].message
 
     def test_error_group_already_exists(self, project) -> None:
-        """Second add_group with same name returns an error with error_code=2."""
+        """Second add_group with same name returns an error with error_code=ALREADY_EXISTS."""
         list(project.add_app("demo"))
         list(project.add_group("tasks", "demo"))
         results = list(project.add_group("tasks", "demo"))
         assert len(results) == 1
         assert not results[0].success
-        assert results[0].error_code == 2
+        assert results[0].error_code == ExitCode.ALREADY_EXISTS
         assert "already exists" in results[0].message
 
     def test_error_parent_init_missing(self, project, tmp_path) -> None:

@@ -7,6 +7,8 @@ from collections.abc import Iterator
 from operator import attrgetter
 from typing import TYPE_CHECKING, Any
 
+from .exit_codes import ExitCode
+
 if TYPE_CHECKING:
     from .renderer import BaseRenderer
 
@@ -50,7 +52,7 @@ class OperationResult:
         return cls(success=True, item=item, message=message, data=data)
 
     @classmethod
-    def error(cls, item: str, message: str, error_code: int = 1) -> OperationResult:
+    def error(cls, item: str, message: str, error_code: int = ExitCode.ERROR) -> OperationResult:
         """Create a failed result.
 
         Args:

@@ -197,7 +197,6 @@ The log level for unhandled exceptions is set on `@app_group`:
 from pyclif import app_group
 
 @app_group(
-    handle_response=True,
     unhandled_exception_log_level="error",   # default — always visible
 )
 def main():
@@ -205,7 +204,6 @@ def main():
 
 # Quieter — traceback only with --log-level debug or --log-level trace
 @app_group(
-    handle_response=True,
     unhandled_exception_log_level="debug",
 )
 def main():

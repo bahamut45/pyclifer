@@ -1,5 +1,63 @@
 # Output
 
+## ExitCode
+
+Named exit codes used as both the classification value in structured output (JSON, YAML) and
+the actual OS exit code (`$?`). Values are POSIX-safe (0-127).
+
+::: pyclif.ExitCode
+
+### Built-in codes
+
+| Code | Name               | Rationale                                              |
+|------|--------------------|--------------------------------------------------------|
+| 0    | `SUCCESS`          | POSIX standard — implicit default on success           |
+| 1    | `ERROR`            | POSIX standard — unhandled exceptions                  |
+| 2    | `ALREADY_EXISTS`   | Resource already exists (scaffolding, idempotent ops)  |
+| 3    | `NOT_FOUND`        | Resource not found                                     |
+| 4    | `PERMISSION_DENIED`| Insufficient permissions                               |
+| 5    | `INVALID_INPUT`    | Bad user input                                         |
+
+### Safe value ranges for project codes
+
+| Range   | Reserved for                              |
+|---------|-------------------------------------------|
+| 0-5     | pyclif framework codes                    |
+| 6-125   | Application-specific codes — use this     |
+| 126+    | Shell-reserved (not executable, not found, signals) |
+
+### Extending ExitCode
+
+Define a subclass in your project and register it with `@app_group`:
+
+```python
+# my_project/core/constants.py
+from pyclif import ExitCode as _Base
+
+class ExitCode(_Base):
+    QUOTA_EXCEEDED = 10
+    RATE_LIMITED = 11
+```
+
+```python
+# my_project/cli.py
+from pyclif import app_group
+from my_project.core.constants import ExitCode
+
+@app_group(exit_codes_class=ExitCode)
+def cli(): ...
+```
+
+The framework validates that all project-specific values fall in 6-125 at decoration time
+and stores the class in `ctx.meta["pyclif.exit_codes_class"]`. When a command returns a
+`Response(success=False, error_code=ExitCode.QUOTA_EXCEEDED)`, pyclif calls `ctx.exit(10)`
+so that `$?` reflects the failure in shell scripts.
+
+For base codes, `from pyclif import ExitCode` is always sufficient. Only import from
+`constants.py` in files that reference project-specific codes.
+
+---
+
 ## OperationResult
 
 The atomic result type returned by interface methods. Carries success state, an item

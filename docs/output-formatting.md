@@ -29,14 +29,18 @@ in your functions.
 pyclif provides three complementary mechanisms to print a `Response` automatically when a command
 returns one, without manually calling `ctx.print_result_based_on_format(response)`.
 
-### Level 1 — App-wide: `@app_group(handle_response=True)`
+### Level 1 — App-wide (default)
+
+Response handling is **on by default** for `@app_group`. Every command that returns a
+`Response` is automatically dispatched to the output formatter. Disable per-command with
+`handle_response=False`, or app-wide with `@app_group(handle_response=False)`.
 
 ```python
 from pyclif import app_group, option, Response
 import click
 
 
-@app_group(handle_response=True)
+@app_group()
 @click.pass_context
 def app(ctx):
     """My CLI."""
@@ -51,7 +55,7 @@ def hello(ctx, name):
     return Response(success=True, message=f"Hello {name}!", data={"name": name})
 ```
 
-Per-command override:
+Per-command opt-out:
 
 ```python
 @app.command(handle_response=False)
@@ -114,7 +118,7 @@ from pyclif import app_group, output_filter_option, Response
 import click
 
 
-@app_group(handle_response=True)
+@app_group()
 @click.pass_context
 def app(ctx):
     """My CLI."""
@@ -480,7 +484,7 @@ command without being passed as function arguments.
 from pyclif import app_group, command, pagination_options, PaginatedResponse, pass_context
 
 
-@app_group(handle_response=True)
+@app_group()
 @pass_context
 def app(ctx):
     """My CLI."""

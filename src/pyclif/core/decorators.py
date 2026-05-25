@@ -21,6 +21,7 @@ from .classes import (
     StoreInMetaMixin,
 )
 from .log.config import PyclifVerbosityOption, create_log_file_callback
+from .output.exit_codes import ExitCode, validate_exit_codes_class
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 
@@ -192,25 +193,32 @@ class GroupDecorator:
     def _configure_handle_response(self, f: click_extra.Group) -> None:
         """Propagate the handle_response setting from GroupConfig to the group instance.
 
-        Also stores unhandled_exception_log_level in ctx.meta at root context
-        creation time so that returns_response can read it without holding a
-        reference to GroupConfig.
+        Also stores unhandled_exception_log_level and exit_codes_class in
+        ctx.meta at root context creation time so that returns_response can
+        read them without holding a reference to GroupConfig.
 
         Args:
             f: The Click group instance to configure.
+
+        Raises:
+            ValueError: When exit_codes_class is not a valid ExitCode subclass.
         """
+        validate_exit_codes_class(self.config.exit_codes_class)
+
         if self.config.handle_response:
             f.handle_response_by_default = True
 
         level = self.config.unhandled_exception_log_level
+        exit_codes_cls = self.config.exit_codes_class
         original_make_context = f.make_context
 
         @functools.wraps(original_make_context)
         def custom_make_context(info_name, args, parent=None, **extra):
-            """Store unhandled_exception_log_level in ctx.meta at root context."""
+            """Store framework meta keys in ctx.meta at root context creation."""
             ctx = original_make_context(info_name, args, parent=parent, **extra)
             if parent is None:
                 ctx.meta.setdefault("pyclif.unhandled_exception_log_level", level)
+                ctx.meta.setdefault("pyclif.exit_codes_class", exit_codes_cls)
             return ctx
 
         f.make_context = custom_make_context
@@ -267,6 +275,7 @@ def app_group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group
         add_log_file_option=config_kwargs.pop("add_log_file_option", True),
         add_version_option=config_kwargs.pop("add_version_option", True),
         add_output_format_option=config_kwargs.pop("add_output_format_option", True),
+        handle_response=config_kwargs.pop("handle_response", True),
         **config_kwargs,
     )
 
@@ -337,7 +346,7 @@ def returns_response(f: Callable) -> Callable:
                 f.__name__,
                 exc_info=True,
             )
-            result = _Response(success=False, message=str(e), error_code=1)
+            result = _Response(success=False, message=str(e), error_code=ExitCode.ERROR)
         _log.debug(
             "returns_response: command '%s' returned %s",
             f.__name__,
@@ -389,6 +398,13 @@ def returns_response(f: Callable) -> Callable:
             if output_filter:
                 options["filter_value"] = output_filter
             output_ctx.print_result_based_on_format(result, options=options)
+            if (
+                isinstance(result, _Response)
+                and not result.success
+                and result.error_code
+                and ctx is not None
+            ):
+                ctx.exit(result.error_code)
         else:
             _log.debug(
                 "returns_response: result is not a Response instance — skipping output dispatch"

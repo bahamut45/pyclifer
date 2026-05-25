@@ -7,7 +7,7 @@ import time
 import uuid
 from collections.abc import Iterator
 
-from pyclif import BaseInterface, OperationResult, get_logger
+from pyclif import BaseInterface, ExitCode, OperationResult, get_logger
 
 from ...core.context import DemoContext
 from .models import Task
@@ -123,7 +123,9 @@ class TaskInterface(BaseInterface):
         if task is None:
             return [
                 OperationResult.error(
-                    item=task_id, message=f"Task '{task_id}' not found.", error_code=404
+                    item=task_id,
+                    message=f"Task '{task_id}' not found.",
+                    error_code=ExitCode.NOT_FOUND,
                 )
             ]
         return [OperationResult.ok(item=task.id, data=task)]
@@ -142,7 +144,9 @@ class TaskInterface(BaseInterface):
         if task is None:
             return [
                 OperationResult.error(
-                    item=task_id, message=f"Task '{task_id}' not found.", error_code=404
+                    item=task_id,
+                    message=f"Task '{task_id}' not found.",
+                    error_code=ExitCode.NOT_FOUND,
                 )
             ]
         if task.status == "done":
@@ -168,7 +172,9 @@ class TaskInterface(BaseInterface):
         if not found:
             return [
                 OperationResult.error(
-                    item=task_id, message=f"Task '{task_id}' not found.", error_code=404
+                    item=task_id,
+                    message=f"Task '{task_id}' not found.",
+                    error_code=ExitCode.NOT_FOUND,
                 )
             ]
         logger.debug("delete task: %s removed", task_id)

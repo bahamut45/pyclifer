@@ -75,6 +75,7 @@ from .core.output import (
     CliTable,
     CliTableColumn,
     ExceptionTable,
+    ExitCode,
     OperationResult,
     PaginatedResponse,
     Response,
@@ -132,6 +133,7 @@ __all__ = [
     # class
     "BaseContext",
     "BaseModel",
+    "ExitCode",
     "OperationResult",
     "PaginatedResponse",
     "Response",

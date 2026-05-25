@@ -5,6 +5,7 @@ from click.testing import CliRunner
 
 from pyclif.core import app_group, command, group, option, output_filter_option, returns_response
 from pyclif.core.output import Response
+from pyclif.core.output.exit_codes import ExitCode
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -407,7 +408,7 @@ class TestLastResortHandler:
 
         runner = CliRunner()
         result = runner.invoke(app, ["boom"])
-        assert result.exit_code == 0
+        assert result.exit_code == 1
         assert "something broke" in result.output
 
     def test_unhandled_exception_log_level_stored_in_meta(self):
@@ -448,7 +449,7 @@ class TestLastResortHandler:
 
         runner = CliRunner()
         result = runner.invoke(app, ["boom"])
-        assert result.exit_code == 0
+        assert result.exit_code == 1
         assert '"success"' in result.output
 
     def test_exception_without_click_context_returns_failed_response(self):
@@ -476,3 +477,103 @@ class TestLastResortHandler:
         assert isinstance(result, Response)
         assert result.success is True
         assert result.message == "hi"
+
+    def test_unhandled_exception_carries_exit_code_error(self):
+        """An unhandled exception response carries ExitCode.ERROR as its error_code."""
+        from pyclif.core.output.responses import Response
+
+        @returns_response
+        def boom():
+            raise RuntimeError("explodes")
+
+        result = boom()
+        assert isinstance(result, Response)
+        assert result.error_code == ExitCode.ERROR
+
+
+# ---------------------------------------------------------------------------
+# ctx.exit integration
+# ---------------------------------------------------------------------------
+
+
+class TestCtxExitIntegration:
+    """Tests for OS exit code propagation via ctx.exit()."""
+
+    def test_failed_response_exits_with_error_code(self):
+        """A failed Response causes the process to exit with its error_code."""
+        app = _make_app(handle_response_at_group=True, output_format_default="raw")
+
+        @app.command()
+        @click.pass_context
+        def fail(ctx):
+            """Fail"""
+            return Response(success=False, message="nope", error_code=ExitCode.NOT_FOUND)
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["fail"])
+        assert result.exit_code == ExitCode.NOT_FOUND
+
+    def test_successful_response_does_not_call_ctx_exit(self):
+        """A successful Response leaves the exit code at 0."""
+        app = _make_app(handle_response_at_group=True, output_format_default="raw")
+
+        @app.command()
+        @click.pass_context
+        def succeed(ctx):
+            """Succeed"""
+            return Response(success=True, message="ok")
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["succeed"])
+        assert result.exit_code == 0
+
+    def test_exit_codes_class_stored_in_ctx_meta(self):
+        """exit_codes_class registered via @app_group is stored in ctx.meta."""
+        captured = {}
+
+        class MyExitCode(ExitCode):
+            QUOTA_EXCEEDED = 10
+
+        @app_group(
+            exit_codes_class=MyExitCode,
+            handle_response=True,
+            output_format_default="raw",
+        )
+        @click.pass_context
+        def app(ctx):
+            """Test app"""
+
+        @app.command()
+        @click.pass_context
+        def probe(ctx):
+            """Capture meta"""
+            root = ctx
+            while root.parent:
+                root = root.parent
+            captured["cls"] = root.meta.get("pyclif.exit_codes_class")
+
+        runner = CliRunner()
+        runner.invoke(app, ["probe"])
+        assert captured["cls"] is MyExitCode
+
+    def test_default_exit_codes_class_is_base_exit_code(self):
+        """When no exit_codes_class is provided, the ExitCode base class is stored in ctx.meta."""
+        captured = {}
+
+        @app_group(handle_response=True, output_format_default="raw")
+        @click.pass_context
+        def app(ctx):
+            """Test app"""
+
+        @app.command()
+        @click.pass_context
+        def probe(ctx):
+            """Capture meta"""
+            root = ctx
+            while root.parent:
+                root = root.parent
+            captured["cls"] = root.meta.get("pyclif.exit_codes_class")
+
+        runner = CliRunner()
+        runner.invoke(app, ["probe"])
+        assert captured["cls"] is ExitCode

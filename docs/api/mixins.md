@@ -15,7 +15,7 @@ and subgroups at invocation time.
 ## HandleResponseMixin
 
 Auto-wraps commands added via `command()` or `add_command()` with `returns_response`
-when `handle_response=True`.
+by default (opt out with `handle_response=False`).
 
 ::: pyclif.HandleResponseMixin
 

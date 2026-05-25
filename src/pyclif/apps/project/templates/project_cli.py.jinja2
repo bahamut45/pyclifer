@@ -2,11 +2,10 @@ from pyclif import app_group, pass_context
 from .core.context import {{ name_pascal }}Context
 from .apps import groups
 
-
-@app_group(
-    handle_response=True,
-    output_format_default="json",
-)
+# To extend exit codes, define a subclass in core/constants.py and register it:
+# from {{ name_snake }}.core.constants import ExitCode
+# @app_group(exit_codes_class=ExitCode)
+@app_group()
 @pass_context
 def app(ctx):
     """{{ name_pascal }} CLI."""

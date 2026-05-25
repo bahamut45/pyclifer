@@ -173,7 +173,7 @@ class UserRenderer(BaseRenderer):
     success_message = "Users retrieved."
 
 
-@app_group(handle_response=True)
+@app_group()
 @click.pass_context
 def cli(ctx):
     """API management CLI."""

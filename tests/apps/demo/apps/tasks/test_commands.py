@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
+from pyclif import ExitCode
 from pyclif.apps.demo.apps.tasks.interfaces import _FAKE_SYNC_TITLES
 from pyclif.apps.demo.apps.tasks.models import Task
 from pyclif.cli import app
@@ -128,7 +129,7 @@ class TestShowCommand:
         result = _run(
             runner, storage, "--output-format", "json", "demo", "tasks", "show", "missing"
         )
-        assert result.exit_code == 0
+        assert result.exit_code == ExitCode.NOT_FOUND
         data = json.loads(result.output)
         assert not data["success"]
 
@@ -144,7 +145,7 @@ class TestCompleteCommand:
         result = _run(
             runner, storage, "--output-format", "json", "demo", "tasks", "complete", "missing"
         )
-        assert result.exit_code == 0
+        assert result.exit_code == ExitCode.NOT_FOUND
         data = json.loads(result.output)
         assert not data["success"]
 

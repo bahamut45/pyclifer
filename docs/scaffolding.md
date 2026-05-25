@@ -61,16 +61,16 @@ automatically:
 ```python
 from pyclif import app_group, pass_context
 from .core.context import MyProjectContext
-from .apps import exports
+from .apps import groups
 
-@app_group(handle_response=True, output_format_default="json")
+@app_group()
 @pass_context
 def app(ctx):
     """MyProject CLI."""
     ctx.obj = MyProjectContext()
 
-for item in exports:
-    app.add_command(item)
+for group in groups:
+    app.add_command(group)
 ```
 
 ## Adding an app
@@ -107,11 +107,11 @@ src/my_project/apps/users/
 
 **What gets wired**
 
-`apps/__init__.py` is updated automatically:
+`apps/__init__.py` is updated automatically — the import is injected and the list expanded inline:
 
 ```python
 from .users import users
-exports.append(users)
+groups = [users]
 ```
 
 Result: `my-project users list`, `my-project users create`, …
@@ -194,11 +194,11 @@ src/my_project/apps/health/
 
 **What gets wired**
 
-`apps/__init__.py` uses `extend` instead of `append`:
+`apps/__init__.py` gets an `extend` call appended:
 
 ```python
 from .health import commands as health_commands
-exports.extend(health_commands)
+groups.extend(health_commands)
 ```
 
 Result: `my-project status`, `my-project ping`, … — no intermediate group level.
@@ -216,13 +216,11 @@ whether it is a Click `Group` (grouped app) or a Click `Command` (flat app):
 
 ```python
 # apps/__init__.py after adding both:
-exports = []
-
 from .users import users                              # grouped
-exports.append(users)
+groups = [users]
 
 from .health import commands as health_commands       # flat
-exports.extend(health_commands)
+groups.extend(health_commands)
 ```
 
 ```

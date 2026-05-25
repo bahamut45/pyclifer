@@ -13,6 +13,7 @@ from extra_platforms import is_linux
 from rich_click import RichGroup, RichHelpConfiguration
 
 from .mixins import GlobalOptionsMixin, HandleResponseMixin, StoreInMetaMixin
+from .output.exit_codes import ExitCode
 
 
 class PyclifOption(StoreInMetaMixin, click_extra.Option):
@@ -274,6 +275,9 @@ class GroupConfig:
 
     # Error handling
     unhandled_exception_log_level: str = "error"
+
+    # Exit codes
+    exit_codes_class: type[ExitCode] = ExitCode
 
     # Security
     sensitive_fields: list[str] = field(default_factory=list)

@@ -9,6 +9,7 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.syntax import Syntax
 
+from pyclif.core.output.exit_codes import ExitCode
 from pyclif.core.output.renderer import BaseRenderer
 from pyclif.core.output.responses import OperationResult, Response
 
@@ -79,7 +80,7 @@ class OutputFormatMixin:
             success=False,
             item=type(exception).__name__,
             message=str(exception),
-            error_code=1,
+            error_code=ExitCode.ERROR,
             data={"traceback": traceback.format_exc()},
         )
         response = Response.from_results(
@@ -231,7 +232,7 @@ class OutputFormatMixin:
             success=False,
             item="output-filter",
             message=message,
-            error_code=2,
+            error_code=ExitCode.ALREADY_EXISTS,
             data={"available_keys": available_keys},
         )
         error_response = Response.from_results(

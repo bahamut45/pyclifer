@@ -9,7 +9,7 @@ from pathlib import Path
 from boltons.strutils import pluralize, singularize
 from jinja2 import Environment, FileSystemLoader
 
-from pyclif import OperationResult
+from pyclif import ExitCode, OperationResult
 from pyclif.apps.project.renderers import ScaffoldingRenderer
 from pyclif.core.interfaces import BaseInterface
 
@@ -63,7 +63,9 @@ class ScaffoldingInterface(BaseInterface):
         ns = self._names(name)
         root = Path(name)
         if root.exists():
-            yield OperationResult.error(name, f"Directory '{name}' already exists.", error_code=2)
+            yield OperationResult.error(
+                name, f"Directory '{name}' already exists.", error_code=ExitCode.ALREADY_EXISTS
+            )
             return
 
         pkg = f"src/{ns['name_snake']}"
@@ -104,7 +106,9 @@ class ScaffoldingInterface(BaseInterface):
         app_dir = self._root / "src" / self._detect_package() / "apps" / ns["name_snake"]
         if app_dir.exists():
             yield OperationResult.error(
-                str(app_dir), f"App '{name}' already exists at {app_dir}.", error_code=2
+                str(app_dir),
+                f"App '{name}' already exists at {app_dir}.",
+                error_code=ExitCode.ALREADY_EXISTS,
             )
             return
 
@@ -176,7 +180,7 @@ class ScaffoldingInterface(BaseInterface):
             yield OperationResult.error(
                 str(group_dir),
                 f"Group '{name}' already exists at {group_dir}.",
-                error_code=2,
+                error_code=ExitCode.ALREADY_EXISTS,
             )
             return
 
@@ -233,7 +237,9 @@ class ScaffoldingInterface(BaseInterface):
         cmd_file = commands_dir / f"{ns['name_snake']}.py"
         if cmd_file.exists():
             yield OperationResult.error(
-                str(cmd_file), f"Command '{name}' already exists at {cmd_file}.", error_code=2
+                str(cmd_file),
+                f"Command '{name}' already exists at {cmd_file}.",
+                error_code=ExitCode.ALREADY_EXISTS,
             )
             return
 
@@ -267,7 +273,7 @@ class ScaffoldingInterface(BaseInterface):
                 yield OperationResult.error(
                     str(pkg_dir),
                     f"Integration '{name}' already exists at {pkg_dir}.",
-                    error_code=2,
+                    error_code=ExitCode.ALREADY_EXISTS,
                 )
                 return
             files = [
@@ -284,7 +290,7 @@ class ScaffoldingInterface(BaseInterface):
                 yield OperationResult.error(
                     str(simple_file),
                     f"Integration '{name}' already exists at {simple_file}.",
-                    error_code=2,
+                    error_code=ExitCode.ALREADY_EXISTS,
                 )
                 return
             yield self._write_rendered(simple_file, "integration_simple.py.jinja2", ns)
@@ -554,7 +560,9 @@ class ScaffoldingInterface(BaseInterface):
             OperationResult indicating success or failure.
         """
         if path.exists():
-            return OperationResult.error(str(path), f"File '{path}' already exists.", error_code=2)
+            return OperationResult.error(
+                str(path), f"File '{path}' already exists.", error_code=ExitCode.ALREADY_EXISTS
+            )
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(self._render(template_name, variables))
         return OperationResult.ok(str(path), message="created", data={"action": "created"})

@@ -159,7 +159,7 @@ When you use `@app_group`, you automatically get:
 Pass `timer=True` to enable a `--time/--no-time` flag:
 
 ```python
-@app_group(handle_response=True, timer=True)
+@app_group(timer=True)
 def cli():
     """My CLI."""
 ```
