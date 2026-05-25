@@ -674,10 +674,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#level-1-app-wide-app_grouphandle_responsetrue" class="md-nav__link">
+  <a href="#level-1-app-wide-default" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Level 1 — App-wide: @app_group(handle_response=True)
+        Level 1 — App-wide (default)
       
     </span>
   </a>
@@ -1585,10 +1585,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#level-1-app-wide-app_grouphandle_responsetrue" class="md-nav__link">
+  <a href="#level-1-app-wide-default" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Level 1 — App-wide: @app_group(handle_response=True)
+        Level 1 — App-wide (default)
       
     </span>
   </a>
@@ -1843,12 +1843,15 @@ in your functions.</p>
 <h2 id="automatic-response-dispatch">Automatic Response Dispatch<a class="headerlink" href="#automatic-response-dispatch" title="Permanent link">&para;</a></h2>
 <p>pyclif provides three complementary mechanisms to print a <code>Response</code> automatically when a command
 returns one, without manually calling <code>ctx.print_result_based_on_format(response)</code>.</p>
-<h3 id="level-1-app-wide-app_grouphandle_responsetrue">Level 1 — App-wide: <code>@app_group(handle_response=True)</code><a class="headerlink" href="#level-1-app-wide-app_grouphandle_responsetrue" title="Permanent link">&para;</a></h3>
+<h3 id="level-1-app-wide-default">Level 1 — App-wide (default)<a class="headerlink" href="#level-1-app-wide-default" title="Permanent link">&para;</a></h3>
+<p>Response handling is <strong>on by default</strong> for <code>@app_group</code>. Every command that returns a
+<code>Response</code> is automatically dispatched to the output formatter. Disable per-command with
+<code>handle_response=False</code>, or app-wide with <code>@app_group(handle_response=False)</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pyclif</span><span class="w"> </span><span class="kn">import</span> <span class="n">app_group</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">Response</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">click</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nd">@app_group</span><span class="p">(</span><span class="n">handle_response</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nd">@app_group</span><span class="p">()</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">app</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;My CLI.&quot;&quot;&quot;</span>
@@ -1862,7 +1865,7 @@ returns one, without manually calling <code>ctx.print_result_based_on_format(res
 <a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Greet someone.&quot;&quot;&quot;</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Hello </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">})</span>
 </code></pre></div>
-<p>Per-command override:</p>
+<p>Per-command opt-out:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@app</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">handle_response</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">raw_cmd</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
@@ -1909,7 +1912,7 @@ and <code>yaml</code>. Accepts a <strong>dotted key path</strong> — single key
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">click</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="nd">@app_group</span><span class="p">(</span><span class="n">handle_response</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="nd">@app_group</span><span class="p">()</span>
 <a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">app</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;My CLI.&quot;&quot;&quot;</span>
@@ -2252,7 +2255,7 @@ command without being passed as function arguments.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pyclif</span><span class="w"> </span><span class="kn">import</span> <span class="n">app_group</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">pagination_options</span><span class="p">,</span> <span class="n">PaginatedResponse</span><span class="p">,</span> <span class="n">pass_context</span>
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="nd">@app_group</span><span class="p">(</span><span class="n">handle_response</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="nd">@app_group</span><span class="p">()</span>
 <a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="nd">@pass_context</span>
 <a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">app</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
 <a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;My CLI.&quot;&quot;&quot;</span>

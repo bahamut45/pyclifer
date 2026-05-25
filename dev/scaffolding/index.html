@@ -1750,16 +1750,16 @@ you can skip the boilerplate and start writing business logic immediately.</p>
 automatically:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pyclif</span><span class="w"> </span><span class="kn">import</span> <span class="n">app_group</span><span class="p">,</span> <span class="n">pass_context</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.core.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">MyProjectContext</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">exports</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">groups</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="nd">@app_group</span><span class="p">(</span><span class="n">handle_response</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">output_format_default</span><span class="o">=</span><span class="s2">&quot;json&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="nd">@app_group</span><span class="p">()</span>
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nd">@pass_context</span>
 <a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">app</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
 <a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;MyProject CLI.&quot;&quot;&quot;</span>
 <a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span> <span class="o">=</span> <span class="n">MyProjectContext</span><span class="p">()</span>
 <a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">exports</span><span class="p">:</span>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="n">app</span><span class="o">.</span><span class="n">add_command</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="n">app</span><span class="o">.</span><span class="n">add_command</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="adding-an-app">Adding an app<a class="headerlink" href="#adding-an-app" title="Permanent link">&para;</a></h2>
 <p>An <em>app</em> is a self-contained feature area with its own commands, interfaces, models, and tables.
@@ -1801,9 +1801,9 @@ you want commands to appear directly on the root CLI instead.</p>
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    └── __init__.py     # commands = []
 </code></pre></div>
 <p><strong>What gets wired</strong></p>
-<p><code>apps/__init__.py</code> is updated automatically:</p>
+<p><code>apps/__init__.py</code> is updated automatically — the import is injected and the list expanded inline:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.users</span><span class="w"> </span><span class="kn">import</span> <span class="n">users</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">exports</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">users</span><span class="p">)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="n">users</span><span class="p">]</span>
 </code></pre></div>
 <p>Result: <code>my-project users list</code>, <code>my-project users create</code>, …</p>
 <h3 id="grouped-app-with-its-own-context-with-core">Grouped app with its own context (--with-core)<a class="headerlink" href="#grouped-app-with-its-own-context-with-core" title="Permanent link">&para;</a></h3>
@@ -1860,9 +1860,9 @@ object, or anything that commands should access via <code>ctx</code>.</p>
 <a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>    └── __init__.py     # commands = []
 </code></pre></div>
 <p><strong>What gets wired</strong></p>
-<p><code>apps/__init__.py</code> uses <code>extend</code> instead of <code>append</code>:</p>
+<p><code>apps/__init__.py</code> gets an <code>extend</code> call appended:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.health</span><span class="w"> </span><span class="kn">import</span> <span class="n">commands</span> <span class="k">as</span> <span class="n">health_commands</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">exports</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">health_commands</span><span class="p">)</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">groups</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">health_commands</span><span class="p">)</span>
 </code></pre></div>
 <p>Result: <code>my-project status</code>, <code>my-project ping</code>, … — no intermediate group level.</p>
 <p><strong>Adding commands to a flat app works exactly the same way:</strong></p>
@@ -1872,13 +1872,11 @@ object, or anything that commands should access via <code>ctx</code>.</p>
 <p>Both styles coexist freely. <code>cli.py</code> calls <code>add_command()</code> on every item in <code>exports</code>,
 whether it is a Click <code>Group</code> (grouped app) or a Click <code>Command</code> (flat app):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># apps/__init__.py after adding both:</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">exports</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.users</span><span class="w"> </span><span class="kn">import</span> <span class="n">users</span>                              <span class="c1"># grouped</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="n">exports</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">users</span><span class="p">)</span>
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.health</span><span class="w"> </span><span class="kn">import</span> <span class="n">commands</span> <span class="k">as</span> <span class="n">health_commands</span>       <span class="c1"># flat</span>
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="n">exports</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">health_commands</span><span class="p">)</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.users</span><span class="w"> </span><span class="kn">import</span> <span class="n">users</span>                              <span class="c1"># grouped</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="n">users</span><span class="p">]</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.health</span><span class="w"> </span><span class="kn">import</span> <span class="n">commands</span> <span class="k">as</span> <span class="n">health_commands</span>       <span class="c1"># flat</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="n">groups</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">health_commands</span><span class="p">)</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>my-project users list      # grouped app
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>my-project users create
