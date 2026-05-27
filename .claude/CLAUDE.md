@@ -219,3 +219,22 @@ The API docs in `docs/api/` mirror this structure — a symbol documented in the
 
 - Always create a feature branch (`feat/<name>`) before starting implementation of a spec or
   any non-trivial change. Do this before touching the first file.
+- After merging into `main`, delete the feature branch immediately.
+- Never push or merge without the user's explicit validation.
+
+### Commit message format
+
+Every commit must follow this exact structure:
+
+```
+<gitmoji> <type>(<scope>): <imperative summary>
+
+- bullet describing why / what changed
+- bullet for each meaningful change
+```
+
+- **gitmoji**: coherent with the type (`✨` feat, `🐛` fix, `♻️` refactor, `📝` docs, `✅` test, `🔧` chore, etc.)
+- **type**: `feat`, `fix`, `refactor`, `perf`, `docs`, `style`, `test`, `chore`, `ci`, `build`
+- **scope**: optional, use the module name (e.g. `tables`, `decorators`, `log`)
+- **summary**: imperative mood, ≤50 chars, no trailing period
+- **body**: bullet list, each item explains *why* not just *what*; omit if summary is self-explanatory

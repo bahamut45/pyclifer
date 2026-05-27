@@ -39,6 +39,21 @@ user (e.g., "replace line 12 with …") and there is nothing non-obvious to expl
 Specs live in `.claude/specs/`. When a spec is fully implemented, move it to
 `.claude/specs/archived/` immediately — do not ask for confirmation.
 
+As each item is completed, prefix its heading with `✅` in the spec file.
+When all items are marked, archive the spec.
+
+When a spec file is created, commit it immediately before any implementation:
+`📝 docs(specs): add <spec-name> spec`
+
+Implementation process per spec item:
+
+1. Create a feature branch: `git checkout -b feat/<item-slug>`
+2. Apply TDD: write a failing test first, watch it fail, then write minimal code to pass
+3. Run `ruff check` and `ruff format` before committing
+4. Commit using the format defined in `.claude/CLAUDE.md` → "Commit message format"
+5. Get user validation before merging
+6. Merge into `main` and delete the feature branch
+
 ## Commands
 
 ```bash
