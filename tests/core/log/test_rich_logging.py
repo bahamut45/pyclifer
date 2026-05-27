@@ -638,6 +638,17 @@ class TestLoggerFactoryFunctions:
         assert len(args) == 1
         assert result is mock_logger
 
+    def test_get_configured_logger_name_annotation_accepts_none(self) -> None:
+        """name parameter annotation must be str | None, not str, since default is None."""
+        import inspect
+
+        sig = inspect.signature(get_configured_logger)
+        annotation = sig.parameters["name"].annotation
+        assert annotation == str | None, (
+            f"Expected 'str | None', got {annotation!r}. "
+            "Default is None but annotation was str — incorrect type."
+        )
+
 
 class TestLoggingIntegration:
     """Integration tests for the complete logging system."""

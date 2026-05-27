@@ -302,7 +302,7 @@ def create_log_file_callback(
     return callback
 
 
-def get_configured_logger(name: str = None) -> SupportsTraceLogger:
+def get_configured_logger(name: str | None = None) -> SupportsTraceLogger:
     """Get a logger that automatically benefits from global Rich configuration.
 
     This function simply retrieves a standard logger that automatically
