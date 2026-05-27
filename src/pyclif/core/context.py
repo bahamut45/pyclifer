@@ -3,8 +3,6 @@
 import sys
 
 import click_extra
-
-# noinspection PyPackageRequirements
 from rich.console import Console
 
 from pyclif.core.mixins import OutputFormatMixin, RichHelpersMixin

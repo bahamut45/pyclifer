@@ -10,6 +10,7 @@ authors = [
 ]
 dependencies = [
     "click-extra>=7.16.1,<8.0.0",
+    "rich>=13.0,<14.0",
     "rich-click>=1.9.7,<2.0.0",
     "pyyaml>=6.0.3,<7.0.0",
     "xmltodict>=1.0.0,<2.0.0",

@@ -116,7 +116,6 @@ def configure_rich_logging(
             return  # Already configured, do nothing
 
     if use_rich and rich_tracebacks:
-        # noinspection PyPackageRequirements
         from rich.traceback import install as install_rich_traceback
 
         # noinspection PyArgumentEqualDefault
