@@ -9,36 +9,16 @@ from rich import box
 from rich.table import Column, Table
 
 
-def is_bool(value: Any) -> bool:
-    """Check if a value is a boolean.
+def convert_bool_to_emoji(value: object) -> str:
+    """Convert a value to an emoji checkmark or cross.
 
     Args:
-        value: The value to check.
+        value: The value to convert.
 
     Returns:
-        bool: True if the value is a boolean, False otherwise.
+        Green checkmark for truthy values, red cross for falsy values.
     """
-    return isinstance(value, bool)
-
-
-def convert_bool_to_emoji(value: object) -> str | bool | object:
-    """Convert boolean values to emoji representation.
-
-    Converts True to a green checkmark and False to a red X mark.
-
-    Args:
-        value: The boolean value to convert.
-
-    Returns:
-        Green checkmark for True, red X for False, or the original value if not
-        a boolean.
-    """
-    value = bool(value)
-    if is_bool(value):
-        tick = "[green]:heavy_check_mark:[/]"
-        cross = "[red]:heavy_multiplication_x:[/]"
-        return tick if value else cross
-    return value  # pragma: no cover
+    return "[green]:heavy_check_mark:[/]" if value else "[red]:heavy_multiplication_x:[/]"
 
 
 class CliTableColumn(Column):

@@ -5,29 +5,23 @@ import datetime
 import pytest
 from rich.table import Table
 
+import pyclif.core.output.tables as tables_module
 from pyclif.core.output.tables import (
     CliTable,
     CliTableColumn,
     ExceptionTable,
     convert_bool_to_emoji,
-    is_bool,
 )
 
 
 class TestUtilityFunctions:
     """Test suite for utility functions in the tables module."""
 
-    def test_is_bool_with_boolean(self) -> None:
-        """Test that is_bool correctly identifies boolean values."""
-        assert is_bool(True) is True
-        assert is_bool(False) is True
-
-    def test_is_bool_with_non_boolean(self) -> None:
-        """Test that is_bool correctly rejects non-boolean values."""
-        assert is_bool(1) is False
-        assert is_bool("True") is False
-        assert is_bool(None) is False
-        assert is_bool([True]) is False
+    def test_is_bool_is_removed(self) -> None:
+        """is_bool was dead code — it must not be exported from the module."""
+        assert not hasattr(tables_module, "is_bool"), (
+            "is_bool should have been removed; it is always shadowed by bool() cast"
+        )
 
     def test_convert_bool_to_emoji_true(self) -> None:
         """Test that True is converted to a green checkmark emoji."""
@@ -38,6 +32,11 @@ class TestUtilityFunctions:
         """Test that False is converted to a red cross emoji."""
         result = convert_bool_to_emoji(False)
         assert result == "[red]:heavy_multiplication_x:[/]"
+
+    def test_convert_bool_to_emoji_returns_str(self) -> None:
+        """convert_bool_to_emoji always returns str, never the original object."""
+        assert isinstance(convert_bool_to_emoji(True), str)
+        assert isinstance(convert_bool_to_emoji(False), str)
 
 
 class TestCliTableColumn:
