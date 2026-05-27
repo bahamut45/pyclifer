@@ -50,10 +50,11 @@ Implementation process per spec item:
 1. Create a feature branch: `git checkout -b feat/<item-slug>`
 2. Apply TDD: write a failing test first, watch it fail, then write minimal code to pass
 3. Run `ruff check` and `ruff format` before committing
-4. Stage code, tests, **and** the spec file (with `✅` prefix on the item heading) together
-5. Commit everything in one commit using the format defined in `.claude/CLAUDE.md` → "Commit message format"
-6. Get user validation before merging
-7. Merge into `main` and delete the feature branch
+4. Run `python -m pytest tests/ -v` and confirm all tests pass
+5. Stage code, tests, **and** the spec file (with `✅` prefix on the item heading) together
+6. Commit everything in one commit using the format defined in `.claude/CLAUDE.md` → "Commit message format"
+7. Get user validation before merging
+8. Merge into `main` and delete the feature branch
 
 ## Commands
 

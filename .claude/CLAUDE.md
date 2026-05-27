@@ -102,6 +102,9 @@ from pyclif.core.output import Response
 ```
 
 - Prefer `from x import y` over `import x.y`.
+- **Prefer `click_extra` over `click` directly** — `click_extra` re-exports the full Click API
+  (`Context`, `Parameter`, `get_current_context`, etc.) and is the declared project dependency.
+  Never `import click` when `click_extra` provides the same symbol.
 - Use **lazy imports** (inside the function body) only to break circular dependencies — always
   add a comment explaining why.
 
