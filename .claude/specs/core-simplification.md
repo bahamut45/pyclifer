@@ -82,7 +82,7 @@ leaving only `name: description`.
 
 ---
 
-### 2.2 Missing return type annotations
+### ✅ 2.2 Missing return type annotations
 
 The project style requires return types on all functions.
 

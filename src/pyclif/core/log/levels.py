@@ -44,7 +44,7 @@ def add_trace_method(logger_class: type) -> type:
     """
 
     # noinspection PyIncorrectDocstring
-    def trace(self, msg, *args, **kwargs):
+    def trace(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Log a message at TRACE level.
 
         Args:

@@ -3,6 +3,8 @@
 import sys
 
 import click_extra
+
+# noinspection PyPackageRequirements
 from rich.console import Console
 
 from pyclif.core.mixins import OutputFormatMixin, RichHelpersMixin
@@ -15,7 +17,7 @@ class ContextException(Exception):
 class BaseContext(RichHelpersMixin, OutputFormatMixin):
     """BaseContext class initializes state and combines output and rich helpers for CLI commands."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the context with a console and detect TTY mode."""
         self.console = Console()
         self.is_atty = sys.stdout.isatty()

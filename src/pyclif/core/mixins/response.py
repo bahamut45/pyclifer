@@ -1,6 +1,8 @@
 """Response-handling mixin for Click groups."""
 
 import logging
+from collections.abc import Callable
+from typing import Any
 
 _log = logging.getLogger(__name__)
 
@@ -69,7 +71,9 @@ class HandleResponseMixin:
 
     handle_response_by_default: bool = False
 
-    def command(self, *args, handle_response=None, **kwargs):
+    def command(
+        self, *args: Any, handle_response: bool | None = None, **kwargs: Any
+    ) -> Callable[..., Any]:
         """Override Click.Group.command to automatically handle Response objects."""
         if handle_response is None:
             handle_response = self.handle_response_by_default
@@ -96,7 +100,7 @@ class HandleResponseMixin:
 
         return wrapped
 
-    def add_command(self, cmd, name=None):
+    def add_command(self, cmd: Any, name: str | None = None) -> None:
         """Override Click.Group.add_command to propagate response handling.
 
         When handle_response_by_default is True:

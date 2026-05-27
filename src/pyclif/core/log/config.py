@@ -3,9 +3,9 @@
 import logging
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
+from typing import Any
 
-import click
-from click_extra import Choice
+from click_extra import Choice, Context, Parameter, get_current_context
 from click_extra.logging import VerbosityOption as BaseVerbosityOption
 from click_extra.logging import extraBasicConfig
 
@@ -17,7 +17,7 @@ from .levels import PYCLIF_LOG_LEVELS, SupportsTraceLogger, add_trace_method
 class PyclifVerbosityOption(BaseVerbosityOption):
     """Extended VerbosityOption with TRACE level support."""
 
-    def set_level(self, ctx: click.Context, param: click.Parameter, value: str) -> None:
+    def set_level(self, ctx: Context, param: Parameter, value: str) -> None:
         """Set the level of all loggers configured on the option.
 
         Override the parent method to use PYCLIF_LOG_LEVELS instead of LOG_LEVELS
@@ -116,6 +116,7 @@ def configure_rich_logging(
             return  # Already configured, do nothing
 
     if use_rich and rich_tracebacks:
+        # noinspection PyPackageRequirements
         from rich.traceback import install as install_rich_traceback
 
         # noinspection PyArgumentEqualDefault
@@ -206,7 +207,7 @@ def setup_file_logging(
     file_level_int: int = PYCLIF_LOG_LEVELS.get(level_name, logging.DEBUG)
 
     # Get current console verbosity to restrict stream handlers
-    ctx = click.get_current_context(silent=True)
+    ctx = get_current_context(silent=True)
 
     # Check if a custom default level was set on the GroupConfig via ctx.command
     default_verbosity = "WARNING"
@@ -283,7 +284,7 @@ def create_log_file_callback(
     """Create a Click callback for the log file option."""
 
     # noinspection PyUnusedLocal
-    def callback(ctx, param, value):
+    def callback(ctx: Context, param: Parameter, value: Any) -> Any:
         """Callback function for the log file option."""
         if value:
             ctx.meta["pyclif.log_file_path"] = value
