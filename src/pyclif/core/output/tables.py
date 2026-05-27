@@ -89,14 +89,6 @@ class CliTable:
         """
         return self.table if self.table.row_count != 0 else "[i]No dataset available.[/i]"
 
-    def table(self) -> Table:  # pragma: no cover
-        """Return the internal table object.
-
-        Returns:
-            Table: The rich Table instance.
-        """
-        return self.table
-
     def update_columns(self, fields: dict) -> None:
         """Add columns to the table from field definitions.
 

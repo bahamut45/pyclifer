@@ -1,6 +1,7 @@
 """Unit tests for the tables module in the output package."""
 
 import datetime
+import inspect
 
 import pytest
 from rich.table import Table
@@ -74,6 +75,12 @@ class TestCliTable:
             "active": CliTableColumn(header="Active Status"),
             "roles.name": CliTableColumn(header="Roles"),
         }
+
+    def test_table_method_is_removed(self) -> None:
+        """table() method shadows the self.table attribute — it must not exist on the class."""
+        assert not inspect.isfunction(CliTable.__dict__.get("table")), (
+            "table() method should be removed; it is unreachable after __init__ sets self.table"
+        )
 
     def test_initialization(self, sample_fields: dict) -> None:
         """Test that CliTable initializes correctly with given styles and columns."""
