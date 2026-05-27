@@ -49,7 +49,7 @@ attribute directly via `instance.table`.
 
 ---
 
-### 1.3 `log/config.py`: `get_configured_logger` has wrong default type
+### ✅ 1.3 `log/config.py`: `get_configured_logger` has wrong default type
 
 ```python
 # Before — default is None but type says str
