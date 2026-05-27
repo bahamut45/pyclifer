@@ -71,7 +71,6 @@ class PyclifRichGroup(HandleResponseMixin, GlobalOptionsMixin, RichGroup):
     """Custom group based on rich-click that propagates global options."""
 
 
-# Alias for convenience
 PyclifGroup = PyclifExtraGroup
 
 
@@ -102,7 +101,6 @@ class CustomConfigOption(StoreInMetaMixin, ConfigOption):
         evaluation to display the actual path cleanly.
         """
         default = super().get_default(ctx, call=call)
-        # If call=False returned a callable (our bound method), evaluate it anyway
         if not call and callable(default):
             # noinspection PyBroadException
             try:
@@ -144,7 +142,6 @@ class CustomConfigOption(StoreInMetaMixin, ConfigOption):
         Returns:
             str: Extension pattern for glob matching (e.g., 'toml' or '{toml,yaml,json}').
         """
-        # Build file extension pattern from supported formats
         extensions = []
 
         if self.file_format_patterns:
@@ -158,12 +155,9 @@ class CustomConfigOption(StoreInMetaMixin, ConfigOption):
         if not extensions:
             return "*"
 
-        # Create an extension pattern for glob matching
         if len(extensions) == 1:
             return extensions[0]
-        else:
-            # Use brace notation for multiple extension matching
-            return f"{{{','.join(extensions)}}}"
+        return f"{{{','.join(extensions)}}}"
 
     def _get_all_config_patterns(self) -> list[str]:
         """Get all configuration search patterns in priority order.
@@ -180,10 +174,8 @@ class CustomConfigOption(StoreInMetaMixin, ConfigOption):
         """
         patterns = []
 
-        # Get extension pattern
         ext_pattern = self._get_extension_pattern()
 
-        # Get CLI name from click context
         try:
             ctx = get_current_context()
             cli_name = ctx.find_root().info_name
@@ -195,13 +187,11 @@ class CustomConfigOption(StoreInMetaMixin, ConfigOption):
         if not cli_name:
             return []
 
-        # 1. Add a system-wide configuration path (Linux only)
         if is_linux():
             system_config_dir = Path(f"/etc/{cli_name}")
             system_pattern = str(system_config_dir / f"*.{ext_pattern}")
             patterns.append(system_pattern)
 
-        # 2. Add a user configuration directory (all platforms)
         try:
             roaming = getattr(self, "roaming", False)
             force_posix = getattr(self, "force_posix", False)
@@ -233,7 +223,6 @@ class CustomConfigOption(StoreInMetaMixin, ConfigOption):
         Returns:
             str: A basic configuration file search pattern.
         """
-        # Basic fallback pattern in the current directory
         ext_pattern = self._get_extension_pattern()
         return f"*.{ext_pattern}"
 

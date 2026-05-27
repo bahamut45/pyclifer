@@ -99,7 +99,6 @@ class SecretsMasker(logging.Filter):
                 for dict_key, nested_item in item.items()
             }
         elif isinstance(item, (tuple, set)):
-            # Turn set in to tuple!
             return tuple(self._redact_all(nested_item, depth + 1) for nested_item in item)
         elif isinstance(item, list):
             return [self._redact_all(nested_item, depth + 1) for nested_item in item]
@@ -107,10 +106,12 @@ class SecretsMasker(logging.Filter):
             return item
 
     def _redact(self, item, name, depth):
-        """Recursively redact sensitive fields from a value based on the key name."""
-        # Avoid spending too much effort on redacting on deeply nested
-        # structures. This also avoids infinite recursion if a structure has
-        # a reference to self.
+        """Recursively redact sensitive fields from a value based on the key name.
+
+        Depth is bounded to avoid spending excessive effort on deeply nested
+        structures and to prevent infinite recursion when a structure holds a
+        reference to itself.
+        """
         try:
             if name and should_hide_value_for_key(name):
                 return self._redact_all(item, depth)
@@ -132,7 +133,6 @@ class SecretsMasker(logging.Filter):
             elif isinstance(item, str):
                 return item
             elif isinstance(item, (tuple, set)):
-                # Turn set in to tuple!
                 return tuple(
                     self._redact(nested_item, name=None, depth=(depth + 1)) for nested_item in item
                 )

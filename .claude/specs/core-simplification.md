@@ -100,7 +100,7 @@ mirroring the parent Click signatures.
 
 ---
 
-### 2.3 Unnecessary comments that describe what the code does
+### ✅ 2.3 Unnecessary comments that describe what the code does
 
 The project rule: *default to writing no comments; only add one when the WHY is
 non-obvious.*
