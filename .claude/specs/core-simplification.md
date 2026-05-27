@@ -36,7 +36,7 @@ Remove `is_bool()` entirely and update its test if one exists.
 
 ---
 
-### 1.2 `output/tables.py`: `CliTable.table` method shadows the instance attribute
+### ✅ 1.2 `output/tables.py`: `CliTable.table` method shadows the instance attribute
 
 `__init__` assigns `self.table = Table(...)` (a `rich.Table` instance).  The
 class also defines a `table(self)` method that returns `self.table`.  After
