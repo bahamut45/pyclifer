@@ -53,8 +53,8 @@ class RichHelpersMixin:
         """Display a horizontal rule with an optional title.
 
         Args:
-            title (str): The text to display in the middle of the rule.
-            style (str): The color and style of the rule.
+            title: The text to display in the middle of the rule.
+            style: The color and style of the rule.
         """
         self.console.print(Rule(title=title, style=style))  # type: ignore
 
@@ -62,8 +62,8 @@ class RichHelpersMixin:
         """Return a rich status context manager for long-running tasks.
 
         Args:
-            message (str): The message to display next to the spinner.
-            spinner (str): The type of spinner animation to use.
+            message: The message to display next to the spinner.
+            spinner: The type of spinner animation to use.
 
         Returns:
             Status: A context manager for the status.
@@ -96,8 +96,8 @@ class RichHelpersMixin:
         """Ask the user a yes or no confirmation question.
 
         Args:
-            question (str): The prompt text to display.
-            default (bool): The default answer if the user presses enter.
+            question: The prompt text to display.
+            default: The default answer if the user presses enter.
 
         Returns:
             bool: True if the user confirmed, False otherwise.

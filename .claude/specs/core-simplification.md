@@ -63,7 +63,7 @@ def get_configured_logger(name: str | None = None) -> SupportsTraceLogger:
 
 ## Priority 2 — Project standard violations
 
-### 2.1 Docstring Args sections must not include types (multiple files)
+### ✅ 2.1 Docstring Args sections must not include types (multiple files)
 
 The project rule: *Do NOT include type information in `Args:` / `Returns:` — it
 is already in the signature.*

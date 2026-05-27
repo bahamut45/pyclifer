@@ -15,7 +15,7 @@ class StoreInMetaMixin:
 
         Args:
             *args: Positional arguments for the parent class.
-            store_in_meta (bool): If True, store the parsed value in ctx.meta.
+            store_in_meta: If True, store the parsed value in ctx.meta.
             **kwargs: Keyword arguments for the parent class.
         """
         self.store_in_meta = store_in_meta
