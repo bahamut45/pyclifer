@@ -124,7 +124,7 @@ self-explanatory.
 
 ---
 
-### 2.4 Lazy import in `classes.py` missing explanation comment
+### ✅ 2.4 Lazy import in `classes.py` missing explanation comment
 
 `_get_all_config_patterns` does `import logging` inside the except block
 (line 218) without a comment explaining why the import is lazy.

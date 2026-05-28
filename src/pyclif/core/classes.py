@@ -1,5 +1,6 @@
 """Custom Click classes for pyclif."""
 
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import perf_counter
@@ -205,9 +206,6 @@ class CustomConfigOption(StoreInMetaMixin, ConfigOption):
             # - OSError: File system-related errors (permissions, path issues, etc.)
             # - ValueError: Invalid arguments passed to get_app_dir or Path
             # - TypeError: Type-related issues with arguments
-            import logging
-
-            # noinspection PyUnresolvedReferences
             logger = logging.getLogger(__name__)
             logger.debug(f"Failed to get user config directory: {e}")
             # Continue without user config pattern - system config may still work
