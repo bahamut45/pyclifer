@@ -137,7 +137,7 @@ Recommended: move to the top of the file.
 
 ---
 
-### 2.5 Unnecessary string forward-reference in `GroupConfig`
+### ✅ 2.5 Unnecessary string forward-reference in `GroupConfig`
 
 `RichHelpConfiguration` is already imported at the top of `classes.py`
 (`from rich_click import RichGroup, RichHelpConfiguration`), so the field
