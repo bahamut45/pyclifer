@@ -153,7 +153,7 @@ rich_help_config: dict | str | RichHelpConfiguration | None = None
 
 ---
 
-### 2.6 Undocumented bare `except Exception` in `CustomConfigOption.get_default`
+### ✅ 2.6 Undocumented bare `except Exception` in `CustomConfigOption.get_default`
 
 ```python
 try:

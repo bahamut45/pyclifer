@@ -106,7 +106,7 @@ class CustomConfigOption(StoreInMetaMixin, ConfigOption):
             # noinspection PyBroadException
             try:
                 return default()
-            except Exception:
+            except Exception:  # rich-click may pass an unresolvable callable — swallow silently
                 pass
         return default
 
