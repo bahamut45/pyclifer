@@ -152,9 +152,8 @@ class GroupDecorator:
             group_decorator = click_extra.group
 
         if self.config.name:
-            return group_decorator(name=self.config.name, **self.click_kwargs)(f)
-        else:
-            return group_decorator(**self.click_kwargs)(f)
+            self.click_kwargs["name"] = self.config.name
+        return group_decorator(**self.click_kwargs)(f)
 
     def _inject_dynamic_envvar(self, f: click_extra.Group) -> click_extra.Group:
         """Inject dynamic auto_envvar_prefix generation at runtime if not specified."""

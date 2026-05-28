@@ -226,7 +226,7 @@ def _split_group_kwargs(kwargs: dict[str, Any]) -> tuple[dict[str, Any], dict[st
 
 ---
 
-### 3.3 `decorators.py`: `_apply_click_group` name-kwarg duplication
+### ✅ 3.3 `decorators.py`: `_apply_click_group` name-kwarg duplication
 
 ```python
 # Before
