@@ -202,7 +202,7 @@ Replace both occurrences in `returns_response`.
 
 ---
 
-### 3.2 `decorators.py`: `app_group` / `group` duplicate kwargs-splitting logic
+### ✅ 3.2 `decorators.py`: `app_group` / `group` duplicate kwargs-splitting logic
 
 Both functions repeat:
 

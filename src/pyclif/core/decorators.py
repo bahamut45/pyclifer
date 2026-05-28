@@ -26,6 +26,15 @@ from .output.exit_codes import ExitCode, validate_exit_codes_class
 _F = TypeVar("_F", bound=Callable[..., Any])
 
 
+def _split_group_kwargs(kwargs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Split kwargs into GroupConfig fields and Click pass-through arguments."""
+    config_fields = {f.name for f in fields(GroupConfig)}
+    return (
+        {k: v for k, v in kwargs.items() if k in config_fields},
+        {k: v for k, v in kwargs.items() if k not in config_fields},
+    )
+
+
 def _get_root_context() -> click_extra.Context | None:
     """Return the root Click context by walking up the parent chain."""
     ctx = click_extra.get_current_context(silent=True)
@@ -274,9 +283,7 @@ def app_group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group
     Returns:
         A decorator that wraps the function as a pyclif CLI group.
     """
-    config_fields = {f.name for f in fields(GroupConfig)}
-    config_kwargs = {k: v for k, v in kwargs.items() if k in config_fields}
-    click_kwargs = {k: v for k, v in kwargs.items() if k not in config_fields}
+    config_kwargs, click_kwargs = _split_group_kwargs(kwargs)
 
     # Create config with App defaults
     config = GroupConfig(
@@ -297,9 +304,7 @@ def group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group]:
 
     Creates a standard group without global application options by default.
     """
-    config_fields = {f.name for f in fields(GroupConfig)}
-    config_kwargs = {k: v for k, v in kwargs.items() if k in config_fields}
-    click_kwargs = {k: v for k, v in kwargs.items() if k not in config_fields}
+    config_kwargs, click_kwargs = _split_group_kwargs(kwargs)
 
     # Create config with Sub-group defaults (mostly False from the dataclass)
     config = GroupConfig(**config_kwargs)
