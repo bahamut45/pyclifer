@@ -26,6 +26,16 @@ from .output.exit_codes import ExitCode, validate_exit_codes_class
 _F = TypeVar("_F", bound=Callable[..., Any])
 
 
+def _get_root_context() -> click_extra.Context | None:
+    """Return the root Click context by walking up the parent chain."""
+    ctx = click_extra.get_current_context(silent=True)
+    if ctx is None:
+        return None
+    while ctx.parent is not None:
+        ctx = ctx.parent
+    return ctx
+
+
 class GroupDecorator:
     """Decorator class applying GroupConfig and Click logic to a group."""
 
@@ -333,11 +343,7 @@ def returns_response(f: Callable) -> Callable:
         try:
             result = f(*args, **kwargs)
         except Exception as e:
-            ctx = click_extra.get_current_context(silent=True)
-            root = ctx
-            if root is not None:
-                while (parent := root.parent) is not None:
-                    root = parent
+            root = _get_root_context()
             meta = root.meta if root is not None else {}
             log_level = meta.get("pyclif.unhandled_exception_log_level", "error")
             _log.log(
@@ -355,14 +361,8 @@ def returns_response(f: Callable) -> Callable:
         if isinstance(result, _get_response_class()):
             from pyclif.core.context import BaseContext
 
-            # --output-format is set on the root group context.
-            # Walk up the context chain to find the root where the user's
-            # explicit value (or the app-level default) is stored.
             ctx = click_extra.get_current_context(silent=True)
-            root = ctx
-            if root is not None:
-                while (parent := root.parent) is not None:
-                    root = parent
+            root = _get_root_context()
 
             # Use the actual context object (ctx.obj) if it is a BaseContext
             # subclass so that custom overrides (e.g., print_result_based_on_format)

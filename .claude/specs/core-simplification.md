@@ -172,7 +172,7 @@ comment:  `# rich-click may pass an unresolvable callable — swallow silently`.
 
 ## Priority 3 — Duplication & clarity
 
-### 3.1 `decorators.py`: "walk to root context" pattern duplicated in `returns_response`
+### ✅ 3.1 `decorators.py`: "walk to root context" pattern duplicated in `returns_response`
 
 The same four-line pattern appears **twice** inside the `wrapper` function
 (lines 337–341 for exception handling; lines 361–366 for dispatch):
