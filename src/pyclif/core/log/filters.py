@@ -143,7 +143,7 @@ class SecretsMasker(logging.Filter):
                 ]
             else:
                 return item
-        except Exception as e:
+        except Exception as e:  # security filter must never crash — log and return item unredacted
             logging.warning(
                 "Unable to redact %s. Error was: %s: %s",
                 repr(item),
