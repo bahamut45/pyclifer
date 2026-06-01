@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-06-01
+
+### Bug Fixes
+
+- **log**: Correct get_configured_logger name parameter type annotation
+- **output**: Use INVALID_INPUT exit code for missing filter path
+
+### Documentation
+
+- **claude**: Document git workflow, commit format and spec process
+- **specs**: Add core-simplification spec (1.1 already implemented)
+- **specs**: Mark 1.2 done in core-simplification
+- **specs**: Mark 1.3 done in core-simplification
+- **claude**: Include spec ✅ update in feature commit, not separately
+- **claude**: Add pytest step and click_extra import rule
+- **specs**: Add make-context refactor spec, archive core-simplification
+
+### Miscellaneous
+
+- **deps**: Declare rich as direct dependency
+- **deps**: Update `rich` dependency constraints
+
 ## [0.2.0] - 2026-05-25
 
 ### Features
