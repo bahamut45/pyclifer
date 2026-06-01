@@ -255,7 +255,7 @@ if callable(getattr(value, "to_dict", None)):
 
 ---
 
-### 3.5 `tables.py`: `isinstance(field, type(None))` should be `field is None`
+### ✅ 3.5 `tables.py`: `isinstance(field, type(None))` should be `field is None`
 
 In `CliTable.__rich_field__` (line 193):
 

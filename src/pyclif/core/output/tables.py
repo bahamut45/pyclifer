@@ -162,7 +162,7 @@ class CliTable:
             return convert_bool_to_emoji(field)
         if isinstance(field, int):
             return str(field)
-        if isinstance(field, type(None)):
+        if field is None:
             return "N/A"
         if isinstance(field, datetime.datetime):
             return field.strftime(self.datetime_format)
