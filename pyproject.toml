@@ -48,7 +48,7 @@ dev = [
     "ruff",
     "tox>=4.0",
     "tox-uv>=1.0",
-    "bump-my-version>=0.28.0",
+
     "git-cliff>=2.0",
     "pre-commit>=3.0",
 ]
