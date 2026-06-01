@@ -269,7 +269,7 @@ if field is None:
 
 ---
 
-### 3.6 `log/config.py`: redundant `isinstance(level, str)` in `setup_file_logging`
+### ✅ 3.6 `log/config.py`: redundant `isinstance(level, str)` in `setup_file_logging`
 
 The parameter is already typed `level: str`, so the defensive check is
 unreachable code:
@@ -284,7 +284,7 @@ level_name = level.upper()
 
 ---
 
-### 3.7 `log/config.py`: `callback` inner function should use `_param` for unused parameter
+### ✅ 3.7 `log/config.py`: `callback` inner function should use `_param` for unused parameter
 
 ```python
 # Before

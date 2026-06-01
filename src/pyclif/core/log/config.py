@@ -202,7 +202,7 @@ def setup_file_logging(
     root_logger = logging.getLogger()
     abs_log_file = str(Path(log_file).resolve())
 
-    level_name = level.upper() if isinstance(level, str) else "DEBUG"
+    level_name = level.upper()
     file_level_int: int = PYCLIF_LOG_LEVELS.get(level_name, logging.DEBUG)
 
     # Get current console verbosity to restrict stream handlers
@@ -283,7 +283,7 @@ def create_log_file_callback(
     """Create a Click callback for the log file option."""
 
     # noinspection PyUnusedLocal
-    def callback(ctx: Context, param: Parameter, value: Any) -> Any:
+    def callback(ctx: Context, _param: Parameter, value: Any) -> Any:
         """Callback function for the log file option."""
         if value:
             ctx.meta["pyclif.log_file_path"] = value
