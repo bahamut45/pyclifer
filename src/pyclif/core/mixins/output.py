@@ -232,7 +232,7 @@ class OutputFormatMixin:
             success=False,
             item="output-filter",
             message=message,
-            error_code=ExitCode.ALREADY_EXISTS,
+            error_code=ExitCode.INVALID_INPUT,
             data={"available_keys": available_keys},
         )
         error_response = Response.from_results(
