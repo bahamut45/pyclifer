@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2026-06-01
+
+### Documentation
+
+- **specs**: Add deps-upgrade spec
+
+### Miscellaneous
+
+- **deps**: Upgrade click-extra, rich, rich-click
+- **specs**: Archive `2026-06-01-deps-upgrade-fr.md`
+- **deps**: Isolate bump-my-version via uvx
+
 ## [0.3.0] - 2026-06-01
 
 ### Bug Fixes

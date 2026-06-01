@@ -4,7 +4,7 @@
 
 # pyclif
 
-![version](https://img.shields.io/badge/version-0.3.0-green)
+![version](https://img.shields.io/badge/version-0.3.1-green)
 [![codecov](https://codecov.io/gh/bahamut45/pyclif/graph/badge.svg)](https://codecov.io/gh/bahamut45/pyclif)
 
 **PYthon Command Line Interface Framework** — a decorator-driven CLI framework built on
