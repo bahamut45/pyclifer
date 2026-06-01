@@ -298,7 +298,7 @@ This silences the linter warning and signals intent without a `# noqa`.
 
 ---
 
-### 3.8 `output/renderer.py`: `_detail_grid` unnecessary lazy import
+### ✅ 3.8 `output/renderer.py`: `_detail_grid` unnecessary lazy import
 
 `from rich.table import Table` inside `_detail_grid` has a `# noqa: PLC0415`
 suppression. `rich.table.Table` is a third-party import with no circular

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
 
 if TYPE_CHECKING:
     from pyclif.core.models import BaseModel
@@ -228,14 +229,12 @@ class BaseRenderer:
         return self.serialize(response)
 
     @staticmethod
-    def _detail_grid() -> Any:
+    def _detail_grid() -> Table:
         """Return a two-column key-value grid for detail panels.
 
         Returns:
             A Table configured as a key-value grid with a bold-cyan label column.
         """
-        from rich.table import Table  # noqa: PLC0415
-
         grid = Table.grid(padding=(0, 2))
         grid.add_column(style="bold cyan", no_wrap=True)
         grid.add_column()
