@@ -194,7 +194,7 @@ class Response:
         if isinstance(self.data, dict):
             serialized_dict = {}
             for key, value in self.data.items():
-                if (hasattr(value, "to_dict")) and callable(value.to_dict):
+                if callable(getattr(value, "to_dict", None)):
                     serialized_dict[key] = value.to_dict()
                 else:
                     serialized_dict[key] = value

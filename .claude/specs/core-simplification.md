@@ -243,7 +243,7 @@ return group_decorator(**self.click_kwargs)(f)
 
 ---
 
-### 3.4 `output/responses.py`: `_serialize_data` callable check pattern
+### ✅ 3.4 `output/responses.py`: `_serialize_data` callable check pattern
 
 ```python
 # Before — redundant parentheses and verbose
