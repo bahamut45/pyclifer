@@ -206,3 +206,55 @@ class Task(BaseModel):
 !!! tip "Dans ton projet"
     Run `pyclifer project init my-app` and `pyclifer project add app tasks` — the generated
     `apps/tasks/models.py` has the same shape, ready to fill with your own fields.
+
+### Layer 2 — Renderer
+
+Source: [`apps/tasks/renderers.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/renderers.py)
+
+Every output format (table, JSON, YAML, Rich, raw) is controlled from one class —
+no formatting logic lives in commands or interfaces.
+
+**Declarative renderer** — set class attributes, override nothing:
+
+```python
+class TaskListRenderer(BaseRenderer):
+    model_class = Task
+    fields = ["id", "title", "priority", "status", "due_date", "assignee"]
+    columns = ["id", "title", "priority", "status", "due_date", "assignee"]
+    rich_title = "Tasks"
+    success_message = "Tasks retrieved successfully."
+    failure_message = "Failed to retrieve tasks."
+```
+
+- `fields` — keys included in JSON / YAML / raw output
+- `columns` — columns shown in the Rich table
+- `rich_title` — panel / table title
+
+**Streaming renderer** — three hooks drive the live progress bar in `sync`:
+
+```python
+class TaskSyncRenderer(BaseRenderer):
+    def rich_setup(self) -> Any:
+        # called once before the stream starts — return the Rich renderable for Live()
+        progress = Progress(SpinnerColumn(), TextColumn("…"), BarColumn(), MofNCompleteColumn())
+        self._progress = progress
+        self._task_bar = progress.add_task("Syncing…", total=None)
+        return self._progress
+
+    def rich_on_item(self, result: OperationResult, all_so_far: list) -> None:
+        # called after each yielded result — advance the bar
+        self._progress.advance(self._task_bar)
+
+    def rich_summary(self, response: Response, console: Console) -> None:
+        # called once after the stream closes — print a summary
+        results = response.data.get("results", [])
+        console.rule("[bold green]Sync complete")
+        console.print(f"{len(results)} tasks imported.")
+```
+
+When `-o json` is passed, none of these hooks are called — the framework waits for all
+results and serialises them directly. The renderer stays format-agnostic.
+
+!!! tip "Dans ton projet"
+    See [Rich Progressive Output](how-to/rich-progressive-output.md) for the full guide on
+    building streaming commands with live renderers.
