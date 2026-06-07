@@ -4,7 +4,7 @@
 
 # pyclifer
 
-![version](https://img.shields.io/badge/version-0.4.0-green)
+![version](https://img.shields.io/badge/version-0.4.1-green)
 [![PyPI](https://img.shields.io/pypi/v/pyclifer)](https://pypi.org/project/pyclifer/)
 [![codecov](https://codecov.io/gh/bahamut45/pyclifer/graph/badge.svg)](https://codecov.io/gh/bahamut45/pyclifer)
 
