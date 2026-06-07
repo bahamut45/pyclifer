@@ -370,3 +370,68 @@ def show(ctx, task_id) -> Response:
 !!! tip "Dans ton projet"
     Run `pyclifer project add command list --app tasks` to generate a pre-wired command stub
     following this exact pattern.
+
+### Layer 5 — Core (context + storage)
+
+Source: [`core/context.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/core/context.py),
+[`core/storage.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/core/storage.py)
+
+`DemoContext` extends `BaseContext` with a single addition — a lazily initialised `Storage`
+property:
+
+```python
+class DemoContext(BaseContext):
+    def __init__(self) -> None:
+        super().__init__()
+        self._storage: Storage | None = None
+
+    @property
+    def storage(self) -> Storage:
+        if self._storage is None:
+            self._storage = Storage()
+        return self._storage
+
+pass_demo_context = make_pass_decorator(DemoContext, ensure=True)
+```
+
+`make_pass_decorator` is pyclifer's typed equivalent of `click.make_pass_decorator`. The
+`ensure=True` flag creates a fresh context if none exists, so commands always get a valid
+`DemoContext` even when invoked in isolation.
+
+`Storage` reads and writes a single JSON file:
+
+```python
+DATA_PATH = pathlib.Path.home() / ".config" / "pyclifer" / "demo.json"
+
+class Storage:
+    def upsert_task(self, task: Task) -> None:
+        data = self.load()
+        tasks = data.get("tasks", [])
+        task_dict = task.model_dump(mode="json")
+        for i, raw in enumerate(tasks):
+            if raw["id"] == task.id:
+                tasks[i] = task_dict
+                break
+        else:
+            tasks.append(task_dict)
+        data["tasks"] = tasks
+        self.save(data)
+```
+
+In a real project you would replace `Storage` with a client for your actual backend
+(database, API, cloud service). The interface layer never touches storage directly —
+only through `ctx.storage` — so swapping the backend requires changing one file.
+
+!!! tip "Dans ton projet"
+    `pyclifer project init my-app` generates `core/context.py` with the same `BaseContext`
+    extension pattern. Add your own service clients as properties there.
+
+---
+
+## Next steps
+
+- Browse the full source: [`src/pyclifer/apps/demo/`](https://github.com/bahamut45/pyclifer/tree/main/src/pyclifer/apps/demo)
+- Build the same structure for your own project: [Scaffolding](scaffolding.md)
+- Deep-dive on output formats: [Choosing an Output Format](how-to/output-format.md)
+- Streaming in detail: [Rich Progressive Output](how-to/rich-progressive-output.md)
+- Error handling patterns: [Error Handling](how-to/error-handling.md)
