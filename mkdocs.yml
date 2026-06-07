@@ -44,6 +44,7 @@ nav:
       - Error Handling: error-handling.md
       - Scaffolding: scaffolding.md
   - Examples: examples.md
+  - Demo App: demo.md
   - How-to Guides:
       - how-to/index.md
       - how-to/response-patterns.md
