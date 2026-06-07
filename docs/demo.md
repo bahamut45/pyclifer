@@ -157,4 +157,52 @@ A Rich panel titled **Logged in as \<your-unix-user\>** shows your auto-created 
 
 ## Part 2 — Code Walkthrough
 
-<!-- walkthrough sections go here -->
+The demo app lives in `src/pyclifer/apps/demo/`. It follows the exact same structure that
+`pyclifer project init` generates for your own projects.
+
+```
+apps/demo/
+├── __init__.py             # @group entry point, wires sub-groups and commands
+├── core/
+│   ├── context.py          # DemoContext — extends BaseContext with a storage property
+│   ├── constants.py        # PRIORITY_CHOICE, STATUS_CHOICE Click types
+│   ├── options.py          # --project global option
+│   └── storage.py          # JSON file backend at ~/.config/pyclifer/demo.json
+├── apps/
+│   ├── tasks/
+│   │   ├── models.py       # Task dataclass (Pydantic BaseModel)
+│   │   ├── renderers.py    # TaskListRenderer, TaskDetailRenderer, TaskSyncRenderer…
+│   │   ├── interfaces.py   # TaskInterface — business logic, yields/returns OperationResult
+│   │   └── commands/       # one file per command (add, list, show, complete, delete, sync)
+│   └── users/
+│       ├── models.py       # User dataclass
+│       ├── interfaces.py   # UserInterface + renderers
+│       └── commands/       # list, whoami
+├── interfaces.py           # top-level DemoInterface (unused in tour, available to extend)
+├── models.py               # top-level shared models
+└── tables.py               # top-level shared table helpers
+```
+
+### Layer 1 — Model
+
+Source: [`apps/tasks/models.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/models.py)
+
+```python
+class Task(BaseModel):
+    id: str
+    title: str
+    description: str = ""
+    priority: str = "medium"
+    status: str = "open"
+    due_date: datetime.date | None = None
+    tags: list[str] = []
+    assignee: str = ""
+    created_at: datetime.datetime
+```
+
+`BaseModel` is pyclifer's re-export of `pydantic.BaseModel`. Pydantic validators on
+`priority` and `status` reject values outside the allowed sets at construction time.
+
+!!! tip "Dans ton projet"
+    Run `pyclifer project init my-app` and `pyclifer project add app tasks` — the generated
+    `apps/tasks/models.py` has the same shape, ready to fill with your own fields.
