@@ -1,6 +1,6 @@
 """Tests for GroupDecorator configuration branches and option factory functions."""
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import click
 from click.testing import CliRunner
@@ -17,6 +17,7 @@ from pyclifer.core.decorators import (
     pagination_options,
     verbosity_option,
 )
+from pyclifer.core.output.exit_codes import ExitCode
 
 # ---------------------------------------------------------------------------
 # GroupDecorator — _setup_logging
@@ -110,76 +111,32 @@ class TestGroupDecoratorVersionKwarg:
 
 
 # ---------------------------------------------------------------------------
-# GroupDecorator — _inject_dynamic_envvar
+# GroupDecorator — _configure_context (envvar prefix static path)
 # ---------------------------------------------------------------------------
 
 
-class TestGroupDecoratorInjectDynamicEnvvar:
-    """Tests for _inject_dynamic_envvar ."""
+class TestGroupDecoratorConfigureContextEnvvar:
+    """Tests for _configure_context — the static auto_envvar_prefix path."""
 
-    def test_dynamic_injection_skipped_when_prefix_is_set(self):
-        """When auto_envvar_prefix is not None, make_context is not replaced."""
-        config = GroupConfig(auto_envvar_prefix="MY_APP")
+    def test_explicit_prefix_not_derived_at_runtime(self):
+        """When auto_envvar_prefix is set, derived prefix is NOT injected by _patch_make_context."""
+        captured: dict = {}
+        config = GroupConfig(auto_envvar_prefix="MY_APP", add_verbosity_option=False)
         decorator = GroupDecorator(config, {})
 
         class _FakeGroup:
-            # noinspection PyMethodMayBeStatic,PyMissingOrEmptyDocstring,PyUnusedLocal
-            def make_context(self, info_name, args, parent=None, **extra):
-                return None
+            def make_context(self_inner, info_name, args, parent=None, **extra):
+                """Record extra and return a minimal context-like object."""
+                captured["extra"] = extra
+                ctx = MagicMock()
+                ctx.command.params = []
+                ctx.meta = {}
+                return ctx
 
         g = _FakeGroup()
-        # noinspection PyTypeChecker
-        decorator._inject_dynamic_envvar(g)
-
-        # make_context must NOT have been replaced as an instance attribute
-        assert "make_context" not in g.__dict__
-
-
-# ---------------------------------------------------------------------------
-# GroupDecorator — _inject_early_verbosity
-# ---------------------------------------------------------------------------
-
-
-# noinspection PyUnusedLocal
-class TestGroupDecoratorInjectEarlyVerbosity:
-    """Tests for _inject_early_verbosity edge cases."""
-
-    def test_empty_args_skips_verbosity_extraction(self):
-        """Invoking the app with no args skips early verbosity extraction."""
-
-        @app_group(add_verbosity_option=True, invoke_without_command=True)
-        @click.pass_context
-        def app(ctx):
-            """App"""
-            if ctx.invoked_subcommand is None:
-                click.echo("root")
-
-        runner = CliRunner()
-        result = runner.invoke(app, [])
-        assert result.exit_code == 0
-        assert "root" in result.output
-
-    def test_invalid_verbosity_level_extracted_is_silently_ignored(self):
-        """Extracted level not in PYCLIFER_LOG_LEVELS is silently ignored."""
-
-        @app_group(add_verbosity_option=True)
-        @click.pass_context
-        def app(ctx):
-            """App"""
-
-        @app.command()
-        @click.pass_context
-        def probe(ctx):
-            """Probe"""
-            click.echo("ok")
-
-        # Patch _extract_early_verbosity to return an unrecognized level so that
-        # original_make_context can still succeed (click validation is not triggered).
-        with patch.object(GroupDecorator, "_extract_early_verbosity", return_value="NOTINLEVELS"):
-            runner = CliRunner()
-            result = runner.invoke(app, ["probe"])
-
-        assert "ok" in result.output
+        decorator._patch_make_context(g)
+        g.make_context("my-app", [], parent=None)
+        assert "auto_envvar_prefix" not in captured["extra"]
 
 
 # ---------------------------------------------------------------------------
@@ -438,3 +395,200 @@ class TestPaginationOptions:
         runner.invoke(app, ["cmd", "--page", "3", "--limit", "5"])
         assert captured["page"] == 3
         assert captured["limit"] == 5
+
+
+# ---------------------------------------------------------------------------
+# GroupDecorator — _patch_make_context / Concern 1: dynamic envvar prefix
+# ---------------------------------------------------------------------------
+
+
+class TestPatchMakeContextDynamicEnvvar:
+    """Tests concern 1: dynamic auto_envvar_prefix injection in composite wrapper."""
+
+    def _make_fake_group(self, captured: dict):
+        """Build a fake group that records the extra kwargs received by make_context."""
+
+        class _FakeGroup:
+            def make_context(self_inner, info_name, args, parent=None, **extra):
+                """Capture extra and return a minimal context-like object."""
+                captured["extra"] = extra
+                ctx = MagicMock()
+                ctx.command.params = []
+                ctx.meta = {}
+                return ctx
+
+        return _FakeGroup()
+
+    def test_prefix_derived_from_info_name_when_config_prefix_is_none(self):
+        """auto_envvar_prefix is derived from info_name when config.auto_envvar_prefix is None."""
+        captured: dict = {}
+        config = GroupConfig(auto_envvar_prefix=None, add_verbosity_option=False)
+        decorator = GroupDecorator(config, {})
+        g = self._make_fake_group(captured)
+        decorator._patch_make_context(g)
+        g.make_context("my-app", [], parent=None)
+        assert captured["extra"].get("auto_envvar_prefix") == "MY_APP"
+
+    def test_prefix_not_injected_when_explicitly_set(self):
+        """When config.auto_envvar_prefix is not None, derived prefix is not injected."""
+        captured: dict = {}
+        config = GroupConfig(auto_envvar_prefix="EXPLICIT", add_verbosity_option=False)
+        decorator = GroupDecorator(config, {})
+        g = self._make_fake_group(captured)
+        decorator._patch_make_context(g)
+        g.make_context("my-app", [], parent=None)
+        assert "auto_envvar_prefix" not in captured["extra"]
+
+    def test_hyphens_and_spaces_become_underscores_in_derived_prefix(self):
+        """Hyphens and spaces in info_name are uppercased and underscored."""
+        captured: dict = {}
+        config = GroupConfig(auto_envvar_prefix=None, add_verbosity_option=False)
+        decorator = GroupDecorator(config, {})
+        g = self._make_fake_group(captured)
+        decorator._patch_make_context(g)
+        g.make_context("my cli-app", [], parent=None)
+        assert captured["extra"].get("auto_envvar_prefix") == "MY_CLI_APP"
+
+
+# ---------------------------------------------------------------------------
+# GroupDecorator — _patch_make_context / Concern 2: early verbosity
+# ---------------------------------------------------------------------------
+
+
+class TestPatchMakeContextEarlyVerbosity:
+    """Tests concern 2: early verbosity extraction in composite make_context wrapper."""
+
+    def test_add_verbosity_option_false_skips_verbosity_extraction(self):
+        """no-op when add_verbosity_option=False."""
+
+        @app_group(add_verbosity_option=False, invoke_without_command=True)
+        @click.pass_context
+        def app(ctx):
+            """App"""
+            click.echo("root")
+
+        runner = CliRunner()
+        result = runner.invoke(app, [])
+        assert result.exit_code == 0
+        assert "root" in result.output
+
+    def test_no_op_when_no_args_supplied(self):
+        """no-op when args list is empty."""
+
+        @app_group(add_verbosity_option=True, invoke_without_command=True)
+        @click.pass_context
+        def app(ctx):
+            """App"""
+            click.echo("root")
+
+        runner = CliRunner()
+        result = runner.invoke(app, [])
+        assert result.exit_code == 0
+        assert "root" in result.output
+
+    def test_unknown_level_silently_skipped(self):
+        """Level not in PYCLIFER_LOG_LEVELS is silently ignored, command still runs."""
+
+        @app_group(add_verbosity_option=True)
+        @click.pass_context
+        def app(ctx):
+            """App"""
+
+        @app.command()
+        @click.pass_context
+        def probe(ctx):
+            """Probe"""
+            click.echo("ok")
+
+        with patch.object(GroupDecorator, "_extract_early_verbosity", return_value="NOTINLEVELS"):
+            runner = CliRunner()
+            result = runner.invoke(app, ["probe"])
+
+        assert "ok" in result.output
+
+
+# ---------------------------------------------------------------------------
+# GroupDecorator — _patch_make_context / Concern 3: framework meta injection
+# ---------------------------------------------------------------------------
+
+
+class TestPatchMakeContextMetaInjection:
+    """Tests concern 3: framework meta injection in composite make_context wrapper."""
+
+    def _make_fake_group(self, preset_meta: dict | None = None):
+        """Build a fake group returning a context with a real meta dict."""
+
+        class _FakeGroup:
+            def make_context(self_inner, info_name, args, parent=None, **extra):
+                """Return a minimal context-like object with a real meta dict."""
+                ctx = MagicMock()
+                ctx.command.params = []
+                ctx.meta = dict(preset_meta) if preset_meta else {}
+                return ctx
+
+        return _FakeGroup()
+
+    def test_unhandled_exception_log_level_stored_in_root_ctx_meta(self):
+        """pyclifer.unhandled_exception_log_level is stored in ctx.meta at root."""
+        config = GroupConfig(unhandled_exception_log_level="warning", add_verbosity_option=False)
+        decorator = GroupDecorator(config, {})
+        g = self._make_fake_group()
+        decorator._patch_make_context(g)
+        ctx = g.make_context("app", [], parent=None)
+        assert ctx.meta["pyclifer.unhandled_exception_log_level"] == "warning"
+
+    def test_exit_codes_class_stored_in_root_ctx_meta(self):
+        """pyclifer.exit_codes_class is stored in ctx.meta at root."""
+        config = GroupConfig(add_verbosity_option=False)
+        decorator = GroupDecorator(config, {})
+        g = self._make_fake_group()
+        decorator._patch_make_context(g)
+        ctx = g.make_context("app", [], parent=None)
+        assert ctx.meta["pyclifer.exit_codes_class"] is ExitCode
+
+    def test_meta_keys_not_set_when_parent_is_not_none(self):
+        """Framework meta keys are not set when a parent context exists."""
+        config = GroupConfig(add_verbosity_option=False)
+        decorator = GroupDecorator(config, {})
+        g = self._make_fake_group()
+        decorator._patch_make_context(g)
+        ctx = g.make_context("sub", [], parent=MagicMock())
+        assert "pyclifer.unhandled_exception_log_level" not in ctx.meta
+        assert "pyclifer.exit_codes_class" not in ctx.meta
+
+    def test_setdefault_does_not_overwrite_existing_meta_value(self):
+        """setdefault semantics: a pre-existing value in ctx.meta is preserved."""
+        config = GroupConfig(unhandled_exception_log_level="error", add_verbosity_option=False)
+        decorator = GroupDecorator(config, {})
+        g = self._make_fake_group(
+            preset_meta={"pyclifer.unhandled_exception_log_level": "critical"}
+        )
+        decorator._patch_make_context(g)
+        ctx = g.make_context("app", [], parent=None)
+        assert ctx.meta["pyclifer.unhandled_exception_log_level"] == "critical"
+
+
+# ---------------------------------------------------------------------------
+# GroupDecorator — _patch_make_context / Integration: all concerns together
+# ---------------------------------------------------------------------------
+
+
+class TestPatchMakeContextIntegration:
+    """Integration: all three concerns active simultaneously via default app_group config."""
+
+    def test_all_concerns_active_with_default_app_group(self):
+        """app_group with defaults activates all three concerns simultaneously."""
+        captured: dict = {}
+
+        @app_group(invoke_without_command=True)
+        @click.pass_context
+        def myapp(ctx):
+            """My app"""
+            if ctx.invoked_subcommand is None:
+                captured["meta"] = dict(ctx.meta)
+
+        runner = CliRunner()
+        result = runner.invoke(myapp, [])
+        assert result.exit_code == 0
+        assert "pyclifer.unhandled_exception_log_level" in captured["meta"]
+        assert "pyclifer.exit_codes_class" in captured["meta"]
