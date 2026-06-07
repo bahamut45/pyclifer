@@ -8,7 +8,7 @@
 [![PyPI](https://img.shields.io/pypi/v/pyclifer)](https://pypi.org/project/pyclifer/)
 [![codecov](https://codecov.io/gh/bahamut45/pyclifer/graph/badge.svg)](https://codecov.io/gh/bahamut45/pyclifer)
 
-**PYthon Command Line Interface Framework** — a decorator-driven CLI framework built on
+**PY**thon **C**ommand **L**ine **I**nterface **F**ram**E**wo**R**k — a decorator-driven CLI framework built on
 [click-extra](https://github.com/kdeldycke/click-extra) and [rich-click](https://github.com/ewels/rich-click).
 
 pyclifer provides four decorators (`@app_group`, `@group`, `@command`, `@option`) that give

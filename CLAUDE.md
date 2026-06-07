@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-pyclifer (PYthon Command Line Interface Framework) is a decorator-driven CLI framework built on
+pyclifer (**PY**thon **C**ommand **L**ine **I**nterface **F**ram**E**wo**R**k) is a decorator-driven CLI framework built on
 top of `click-extra` and `rich-click`. It provides four main decorators (`@app_group`, `@group`,
 `@command`, `@option`) that give CLI applications automatic configuration management, environment
 variable binding, Rich-enhanced logging, global option propagation, and standardized output
@@ -26,6 +26,9 @@ framework logic has been ported over with the following improvements:
 - Framework dogfoods its own pattern — scaffolding lives in `src/pyclifer/apps/project/`
 
 ## Working Style
+
+Respond in **French** in all conversational messages. Keep English for all code, comments,
+docstrings, commit messages, and documentation files.
 
 Before modifying any file, state in one or two sentences:
 - **What** you are about to write or change (the substance, not just "update X")
