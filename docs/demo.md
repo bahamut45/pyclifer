@@ -258,3 +258,65 @@ results and serialises them directly. The renderer stays format-agnostic.
 !!! tip "Dans ton projet"
     See [Rich Progressive Output](how-to/rich-progressive-output.md) for the full guide on
     building streaming commands with live renderers.
+
+### Layer 3 — Interface
+
+Source: [`apps/tasks/interfaces.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/interfaces.py)
+
+The interface owns all business logic. It maps method names to renderers and returns
+`OperationResult` objects — never strings, never HTTP responses.
+
+```python
+class TaskInterface(BaseInterface):
+    ctx: DemoContext
+
+    renderers = {
+        "list_tasks": TaskListRenderer,
+        "add_task": TaskAddRenderer,
+        "show_task": TaskDetailRenderer,
+        "complete_task": TaskCompleteRenderer,
+        "delete_task": TaskDeleteRenderer,
+        "sync_tasks": TaskSyncRenderer,
+    }
+
+    def list_tasks(
+        self, status: str | None = None, priority: str | None = None
+    ) -> list[OperationResult]:
+        tasks = self.ctx.storage.get_tasks()
+        if status:
+            tasks = [t for t in tasks if t.status == status]
+        if priority:
+            tasks = [t for t in tasks if t.priority == priority]
+        return [OperationResult.ok(item=t.id, data=t) for t in tasks]
+
+    def sync_tasks(self, source: str = "…") -> Iterator[OperationResult]:
+        # yields one result per task — drives the streaming renderer
+        for title in _FAKE_SYNC_TITLES:
+            time.sleep(0.1)
+            task = Task(id=str(uuid.uuid4()), title=title, created_at=datetime.datetime.now())
+            self.ctx.storage.upsert_task(task)
+            yield OperationResult.ok(item=task.id, data=task, message=f"Synced: {title}")
+```
+
+**Error path** — return `OperationResult.error()` with an `ExitCode`:
+
+```python
+    def show_task(self, task_id: str = "") -> list[OperationResult]:
+        task = self.ctx.storage.get_task(task_id)
+        if task is None:
+            return [
+                OperationResult.error(
+                    item=task_id,
+                    message=f"Task '{task_id}' not found.",
+                    error_code=ExitCode.NOT_FOUND,
+                )
+            ]
+        return [OperationResult.ok(item=task.id, data=task)]
+```
+
+`ExitCode.NOT_FOUND` is 4. The framework serialises this into `"error_code": 4` in JSON
+and exits with code 1.
+
+!!! tip "Dans ton projet"
+    See [Response Patterns](how-to/response-patterns.md) for the full interface + renderer
+    wiring, and [Error Handling](how-to/error-handling.md) for the complete error recipe.
