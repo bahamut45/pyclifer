@@ -62,9 +62,7 @@ class GroupDecorator:
         f = self._apply_automatic_options(f)
         f = self._apply_click_group(f)
         # noinspection PyTypeChecker
-        f = self._inject_dynamic_envvar(f)
-        # noinspection PyTypeChecker
-        f = self._inject_early_verbosity(f)
+        self._patch_make_context(f)
         # noinspection PyTypeChecker
         self._configure_handle_response(f)
 
@@ -155,46 +153,41 @@ class GroupDecorator:
             self.click_kwargs["name"] = self.config.name
         return group_decorator(**self.click_kwargs)(f)
 
-    def _inject_dynamic_envvar(self, f: click_extra.Group) -> click_extra.Group:
-        """Inject dynamic auto_envvar_prefix generation at runtime if not specified."""
-        if self.config.auto_envvar_prefix is None:
-            original_make_context = f.make_context
+    def _patch_make_context(self, f: click_extra.Group) -> None:
+        """Patch make_context once with all framework hooks applied in order.
 
-            @functools.wraps(original_make_context)
-            def custom_make_context(info_name, args, parent=None, **extra):
-                """Dynamically generate auto_envvar_prefix based on the CLI name."""
-                if parent is None and info_name:
-                    derived_prefix = info_name.upper().replace("-", "_").replace(" ", "_")
-                    extra.setdefault("auto_envvar_prefix", derived_prefix)
-                return original_make_context(info_name, args, parent=parent, **extra)
+        Three concerns are composed here — each guarded by its config flag:
 
-            f.make_context = custom_make_context
-        return f
-
-    def _inject_early_verbosity(self, f: click_extra.Group) -> click_extra.Group:
-        """Inject early verbosity pre-parsing at runtime.
+        1. Dynamic auto_envvar_prefix (pre-call): derive prefix from CLI name when not set.
+        2. Early verbosity (pre-call + post-call): extract level before Click parses args,
+           apply it after the context is built.
+        3. Framework meta injection (post-call): store log level and exit codes in ctx.meta
+           so returns_response can read them without a GroupConfig reference.
 
         Args:
-            f: The Click group to decorate.
-
-        Returns:
-            The decorated Click group.
+            f: The Click group to patch.
         """
-        if not self.config.add_verbosity_option:
-            return f
-
         original_make_context = f.make_context
+        level = self.config.unhandled_exception_log_level
+        exit_codes_cls = self.config.exit_codes_class
 
         @functools.wraps(original_make_context)
         def custom_make_context(info_name, args, parent=None, **extra):
-            """Pre-parse verbosity from arguments to apply it before callbacks run."""
+            """Apply all make_context hooks in a single wrapper."""
+            # --- pre-call ---
+            if self.config.auto_envvar_prefix is None and parent is None and info_name:
+                derived_prefix = info_name.upper().replace("-", "_").replace(" ", "_")
+                extra.setdefault("auto_envvar_prefix", derived_prefix)
+
             level_name = None
-            if parent is None and args:
+            if self.config.add_verbosity_option and parent is None and args:
                 level_name = self._extract_early_verbosity(args)
 
+            # --- call ---
             ctx = original_make_context(info_name, args, parent=parent, **extra)
 
-            if parent is None and level_name:
+            # --- post-call ---
+            if self.config.add_verbosity_option and parent is None and level_name:
                 from .log.config import PYCLIFER_LOG_LEVELS
 
                 if level_name in PYCLIFER_LOG_LEVELS:
@@ -203,17 +196,16 @@ class GroupDecorator:
                             param.set_level(ctx, param, level_name)
                             break
 
+            if parent is None:
+                ctx.meta.setdefault("pyclifer.unhandled_exception_log_level", level)
+                ctx.meta.setdefault("pyclifer.exit_codes_class", exit_codes_cls)
+
             return ctx
 
         f.make_context = custom_make_context
-        return f
 
     def _configure_handle_response(self, f: click_extra.Group) -> None:
-        """Propagate the handle_response setting from GroupConfig to the group instance.
-
-        Also stores unhandled_exception_log_level and exit_codes_class in
-        ctx.meta at root context creation time so that returns_response can
-        read them without holding a reference to GroupConfig.
+        """Validate exit codes and propagate handle_response to the group instance.
 
         Args:
             f: The Click group instance to configure.
@@ -225,21 +217,6 @@ class GroupDecorator:
 
         if self.config.handle_response:
             f.handle_response_by_default = True
-
-        level = self.config.unhandled_exception_log_level
-        exit_codes_cls = self.config.exit_codes_class
-        original_make_context = f.make_context
-
-        @functools.wraps(original_make_context)
-        def custom_make_context(info_name, args, parent=None, **extra):
-            """Store framework meta keys in ctx.meta at root context creation."""
-            ctx = original_make_context(info_name, args, parent=parent, **extra)
-            if parent is None:
-                ctx.meta.setdefault("pyclifer.unhandled_exception_log_level", level)
-                ctx.meta.setdefault("pyclifer.exit_codes_class", exit_codes_cls)
-            return ctx
-
-        f.make_context = custom_make_context
 
     @staticmethod
     def _extract_early_verbosity(args: list[str]) -> str | None:
