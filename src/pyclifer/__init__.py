@@ -1,7 +1,7 @@
 """pyclifer — PYthon Command Line Interface Framework"""
 
 __app_name__ = "pyclifer"
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 
 from click_extra import (
     BOOL,
