@@ -3,9 +3,9 @@
 import click
 from click.testing import CliRunner
 
-from pyclif.core import app_group, command, group, option, output_filter_option, returns_response
-from pyclif.core.output import Response
-from pyclif.core.output.exit_codes import ExitCode
+from pyclifer.core import app_group, command, group, option, output_filter_option, returns_response
+from pyclifer.core.output import Response
+from pyclifer.core.output.exit_codes import ExitCode
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -431,7 +431,7 @@ class TestLastResortHandler:
             root = ctx
             while root.parent:
                 root = root.parent
-            captured["level"] = root.meta.get("pyclif.unhandled_exception_log_level")
+            captured["level"] = root.meta.get("pyclifer.unhandled_exception_log_level")
 
         runner = CliRunner()
         runner.invoke(app, ["probe"])
@@ -454,7 +454,7 @@ class TestLastResortHandler:
 
     def test_exception_without_click_context_returns_failed_response(self):
         """Exception handler works when there is no active click context (lines 327→330)."""
-        from pyclif.core.output.responses import Response
+        from pyclifer.core.output.responses import Response
 
         @returns_response
         def boom():
@@ -467,7 +467,7 @@ class TestLastResortHandler:
 
     def test_response_without_click_context_does_not_crash(self):
         """Response path works without an active click context (lines 352→360)."""
-        from pyclif.core.output.responses import Response
+        from pyclifer.core.output.responses import Response
 
         @returns_response
         def succeed():
@@ -480,7 +480,7 @@ class TestLastResortHandler:
 
     def test_unhandled_exception_carries_exit_code_error(self):
         """An unhandled exception response carries ExitCode.ERROR as its error_code."""
-        from pyclif.core.output.responses import Response
+        from pyclifer.core.output.responses import Response
 
         @returns_response
         def boom():
@@ -550,7 +550,7 @@ class TestCtxExitIntegration:
             root = ctx
             while root.parent:
                 root = root.parent
-            captured["cls"] = root.meta.get("pyclif.exit_codes_class")
+            captured["cls"] = root.meta.get("pyclifer.exit_codes_class")
 
         runner = CliRunner()
         runner.invoke(app, ["probe"])
@@ -572,7 +572,7 @@ class TestCtxExitIntegration:
             root = ctx
             while root.parent:
                 root = root.parent
-            captured["cls"] = root.meta.get("pyclif.exit_codes_class")
+            captured["cls"] = root.meta.get("pyclifer.exit_codes_class")
 
         runner = CliRunner()
         runner.invoke(app, ["probe"])

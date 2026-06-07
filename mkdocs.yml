@@ -1,8 +1,8 @@
-site_name: pyclif
+site_name: pyclifer
 site_description: PYthon Command Line Interface Framework — decorator-driven CLI framework built on click-extra and rich-click
-site_url: https://bahamut45.github.io/pyclif
-repo_url: https://github.com/bahamut45/pyclif
-repo_name: bahamut45/pyclif
+site_url: https://bahamut45.github.io/pyclifer
+repo_url: https://github.com/bahamut45/pyclifer
+repo_name: bahamut45/pyclifer
 docs_dir: docs
 edit_uri: edit/main/docs/
 
@@ -86,7 +86,7 @@ extra:
     alias: true
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/bahamut45/pyclif
+      link: https://github.com/bahamut45/pyclifer
 
 markdown_extensions:
   - admonition

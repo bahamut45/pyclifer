@@ -1,6 +1,6 @@
 # Rich Logging
 
-pyclif integrates Rich into the logging system while maintaining full compatibility with `click-extra` and
+pyclifer integrates Rich into the logging system while maintaining full compatibility with `click-extra` and
 preserving the `SecretsMasker` filter and custom `TRACE` level.
 
 ## Overview
@@ -16,11 +16,11 @@ The Rich logging integration provides:
 
 ## Architecture
 
-The logging system lives in `src/pyclif/core/log/`:
+The logging system lives in `src/pyclifer/core/log/`:
 
 1. **`levels.py`** — Custom logging levels and utilities
     - `TRACE` level (value 5)
-    - `PYCLIF_LOG_LEVELS` extending click-extra's log levels
+    - `PYCLIFER_LOG_LEVELS` extending click-extra's log levels
     - `add_trace_method()` for adding trace capability to loggers
 
 2. **`handlers.py`** — Rich-enhanced stream handlers
@@ -37,7 +37,7 @@ The logging system lives in `src/pyclif/core/log/`:
 5. **`config.py`** — Configuration utilities
     - `configure_rich_logging()`: Global logging configuration
     - `get_configured_logger()`: Factory for Rich-enabled loggers
-    - `PyclifVerbosityOption`: Verbosity option with TRACE support
+    - `PycliferVerbosityOption`: Verbosity option with TRACE support
     - `setup_file_logging()`: Time-based rotating log files
     - `create_log_file_callback()`: Click callback for `--log-file`
 
@@ -46,7 +46,7 @@ The logging system lives in `src/pyclif/core/log/`:
 ### Automatic Rich Logging with `@app_group`
 
 ```python
-from pyclif import app_group
+from pyclifer import app_group
 
 
 @app_group()  # Rich logging enabled by default
@@ -78,7 +78,7 @@ def secure_cli():
 ### Logging from Code
 
 ```python
-from pyclif import logger, get_logger
+from pyclifer import logger, get_logger
 
 # Use the pre-configured global logger
 logger.info("Application starting...")
@@ -105,7 +105,7 @@ MYAPP_VERBOSITY=TRACE myapp command
 ### File Logging
 
 ```python
-from pyclif import app_group
+from pyclifer import app_group
 
 
 @app_group(
@@ -128,7 +128,7 @@ Console verbosity (`--verbosity`) and file log level are independent.
 ### Centralized Configuration
 
 ```python
-from pyclif import get_logger, configure_rich_logging
+from pyclifer import get_logger, configure_rich_logging
 
 # Done automatically by @app_group — shown here for reference
 configure_rich_logging(
@@ -186,7 +186,7 @@ is active). The complete default list is available as `SecretsMasker.DEFAULT_FIE
 ### Basic CLI with Rich Logging
 
 ```python
-from pyclif import app_group, logger
+from pyclifer import app_group, logger
 
 
 @app_group()
@@ -207,7 +207,7 @@ def test():
 ### Advanced Configuration
 
 ```python
-from pyclif import app_group
+from pyclifer import app_group
 
 
 @app_group(
@@ -228,7 +228,7 @@ def simple_cli():
 ### Rich Markup in Log Messages
 
 ```python
-from pyclif import logger
+from pyclifer import logger
 
 logger.info("[green]✓[/green] Success!")
 logger.warning("[yellow]⚠[/yellow] Warning!")

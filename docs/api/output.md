@@ -5,7 +5,7 @@
 Named exit codes used as both the classification value in structured output (JSON, YAML) and
 the actual OS exit code (`$?`). Values are POSIX-safe (0-127).
 
-::: pyclif.ExitCode
+::: pyclifer.ExitCode
 
 ### Built-in codes
 
@@ -22,7 +22,7 @@ the actual OS exit code (`$?`). Values are POSIX-safe (0-127).
 
 | Range   | Reserved for                              |
 |---------|-------------------------------------------|
-| 0-5     | pyclif framework codes                    |
+| 0-5     | pyclifer framework codes                    |
 | 6-125   | Application-specific codes — use this     |
 | 126+    | Shell-reserved (not executable, not found, signals) |
 
@@ -32,7 +32,7 @@ Define a subclass in your project and register it with `@app_group`:
 
 ```python
 # my_project/core/constants.py
-from pyclif import ExitCode as _Base
+from pyclifer import ExitCode as _Base
 
 class ExitCode(_Base):
     QUOTA_EXCEEDED = 10
@@ -41,7 +41,7 @@ class ExitCode(_Base):
 
 ```python
 # my_project/cli.py
-from pyclif import app_group
+from pyclifer import app_group
 from my_project.core.constants import ExitCode
 
 @app_group(exit_codes_class=ExitCode)
@@ -49,11 +49,11 @@ def cli(): ...
 ```
 
 The framework validates that all project-specific values fall in 6-125 at decoration time
-and stores the class in `ctx.meta["pyclif.exit_codes_class"]`. When a command returns a
-`Response(success=False, error_code=ExitCode.QUOTA_EXCEEDED)`, pyclif calls `ctx.exit(10)`
+and stores the class in `ctx.meta["pyclifer.exit_codes_class"]`. When a command returns a
+`Response(success=False, error_code=ExitCode.QUOTA_EXCEEDED)`, pyclifer calls `ctx.exit(10)`
 so that `$?` reflects the failure in shell scripts.
 
-For base codes, `from pyclif import ExitCode` is always sufficient. Only import from
+For base codes, `from pyclifer import ExitCode` is always sufficient. Only import from
 `constants.py` in files that reference project-specific codes.
 
 ---
@@ -63,16 +63,16 @@ For base codes, `from pyclif import ExitCode` is always sufficient. Only import 
 The atomic result type returned by interface methods. Carries success state, an item
 identifier, a message, optional data payload, and an error code.
 
-::: pyclif.OperationResult
+::: pyclifer.OperationResult
 
 ---
 
 ## Response
 
-The standard return type for all pyclif commands. Carries success state, a human-readable
+The standard return type for all pyclifer commands. Carries success state, a human-readable
 message, optional structured data, and an error code.
 
-::: pyclif.Response
+::: pyclifer.Response
 
 ---
 
@@ -81,7 +81,7 @@ message, optional structured data, and an error code.
 Extends `Response` with pagination metadata (`page`, `limit`, `total`). Includes a
 `pagination` block in JSON and YAML output automatically.
 
-::: pyclif.PaginatedResponse
+::: pyclifer.PaginatedResponse
 
 ---
 
@@ -89,7 +89,7 @@ Extends `Response` with pagination metadata (`page`, `limit`, `total`). Includes
 
 Wrapper around Rich `Table` for consistent tabular output.
 
-::: pyclif.CliTable
+::: pyclifer.CliTable
 
 ---
 
@@ -97,7 +97,7 @@ Wrapper around Rich `Table` for consistent tabular output.
 
 Column definition for `CliTable`.
 
-::: pyclif.CliTableColumn
+::: pyclifer.CliTableColumn
 
 ---
 
@@ -106,7 +106,7 @@ Column definition for `CliTable`.
 Renders an exception as a Rich table. Used internally by the response formatter but
 available for direct use in error handlers.
 
-::: pyclif.ExceptionTable
+::: pyclifer.ExceptionTable
 
 ---
 
@@ -134,7 +134,7 @@ Numeric segments are treated as list indices. Resolution: `data["data"]` first, 
 
 ## BaseRenderer
 
-Declarative base class for all pyclif output renderers. Subclass and set class
+Declarative base class for all pyclifer output renderers. Subclass and set class
 attributes (`fields`, `columns`, `rich_title`, `success_message`, `failure_message`)
 to control every output format without overriding methods.
 
@@ -144,7 +144,7 @@ Key hooks:
 - `raw(response)` — returns a serialized dict for machine-readable output (used by `--output-format raw`)
 - `serialize(response)` — returns a JSON-serializable dict (used by `json`, `yaml`, and `raw`)
 
-::: pyclif.BaseRenderer
+::: pyclifer.BaseRenderer
 
 ---
 
@@ -153,4 +153,4 @@ Key hooks:
 Protocol that all renderer implementations must satisfy. Implement this Protocol
 directly only when inheriting `BaseRenderer` is not appropriate.
 
-::: pyclif.ResponseRenderer
+::: pyclifer.ResponseRenderer

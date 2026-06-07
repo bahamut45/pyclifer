@@ -1,0 +1,11 @@
+from pyclifer import BaseContext, make_pass_decorator
+
+
+class {{ name_pascal }}Context(BaseContext):
+    """Application context — holds all integration instances."""
+
+    def __init__(self):
+        super().__init__()
+
+
+pass_cli_context = make_pass_decorator({{ name_pascal }}Context)

@@ -1,20 +1,20 @@
-# Demo CLI — `pyclif demo`
+# Demo CLI — `pyclifer demo`
 
-`pyclif demo` est une sous-app fictive de gestion de tâches livrée dans `pyclif` qui
+`pyclifer demo` est une sous-app fictive de gestion de tâches livrée dans `pyclifer` qui
 exerce chaque fonctionnalité du framework dans une application unique et exécutable.
-Elle suit le même layout Django-inspired que génère `pyclif project init`, ce qui en
+Elle suit le même layout Django-inspired que génère `pyclifer project init`, ce qui en
 fait aussi une référence d'implémentation vivante.
 
 ## Objectifs
 
-- Chaque symbole public de pyclif utilisé au moins une fois dans du code réel.
+- Chaque symbole public de pyclifer utilisé au moins une fois dans du code réel.
 - Aucune magie ni raccourci — la démo doit ressembler exactement à un projet utilisateur.
 - Navigable comme documentation : les lecteurs peuvent sauter d'une fonctionnalité dans
   les docs à son usage concret dans la démo.
 
 ## Approche de construction — scaffolding first
 
-La démo est construite **en utilisant les commandes de scaffolding de pyclif lui-même**
+La démo est construite **en utilisant les commandes de scaffolding de pyclifer lui-même**
 autant que possible. L'objectif est double : produire le code de la démo ET auditer le
 scaffolding en conditions réelles pour identifier ce qui manque ou ce qui doit être
 amélioré.
@@ -22,20 +22,20 @@ amélioré.
 ### Processus cible — ✅ COMPLÉTÉ (étapes 1–9)
 
 ```bash
-# Depuis la racine du projet pyclif
+# Depuis la racine du projet pyclifer
 
 # 1. Groupe racine de la démo  ✅
-pyclif project add app demo
+pyclifer project add app demo
 
 # 2. Sous-groupes tasks et users  ✅
-pyclif project add group tasks --app demo
-pyclif project add group users --app demo
+pyclifer project add group tasks --app demo
+pyclifer project add group users --app demo
 
 # 3. Commandes tasks  ✅
-pyclif project add command list add show complete delete sync --app demo.tasks
+pyclifer project add command list add show complete delete sync --app demo.tasks
 
 # 4. Commandes users  ✅
-pyclif project add command list whoami --app demo.users
+pyclifer project add command list whoami --app demo.users
 ```
 
 ### Ce qu'on attend du scaffolding
@@ -43,7 +43,7 @@ pyclif project add command list whoami --app demo.users
 Chaque commande `add app` / `add group` / `add command` doit générer :
 
 - le squelette de fichier au bon endroit (`apps/demo/apps/tasks/commands/list.py`, etc.)
-- les imports pyclif corrects
+- les imports pyclifer corrects
 - la décoration `@group` / `@command` / `@pass_cli_context` en place
 - le câblage automatique dans le `__init__.py` du groupe parent
 
@@ -111,33 +111,33 @@ Chaque commande `add app` / `add group` / `add command` doit générer :
                dans `renderers.py` par défaut.
 ```
 
-## Câblage dans la CLI pyclif
+## Câblage dans la CLI pyclifer
 
-La démo s'enregistre comme sous-groupe de `pyclif` exactement comme `pyclif project`,
+La démo s'enregistre comme sous-groupe de `pyclifer` exactement comme `pyclifer project`,
 sans aucune modification de `pyproject.toml` :
 
 ```python
-# src/pyclif/apps/__init__.py
+# src/pyclifer/apps/__init__.py
 from .project import project
 from .demo import demo
 
 groups = [project, demo]
 ```
 
-Après `uv sync --extra dev`, `pyclif demo --help` est disponible.
+Après `uv sync --extra dev`, `pyclifer demo --help` est disponible.
 
-Les données sont persistées dans `~/.config/pyclif/demo.json` (créé automatiquement au
+Les données sont persistées dans `~/.config/pyclifer/demo.json` (créé automatiquement au
 premier lancement).
 
 ---
 
 ## Arbre de commandes
 
-`--config`, `--verbosity` et `--output-format` sont hérités du groupe racine `pyclif`
+`--config`, `--verbosity` et `--output-format` sont hérités du groupe racine `pyclifer`
 et ne sont pas redéclarés dans `demo`.
 
 ```
-pyclif [--config FILE] [--verbosity LEVEL] [--output-format FMT]
+pyclifer [--config FILE] [--verbosity LEVEL] [--output-format FMT]
 └── demo [--project NAME]
     ├── tasks
     │   ├── list    [--status] [--priority] [--page] [--page-size] [--output-filter]
@@ -159,13 +159,13 @@ le groupe `demo` et automatiquement propagée à chaque sous-commande.
 
 ## Matrice de couverture des fonctionnalités
 
-| Fonctionnalité pyclif | Où elle est exercée |
+| Fonctionnalité pyclifer | Où elle est exercée |
 |---|---|
 | `@group` | groupe racine `demo` + subgroups `tasks/` et `users/` |
 | `@command` | chaque commande feuille |
 | `@option` | options de chaque commande |
 | `is_global=True` option propagation | `--project` dans `core/options.py` |
-| `handle_response=True` auto-wrapping | hérité du groupe `pyclif` parent — observé sans être redéclaré |
+| `handle_response=True` auto-wrapping | hérité du groupe `pyclifer` parent — observé sans être redéclaré |
 | `returns_response` | utilisé directement dans `show` |
 | `output_filter_option` | `tasks list`, `users list` |
 | `pagination_options` | `tasks list` |
@@ -193,7 +193,7 @@ le groupe `demo` et automatiquement propagée à chaque sous-commande.
 ## Structure de fichiers
 
 ```
-src/pyclif/apps/demo/
+src/pyclifer/apps/demo/
 ├── __init__.py                 # @group "demo" + câblage add_command (miroir de apps/project/)
 ├── core/
 │   ├── __init__.py
@@ -229,7 +229,7 @@ src/pyclif/apps/demo/
 > **Deux patterns de renderer côte à côte :**
 > `tasks/` utilise un `renderers.py` séparé (renderers complexes — hooks streaming,
 > Panel custom). `users/` garde tout dans `interfaces.py` (renderers simples — cohérent
-> avec ce que génère `pyclif project add`). Ce contraste est intentionnel : la démo
+> avec ce que génère `pyclifer project add`). Ce contraste est intentionnel : la démo
 > montre les deux approches valides et quand choisir l'une ou l'autre.
 
 ---
@@ -268,8 +268,8 @@ class User(BaseModel):
 
 ## Storage (`core/storage.py`)
 
-Helper minimal qui lit/écrit `~/.config/pyclif/demo.json`. Volontairement simple pour
-ne pas distraire des patterns pyclif.
+Helper minimal qui lit/écrit `~/.config/pyclifer/demo.json`. Volontairement simple pour
+ne pas distraire des patterns pyclifer.
 
 ```python
 class Storage:
@@ -289,8 +289,8 @@ class Storage:
 Miroir exact du pattern `apps/project/__init__.py` — `@group()` et non `@app_group` :
 
 ```python
-# src/pyclif/apps/demo/__init__.py
-from pyclif import group
+# src/pyclifer/apps/demo/__init__.py
+from pyclifer import group
 from .core.options import project_option
 from .core.context import pass_demo_context
 from .apps.tasks import tasks_group
@@ -301,7 +301,7 @@ from .apps.users import users_group
 @project_option
 @pass_demo_context
 def demo(ctx, project):
-    """Demo task manager — reference implementation of all pyclif features."""
+    """Demo task manager — reference implementation of all pyclifer features."""
     ctx.meta["project"] = project
 
 
@@ -310,7 +310,7 @@ demo.add_command(users_group)
 ```
 
 `handle_response`, `--config`, `--verbosity` et `--output-format` sont portés par le
-groupe `pyclif` parent — `demo` n'a pas besoin de les redéclarer.
+groupe `pyclifer` parent — `demo` n'a pas besoin de les redéclarer.
 
 ---
 
@@ -642,7 +642,7 @@ Toutes les étapes sont livrées. Résumé de ce qui a été fait.
 ### Étape 1 — `core/` (fondation) ✅
 
 - `core/constants.py` — `PRIORITIES`, `STATUSES`, `PRIORITY_CHOICE`, `STATUS_CHOICE`
-- `core/storage.py` — classe `Storage` (lecture/écriture `~/.config/pyclif/demo.json`)
+- `core/storage.py` — classe `Storage` (lecture/écriture `~/.config/pyclifer/demo.json`)
 - `core/options.py` — `project_option` (`is_global=True`, `store_in_meta=True`)
 - `core/context.py` — `DemoContext.storage` property lazy + `pass_demo_context`
 
@@ -687,7 +687,7 @@ Cf. section Tests ci-dessous.
 
 ### Correctifs framework découverts en cours de route
 
-- `BaseContext.click` property — accès au Click context depuis pyclif (`ctx.click.meta`)
+- `BaseContext.click` property — accès au Click context depuis pyclifer (`ctx.click.meta`)
 - `CliTable.__rich_field__` — support des types `datetime.datetime` et `datetime.date`
 - `BaseRenderer.datetime_format` / `date_format` — formats configurables par renderer
 - `BaseRenderer._first_result()` / `_detail_grid()` — helpers partagés pour les `rich()` custom
@@ -711,6 +711,6 @@ Les tests vivent dans `tests/apps/demo/` et reflètent la structure source.
 
 **Patterns clés :**
 
-- `Storage` est patché via `patch.object(importlib.import_module("pyclif.apps.demo.core.context"), "Storage", return_value=mock)` — contourne la collision de nom entre le package `pyclif.apps.demo` et la variable `demo` exportée par `pyclif.apps`.
-- Les commandes sont invoquées via le groupe racine `pyclif.cli.app` pour que `handle_response=True` soit actif.
+- `Storage` est patché via `patch.object(importlib.import_module("pyclifer.apps.demo.core.context"), "Storage", return_value=mock)` — contourne la collision de nom entre le package `pyclifer.apps.demo` et la variable `demo` exportée par `pyclifer.apps`.
+- Les commandes sont invoquées via le groupe racine `pyclifer.cli.app` pour que `handle_response=True` soit actif.
 - `time.sleep` est patché via `patch.object(interfaces_mod.time, "sleep")` pour les tests du générateur `sync_tasks`.

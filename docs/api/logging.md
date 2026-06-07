@@ -1,13 +1,13 @@
 # Logging
 
-pyclif ships a Rich-enhanced logging system with a custom `TRACE` level (5), automatic
+pyclifer ships a Rich-enhanced logging system with a custom `TRACE` level (5), automatic
 secrets masking, and rotating file handler support.
 
 ## get_logger
 
 Main factory. Returns a logger pre-configured with Rich formatting.
 
-::: pyclif.get_logger
+::: pyclifer.get_logger
 
 ---
 
@@ -15,7 +15,7 @@ Main factory. Returns a logger pre-configured with Rich formatting.
 
 Returns a logger with full configuration applied (handlers, level, masker).
 
-::: pyclif.get_configured_logger
+::: pyclifer.get_configured_logger
 
 ---
 
@@ -23,7 +23,7 @@ Returns a logger with full configuration applied (handlers, level, masker).
 
 Low-level setup function. Called internally by `get_configured_logger`.
 
-::: pyclif.configure_rich_logging
+::: pyclifer.configure_rich_logging
 
 ---
 
@@ -31,7 +31,7 @@ Low-level setup function. Called internally by `get_configured_logger`.
 
 Patches a logger instance with a `.trace()` method at level 5.
 
-::: pyclif.add_trace_method
+::: pyclifer.add_trace_method
 
 ---
 
@@ -39,7 +39,7 @@ Patches a logger instance with a `.trace()` method at level 5.
 
 Log filter that redacts sensitive values from log records.
 
-::: pyclif.SecretsMasker
+::: pyclifer.SecretsMasker
 
 ---
 
@@ -47,14 +47,14 @@ Log filter that redacts sensitive values from log records.
 
 Rich-aware formatter and stream handler. Wired up automatically by `configure_rich_logging`.
 
-::: pyclif.RichExtraFormatter
+::: pyclifer.RichExtraFormatter
 
-::: pyclif.RichExtraStreamHandler
+::: pyclifer.RichExtraStreamHandler
 
 ---
 
 ## Constants
 
-::: pyclif.TRACE
+::: pyclifer.TRACE
 
-::: pyclif.PYCLIF_LOG_LEVELS
+::: pyclifer.PYCLIFER_LOG_LEVELS

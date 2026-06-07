@@ -1,6 +1,6 @@
 # Response Patterns
 
-A pyclif command is always four layers: a **model** that holds data, an **interface** that
+A pyclifer command is always four layers: a **model** that holds data, an **interface** that
 executes business logic and returns `OperationResult` objects, a **renderer** that controls
 display, and a **command** that wires them together and returns a `Response`.
 
@@ -8,23 +8,23 @@ This guide shows the minimum code for each variant of that pattern.
 
 ## Try it first
 
-The `pyclif demo tasks` app is a working implementation of this pattern. Run it to see the
+The `pyclifer demo tasks` app is a working implementation of this pattern. Run it to see the
 output before reading the code:
 
 ```bash
 # single-item command (add)
-pyclif demo tasks add --title "Fix login bug" --priority high
+pyclifer demo tasks add --title "Fix login bug" --priority high
 
 # collection command (list)
-pyclif demo tasks list
+pyclifer demo tasks list
 
 # same data, different formats
-pyclif demo tasks list -o json
-pyclif demo tasks list -o yaml
-pyclif demo tasks list -o table
+pyclifer demo tasks list -o json
+pyclifer demo tasks list -o yaml
+pyclifer demo tasks list -o table
 ```
 
-Source: [`src/pyclif/apps/demo/apps/tasks/`](https://github.com/bahamut45/pyclif/tree/main/src/pyclif/apps/demo/apps/tasks)
+Source: [`src/pyclifer/apps/demo/apps/tasks/`](https://github.com/bahamut45/pyclifer/tree/main/src/pyclifer/apps/demo/apps/tasks)
 
 ## The four layers at a glance
 
@@ -43,7 +43,7 @@ gives back.
 
 The simplest case: a command that creates or retrieves one resource.
 
-**Model** — a dataclass ([`tasks/models.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/tasks/models.py)):
+**Model** — a dataclass ([`tasks/models.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/models.py)):
 
 ```python
 # tasks/models.py
@@ -61,11 +61,11 @@ class Task:
     created_at: datetime.datetime = field(default_factory=datetime.datetime.now)
 ```
 
-**Renderer** — set class attributes, override nothing ([`tasks/renderers.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/tasks/renderers.py)):
+**Renderer** — set class attributes, override nothing ([`tasks/renderers.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/renderers.py)):
 
 ```python
 # tasks/renderers.py
-from pyclif import BaseRenderer
+from pyclifer import BaseRenderer
 from .models import Task
 
 
@@ -80,13 +80,13 @@ class TaskAddRenderer(BaseRenderer):
 `fields` drives JSON/YAML/raw serialization. `columns` drives the table. Both default to all
 dataclass fields when left empty — set them explicitly to control ordering and visibility.
 
-**Interface** — returns `list[OperationResult]` ([`tasks/interfaces.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/tasks/interfaces.py)):
+**Interface** — returns `list[OperationResult]` ([`tasks/interfaces.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/interfaces.py)):
 
 ```python
 # tasks/interfaces.py
 import uuid
 import datetime
-from pyclif import BaseInterface, OperationResult
+from pyclifer import BaseInterface, OperationResult
 from .models import Task
 from .renderers import TaskAddRenderer
 
@@ -111,11 +111,11 @@ class TaskInterface(BaseInterface):
 The `renderers` dict maps method names to renderer classes. `respond()` looks up the renderer
 automatically by method name.
 
-**Command** — calls `respond()` and returns the result ([`tasks/commands/add.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/tasks/commands/add.py)):
+**Command** — calls `respond()` and returns the result ([`tasks/commands/add.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/commands/add.py)):
 
 ```python
 # tasks/commands/add.py
-from pyclif import Response, command, option
+from pyclifer import Response, command, option
 from ..context import pass_my_context
 from ..interfaces import TaskInterface
 
@@ -130,7 +130,7 @@ def add(ctx, title: str, priority: str) -> Response:
 ```
 
 `respond()` builds a `Response` from the `OperationResult` list, attaches `TaskAddRenderer`,
-and determines `success` from whether all results succeeded. The command returns it; pyclif
+and determines `success` from whether all results succeeded. The command returns it; pyclifer
 prints it in the format requested by `--output-format`.
 
 ## Collection command
@@ -177,7 +177,7 @@ subclass and access them via `self.ctx`:
 
 ```python
 # core/context.py
-from pyclif import BaseContext, make_pass_decorator
+from pyclifer import BaseContext, make_pass_decorator
 
 
 class MyContext(BaseContext):
@@ -214,4 +214,4 @@ The streaming variant is covered in [Rich Progressive Output](rich-progressive-o
 - [Error Handling](error-handling.md) — returning failures from the interface layer
 - [Output Formatting](../output-formatting.md) — full `BaseRenderer` API reference
 - [API — Interfaces](../api/interfaces.md) — `BaseInterface` and `respond()` internals
-- Real-world examples in the demo app: [`tasks/interfaces.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/tasks/interfaces.py), [`tasks/renderers.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/tasks/renderers.py), [`tasks/commands/`](https://github.com/bahamut45/pyclif/tree/main/src/pyclif/apps/demo/apps/tasks/commands)
+- Real-world examples in the demo app: [`tasks/interfaces.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/interfaces.py), [`tasks/renderers.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/renderers.py), [`tasks/commands/`](https://github.com/bahamut45/pyclifer/tree/main/src/pyclifer/apps/demo/apps/tasks/commands)

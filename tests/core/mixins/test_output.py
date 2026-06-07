@@ -7,10 +7,10 @@ import pytest
 from rich.panel import Panel
 
 # noinspection PyProtectedMember
-from pyclif.core.mixins.output import OutputFormatMixin, _ExceptionRenderer
-from pyclif.core.output import Response
-from pyclif.core.output.renderer import BaseRenderer
-from pyclif.core.output.responses import OperationResult
+from pyclifer.core.mixins.output import OutputFormatMixin, _ExceptionRenderer
+from pyclifer.core.output import Response
+from pyclifer.core.output.renderer import BaseRenderer
+from pyclifer.core.output.responses import OperationResult
 
 
 class DummyOutputContext(OutputFormatMixin):
@@ -306,7 +306,7 @@ class TestPrintJson:
 
     def test_to_dict_method_used_by_fallback_encoder(self) -> None:
         """_FallbackEncoder calls to_dict() when available."""
-        from pyclif.core.mixins.output import _FallbackEncoder
+        from pyclifer.core.mixins.output import _FallbackEncoder
 
         # noinspection PyMethodMayBeStatic,PyMissingOrEmptyDocstring
         class _WithToDict:
@@ -323,7 +323,7 @@ class TestPrintJson:
 
 
 class TestPrintYaml:
-    @patch("pyclif.core.mixins.output.Syntax")
+    @patch("pyclifer.core.mixins.output.Syntax")
     def test_calls_print_with_syntax(self, mock_syntax: MagicMock) -> None:
         ctx = DummyOutputContext()
         ctx._print_yaml({"name": "Alice"})
@@ -431,7 +431,7 @@ class TestRendererPathStreamDispatch:
         items = [_ok("a"), _ok("b")]
         response = Response.from_stream(iter(items), renderer=renderer)
 
-        with patch("pyclif.core.mixins.output.Live") as mock_live:
+        with patch("pyclifer.core.mixins.output.Live") as mock_live:
             mock_live.return_value.__enter__ = MagicMock(return_value=None)
             mock_live.return_value.__exit__ = MagicMock(return_value=False)
             ctx.print_result_based_on_format(response)

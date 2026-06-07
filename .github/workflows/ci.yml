@@ -30,7 +30,7 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run tests with coverage
-        run: uv run python -m pytest tests/ --cov=pyclif --cov-report=xml --override-ini=addopts=
+        run: uv run python -m pytest tests/ --cov=pyclifer --cov-report=xml --override-ini=addopts=
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.13'

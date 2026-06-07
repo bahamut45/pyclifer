@@ -8,12 +8,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pyclif.apps.demo.apps.users.interfaces import _DEMO_USERS, UserInterface
-from pyclif.apps.demo.apps.users.models import User
-from pyclif.apps.demo.core.context import DemoContext
+from pyclifer.apps.demo.apps.users.interfaces import _DEMO_USERS, UserInterface
+from pyclifer.apps.demo.apps.users.models import User
+from pyclifer.apps.demo.core.context import DemoContext
 
 _DT = datetime.datetime(2024, 1, 1)
-_users_iface_mod = importlib.import_module("pyclif.apps.demo.apps.users.interfaces")
+_users_iface_mod = importlib.import_module("pyclifer.apps.demo.apps.users.interfaces")
 
 
 def _user(**kwargs) -> User:

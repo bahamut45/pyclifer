@@ -1,4 +1,4 @@
-"""Tests for pyclif logging system - focusing on Rich integration and security features."""
+"""Tests for pyclifer logging system - focusing on Rich integration and security features."""
 
 import logging
 import sys
@@ -6,10 +6,10 @@ from unittest.mock import Mock, PropertyMock, patch
 
 import pytest
 
-from pyclif.core.log import (
-    PYCLIF_LOG_LEVELS,
+from pyclifer.core.log import (
+    PYCLIFER_LOG_LEVELS,
     TRACE,
-    PyclifVerbosityOption,
+    PycliferVerbosityOption,
     RichExtraFormatter,
     RichExtraStreamHandler,
     SecretsMasker,
@@ -24,26 +24,26 @@ class TestLoggingConfiguration:
     """Test logging configuration and setup functionality."""
 
     def test_pyclif_log_levels_contains_trace(self):
-        """Test that PYCLIF_LOG_LEVELS includes our custom TRACE level."""
-        assert "TRACE" in PYCLIF_LOG_LEVELS
-        assert PYCLIF_LOG_LEVELS["TRACE"] == TRACE
+        """Test that PYCLIFER_LOG_LEVELS includes our custom TRACE level."""
+        assert "TRACE" in PYCLIFER_LOG_LEVELS
+        assert PYCLIFER_LOG_LEVELS["TRACE"] == TRACE
         assert TRACE == 5
 
     def test_pyclif_log_levels_extends_click_extra(self):
-        """Test that PYCLIF_LOG_LEVELS extends click-extra's LOG_LEVELS."""
-        from pyclif.core.log.levels import LOG_LEVELS as PYCLIF_INTERNAL_LOG_LEVELS
+        """Test that PYCLIFER_LOG_LEVELS extends click-extra's LOG_LEVELS."""
+        from pyclifer.core.log.levels import LOG_LEVELS as PYCLIFER_INTERNAL_LOG_LEVELS
 
-        for level_name, level_value in PYCLIF_INTERNAL_LOG_LEVELS.items():
+        for level_name, level_value in PYCLIFER_INTERNAL_LOG_LEVELS.items():
             if level_name != "TRACE":
-                assert level_name in PYCLIF_LOG_LEVELS
-                assert PYCLIF_LOG_LEVELS[level_name] == level_value
+                assert level_name in PYCLIFER_LOG_LEVELS
+                assert PYCLIFER_LOG_LEVELS[level_name] == level_value
 
-        assert "TRACE" in PYCLIF_LOG_LEVELS
-        assert PYCLIF_LOG_LEVELS["TRACE"] == TRACE
+        assert "TRACE" in PYCLIFER_LOG_LEVELS
+        assert PYCLIFER_LOG_LEVELS["TRACE"] == TRACE
 
-    @patch("pyclif.core.log.config.extraBasicConfig")
-    @patch("pyclif.core.log.config._preconfigure_click_extra_logger")
-    @patch("pyclif.core.log.config.logging.getLogger")
+    @patch("pyclifer.core.log.config.extraBasicConfig")
+    @patch("pyclifer.core.log.config._preconfigure_click_extra_logger")
+    @patch("pyclifer.core.log.config.logging.getLogger")
     def test_configure_rich_logging_basic(
         self, mock_get_logger, mock_preconfigure, mock_extra_config
     ):
@@ -61,7 +61,7 @@ class TestLoggingConfiguration:
             force=True,
         )
 
-    @patch("pyclif.core.log.config.logging.getLogger")
+    @patch("pyclifer.core.log.config.logging.getLogger")
     def test_configure_rich_logging_already_configured(self, mock_get_logger):
         """Test that configure_rich_logging skips if already configured."""
         mock_handler = Mock()
@@ -70,25 +70,25 @@ class TestLoggingConfiguration:
         mock_root_logger.handlers = [mock_handler]
         mock_get_logger.return_value = mock_root_logger
 
-        with patch("pyclif.core.log.config.extraBasicConfig") as mock_config:
+        with patch("pyclifer.core.log.config.extraBasicConfig") as mock_config:
             # noinspection PyArgumentEqualDefault
             configure_rich_logging(force_reconfigure=False)
             mock_config.assert_not_called()
 
-    @patch("pyclif.core.log.config.extraBasicConfig")
+    @patch("pyclifer.core.log.config.extraBasicConfig")
     def test_configure_rich_logging_force_reconfigure(self, mock_extra_config):
         """Test that force_reconfigure bypasses existing configuration check."""
-        with patch("pyclif.core.log.config._preconfigure_click_extra_logger"):
+        with patch("pyclifer.core.log.config._preconfigure_click_extra_logger"):
             configure_rich_logging(force_reconfigure=True)
             mock_extra_config.assert_called_once()
 
     # noinspection PyUnusedLocal
-    @patch("pyclif.core.log.config.extraBasicConfig")
+    @patch("pyclifer.core.log.config.extraBasicConfig")
     def test_configure_rich_logging_no_tracebacks(self, mock_extra_config):
         """use_rich=True but rich_tracebacks=False skips traceback install."""
         with (
-            patch("pyclif.core.log.config._preconfigure_click_extra_logger"),
-            patch("pyclif.core.log.config.logging.getLogger") as mock_get_logger,
+            patch("pyclifer.core.log.config._preconfigure_click_extra_logger"),
+            patch("pyclifer.core.log.config.logging.getLogger") as mock_get_logger,
         ):
             mock_root_logger = Mock()
             mock_root_logger.handlers = []
@@ -99,7 +99,7 @@ class TestLoggingConfiguration:
                 configure_rich_logging(use_rich=True, rich_tracebacks=False, force_reconfigure=True)
                 mock_install.assert_not_called()
 
-    @patch("pyclif.core.log.config.extraBasicConfig")
+    @patch("pyclifer.core.log.config.extraBasicConfig")
     def test_configure_rich_logging_use_rich_false(self, mock_extra_config):
         """use_rich=False skips all Rich handler setup."""
         configure_rich_logging(use_rich=False, force_reconfigure=True)
@@ -147,7 +147,7 @@ class TestPreconfigureClickExtraLogger:
 
     def test_handler_already_present_returns_early(self):
         """If the handler is already in click_extra_logger.handlers, the function returns early"""
-        from pyclif.core.log.config import _preconfigure_click_extra_logger
+        from pyclifer.core.log.config import _preconfigure_click_extra_logger
 
         handler = logging.NullHandler()
         click_extra_logger = logging.getLogger("click_extra")
@@ -186,7 +186,7 @@ class TestRichExtraStreamHandler:
         assert handler.stream is sys.stderr
         assert handler.rich_console.file is sys.stderr
 
-    @patch("pyclif.core.log.handlers.RichHandler")
+    @patch("pyclifer.core.log.handlers.RichHandler")
     def test_emit_uses_rich_handler(self, mock_rich_handler_class):
         """Test that emit method delegates to Rich handler."""
         mock_rich_handler = Mock()
@@ -207,7 +207,7 @@ class TestRichExtraStreamHandler:
         handler.emit(record)
         mock_rich_handler.emit.assert_called_once_with(record)
 
-    @patch("pyclif.core.log.handlers.RichHandler")
+    @patch("pyclifer.core.log.handlers.RichHandler")
     def test_emit_fallback_on_exception(self, mock_rich_handler_class):
         """Test that emit falls back to the parent on exception."""
         mock_rich_handler = Mock()
@@ -230,7 +230,7 @@ class TestRichExtraStreamHandler:
             handler.emit(record)
             mock_parent_emit.assert_called_once_with(record)
 
-    @patch("pyclif.core.log.handlers.RichHandler")
+    @patch("pyclifer.core.log.handlers.RichHandler")
     def test_emit_recursion_error_is_reraised(self, mock_rich_handler_class):
         """RecursionError from emitting is re-raised, not swallowed."""
         mock_rich_handler = Mock()
@@ -275,7 +275,7 @@ class TestRichExtraFormatter:
         record.levelname = "TRACE"
         record.message = "trace message"
 
-        with patch("pyclif.core.log.formatters.style") as mock_style:
+        with patch("pyclifer.core.log.formatters.style") as mock_style:
             mock_style.return_value = "STYLED_TRACE"
             result = formatter.formatMessage(record)
             mock_style.assert_called_once_with("TRACE", fg="blue", dim=True)
@@ -298,7 +298,7 @@ class TestRichExtraFormatter:
         record.levelname = "INFO"
         record.message = "info message"
 
-        with patch("pyclif.core.log.formatters.get_default_theme") as mock_get_theme:
+        with patch("pyclifer.core.log.formatters.get_default_theme") as mock_get_theme:
             mock_theme = Mock()
             mock_get_theme.return_value = mock_theme
             mock_info_style = Mock(return_value="STYLED_INFO")
@@ -325,7 +325,7 @@ class TestRichExtraFormatter:
         record.levelname = "CUSTOMBAD"
         record.message = "custom message"
 
-        with patch("pyclif.core.log.formatters.get_default_theme") as mock_get_theme:
+        with patch("pyclifer.core.log.formatters.get_default_theme") as mock_get_theme:
             mock_theme = Mock()
             mock_get_theme.return_value = mock_theme
             mock_theme.configure_mock(**{"custombad": None})
@@ -366,7 +366,7 @@ class TestSecretsMasker:
 
     def test_should_mask_sensitive_keys(self):
         """Test that sensitive keys are identified correctly."""
-        from pyclif.core.log.filters import should_hide_value_for_key
+        from pyclifer.core.log.filters import should_hide_value_for_key
 
         sensitive_keys = [
             "password",
@@ -381,7 +381,7 @@ class TestSecretsMasker:
 
     def test_should_not_mask_normal_keys(self):
         """Test that normal keys are not identified as sensitive."""
-        from pyclif.core.log.filters import should_hide_value_for_key
+        from pyclifer.core.log.filters import should_hide_value_for_key
 
         normal_keys = ["username", "email", "name", "value", "data"]
         for key in normal_keys:
@@ -413,7 +413,7 @@ class TestSecretsMasker:
     # noinspection PyTypeChecker
     def test_should_hide_value_for_key_non_string(self):
         """Test that non-string inputs are not flagged as sensitive."""
-        from pyclif.core.log.filters import should_hide_value_for_key
+        from pyclifer.core.log.filters import should_hide_value_for_key
 
         assert should_hide_value_for_key(42) is False
         assert should_hide_value_for_key(None) is False
@@ -525,24 +525,24 @@ class TestAddTraceMethod:
         mock_logger._log.assert_not_called()
 
 
-class TestPyclifVerbosityOption:
-    """Test PyclifVerbosityOption functionality."""
+class TestPycliferVerbosityOption:
+    """Test PycliferVerbosityOption functionality."""
 
     @pytest.fixture
     def verbosity_option(self):
-        """Create a PyclifVerbosityOption for testing."""
-        return PyclifVerbosityOption()
+        """Create a PycliferVerbosityOption for testing."""
+        return PycliferVerbosityOption()
 
     def test_initialization_with_pyclif_log_levels(self, verbosity_option):
-        """Test that PyclifVerbosityOption uses PYCLIF_LOG_LEVELS."""
+        """Test that PycliferVerbosityOption uses PYCLIFER_LOG_LEVELS."""
         # noinspection PyUnresolvedReferences
-        assert set(verbosity_option.type.choices) == set(PYCLIF_LOG_LEVELS.keys())
+        assert set(verbosity_option.type.choices) == set(PYCLIFER_LOG_LEVELS.keys())
 
     def test_initialization_default_params(self, verbosity_option):
-        """Test PyclifVerbosityOption default parameter declarations."""
+        """Test PycliferVerbosityOption default parameter declarations."""
         assert "--verbosity" in verbosity_option.opts
 
-    @patch("pyclif.core.log.config.configure_rich_logging")
+    @patch("pyclifer.core.log.config.configure_rich_logging")
     def test_set_level_calls_configure_rich_logging(self, mock_configure, verbosity_option):
         """Test that set_level calls configure_rich_logging."""
         mock_ctx = Mock()
@@ -564,15 +564,15 @@ class TestPyclifVerbosityOption:
 
         mock_configure.assert_called_once_with(force_reconfigure=True)
 
-        mock_logger1.setLevel.assert_called_once_with(PYCLIF_LOG_LEVELS["DEBUG"])
-        mock_logger2.setLevel.assert_called_once_with(PYCLIF_LOG_LEVELS["DEBUG"])
+        mock_logger1.setLevel.assert_called_once_with(PYCLIFER_LOG_LEVELS["DEBUG"])
+        mock_logger2.setLevel.assert_called_once_with(PYCLIFER_LOG_LEVELS["DEBUG"])
 
         assert mock_ctx.meta["click_extra.verbosity_level"] == "DEBUG"
         assert mock_ctx.meta["click_extra.verbosity"] == "DEBUG"
 
-    @patch("pyclif.core.log.config.configure_rich_logging")
+    @patch("pyclifer.core.log.config.configure_rich_logging")
     def test_set_level_uses_pyclif_dot_log_file_keys(self, mock_configure, verbosity_option):
-        """set_level reads pyclif.log_file_path and pyclif.log_file_level,
+        """set_level reads pyclifer.log_file_path and pyclifer.log_file_level,
         not the old underscore names.
 
         When a log file is active, the effective logger level must be min(verbosity, file_level).
@@ -581,8 +581,8 @@ class TestPyclifVerbosityOption:
         """
         mock_ctx = Mock()
         mock_ctx.meta = {
-            "pyclif.log_file_path": "/tmp/test.log",
-            "pyclif.log_file_level": "DEBUG",
+            "pyclifer.log_file_path": "/tmp/test.log",
+            "pyclifer.log_file_level": "DEBUG",
         }
         mock_param = Mock()
         mock_logger = Mock()
@@ -596,14 +596,14 @@ class TestPyclifVerbosityOption:
                 verbosity_option.set_level(mock_ctx, mock_param, "WARNING")
 
         # file_level=DEBUG (10) < verbosity=WARNING (30) → min level is DEBUG
-        expected_level = min(PYCLIF_LOG_LEVELS["WARNING"], PYCLIF_LOG_LEVELS["DEBUG"])
+        expected_level = min(PYCLIFER_LOG_LEVELS["WARNING"], PYCLIFER_LOG_LEVELS["DEBUG"])
         mock_logger.setLevel.assert_called_once_with(expected_level)
 
 
 class TestLoggerFactoryFunctions:
     """Test logger factory functions."""
 
-    @patch("pyclif.core.log.config.get_configured_logger")
+    @patch("pyclifer.core.log.config.get_configured_logger")
     def test_get_logger_delegates_to_get_configured_logger(self, mock_get_configured):
         """Test that get_logger delegates to get_configured_logger."""
         mock_logger = Mock()
@@ -614,7 +614,7 @@ class TestLoggerFactoryFunctions:
         mock_get_configured.assert_called_once_with("test_logger")
         assert result is mock_logger
 
-    @patch("pyclif.core.log.config.logging.getLogger")
+    @patch("pyclifer.core.log.config.logging.getLogger")
     def test_get_configured_logger_with_name(self, mock_get_logger):
         """Test get_configured_logger with a custom name."""
         mock_logger = Mock()
@@ -625,7 +625,7 @@ class TestLoggerFactoryFunctions:
         mock_get_logger.assert_called_once_with("custom_logger")
         assert result is mock_logger
 
-    @patch("pyclif.core.log.config.logging.getLogger")
+    @patch("pyclifer.core.log.config.logging.getLogger")
     def test_get_configured_logger_default_name(self, mock_get_logger):
         """Test get_configured_logger with the default app name."""
         mock_logger = Mock()
@@ -676,7 +676,7 @@ class TestLoggingIntegration:
         assert hasattr(parent_logger, "trace")
         assert hasattr(child_logger, "trace")
 
-    @patch("pyclif.core.log.handlers.RichHandler")
+    @patch("pyclifer.core.log.handlers.RichHandler")
     def test_secrets_filtering_in_real_logging(self, mock_rich_handler_class):
         """Test that secrets are actually filtered in real logging scenarios."""
         mock_rich_handler = Mock()

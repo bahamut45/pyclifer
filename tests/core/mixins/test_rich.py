@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from rich.panel import Panel
 
-from pyclif.core.mixins.rich import RichHelpersMixin
+from pyclifer.core.mixins.rich import RichHelpersMixin
 
 
 class DummyRichContext(RichHelpersMixin):
@@ -53,7 +53,7 @@ class TestRichHelpersMixin:
         assert isinstance(panel, Panel)
         assert panel.border_style == "red"
 
-    @patch("pyclif.core.mixins.rich.Rule")
+    @patch("pyclifer.core.mixins.rich.Rule")
     def test_display_rule(self, mock_rule_class: MagicMock) -> None:
         """Test that display_rule creates a Rule and prints it to the console."""
         context = DummyRichContext()
@@ -73,7 +73,7 @@ class TestRichHelpersMixin:
 
         context.console.status.assert_called_once_with("Loading...", spinner="bouncingBar")
 
-    @patch("pyclif.core.mixins.rich.Prompt.ask")
+    @patch("pyclifer.core.mixins.rich.Prompt.ask")
     def test_ask_user(self, mock_prompt_ask: MagicMock) -> None:
         """Test that ask_user correctly wraps the rich Prompt.ask method."""
         context = DummyRichContext()
@@ -90,7 +90,7 @@ class TestRichHelpersMixin:
             console=context.console,
         )
 
-    @patch("pyclif.core.mixins.rich.Confirm.ask")
+    @patch("pyclifer.core.mixins.rich.Confirm.ask")
     def test_ask_confirmation(self, mock_confirm_ask: MagicMock) -> None:
         """Test that ask_confirmation correctly wraps the rich Confirm.ask method."""
         context = DummyRichContext()

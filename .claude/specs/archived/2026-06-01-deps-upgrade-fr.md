@@ -14,13 +14,13 @@
 
 ### rich 13.9.4 → 15.0.0
 
-| Version | Breaking change | Impact sur pyclif |
+| Version | Breaking change | Impact sur pyclifer |
 |---------|----------------|-----------------|
 | 14.0.0 | `NO_COLOR=` (vide) ne désactive plus les couleurs ; avant, toute présence de la variable suffisait | Aucun test ni CI ne définit `NO_COLOR=` — confirmé par grep |
 | 14.0.0 | `FORCE_COLOR=` (vide) — même règle | Idem — aucun impact |
-| 15.0.0 | Python 3.8 abandonné | pyclif requiert ≥3.10 — aucun impact |
+| 15.0.0 | Python 3.8 abandonné | pyclifer requiert ≥3.10 — aucun impact |
 
-Aucune API supprimée ou renommée utilisée par pyclif (`Console`, `Panel`, `Table`, `RichHandler`, `Live`, `Status`, `Prompt`, `Rule`, `Syntax`, `Text`, `box` — tous inchangés).
+Aucune API supprimée ou renommée utilisée par pyclifer (`Console`, `Panel`, `Table`, `RichHandler`, `Live`, `Status`, `Prompt`, `Rule`, `Syntax`, `Text`, `box` — tous inchangés).
 
 Effets visuels (pas des breaking changes, mais observables) :
 - Fond du titre des `Panel` corrigé (14.1.0) — les panneaux s'afficheront plus correctement
@@ -28,18 +28,18 @@ Effets visuels (pas des breaking changes, mais observables) :
 
 ### click-extra 7.16.1 → 7.18.0
 
-| Symbole supprimé | Utilisé dans pyclif ? | Verdict |
+| Symbole supprimé | Utilisé dans pyclifer ? | Verdict |
 |-----------------|----------------------|---------|
 | Module `click_extra.themes` | Non | Sûr |
 | Constantes `DARK`, `DRACULA`, `LIGHT`, `MONOKAI`, `NORD`, `SOLARIZED_DARK` | Non | Sûr |
-| Attribut `default_theme` | Non — pyclif utilise déjà `get_default_theme()` dans `core/log/formatters.py:5` | Sûr |
+| Attribut `default_theme` | Non — pyclifer utilise déjà `get_default_theme()` dans `core/log/formatters.py:5` | Sûr |
 | Constantes pré-rendues `OK`, `KO` | Non | Sûr |
 | Attribut `ctx.telemetry` | Non | Sûr |
 | Callback `disable_colors` sur `ColorOption` | Non | Sûr |
 | **Chemins de sous-modules** `click_extra.jobs`, `click_extra.timer` supprimés | `TimerOption` est utilisé (`classes.py:11`, `decorators.py:113`) mais importé via `from click_extra import TimerOption` (racine) — pas via le chemin de sous-module supprimé. | Sûr |
 | `ValueError` au chargement de `--config` → maintenant `SystemExit` | Aucun test n'exerce ce chemin d'erreur | Sûr |
 
-Upgrade transitif : Click 8.3.3 → 8.4.1 (requis par click-extra 7.17.0+). Aucune suppression d'API Click 8.4.x n'affecte pyclif.
+Upgrade transitif : Click 8.3.3 → 8.4.1 (requis par click-extra 7.17.0+). Aucune suppression d'API Click 8.4.x n'affecte pyclifer.
 
 ### rich-click 1.9.7 → 1.9.8
 
@@ -261,7 +261,7 @@ git commit -m "$(cat <<'EOF'
 🔧 chore(deps): upgrade click-extra, rich, rich-click
 
 - click-extra 7.16.1 → 7.18.0 (tire Click 8.3.3 → 8.4.1 transitivement)
-- rich 13.9.4 → 15.0.0 (abandonne Python 3.8 ; pyclif requiert 3.10+)
+- rich 13.9.4 → 15.0.0 (abandonne Python 3.8 ; pyclifer requiert 3.10+)
 - rich-click 1.9.7 → 1.9.8 (corrige la régression de compatibilité Click 8.4.x)
 EOF
 )"
@@ -272,7 +272,7 @@ EOF
 ## Checklist de relecture
 
 - [x] Les trois packages couverts avec des numéros de version précis
-- [x] Breaking changes recherchés et mappés sur la surface de pyclif
+- [x] Breaking changes recherchés et mappés sur la surface de pyclifer
 - [x] Upgrade couplé (click-extra + rich-click + montée Click transitive) documenté
 - [x] Tâche de correction conditionnelle (Tâche 5) couvre les trois catégories d'échecs les plus probables
 - [x] Aucun placeholder — chaque étape a des commandes exactes et une sortie attendue

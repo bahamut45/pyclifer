@@ -1,6 +1,6 @@
-# Scaffolding — `pyclif project add group`
+# Scaffolding — `pyclifer project add group`
 
-Ajoute la commande `pyclif project add group NAME --app APP` au scaffolding,
+Ajoute la commande `pyclifer project add group NAME --app APP` au scaffolding,
 permettant de créer un sous-groupe `@group` imbriqué à l'intérieur d'un app existant.
 
 ## Motivation
@@ -26,7 +26,7 @@ admin SaaS (`admin tenants users list`), DevOps (`platform k8s pods describe`).
 ## Commande
 
 ```
-pyclif project add group NAME --app APP
+pyclifer project add group NAME --app APP
 ```
 
 - `NAME` : nom du sous-groupe (snake_case ou kebab-case).
@@ -64,7 +64,7 @@ Le template `app_init.py.jinja2` est modifié pour inclure `subgroups = []` et s
 ### Template `app_init.py.jinja2` — après modification
 
 ```python
-from pyclif import group
+from pyclifer import group
 from .commands import commands
 
 subgroups = []
@@ -85,7 +85,7 @@ for cmd in commands:
 ### État du parent après `add group tasks --app demo`
 
 ```python
-from pyclif import group
+from pyclifer import group
 from .apps.tasks import tasks
 from .commands import commands
 
@@ -107,7 +107,7 @@ for cmd in commands:
 ### Après un second `add group users --app demo`
 
 ```python
-from pyclif import group
+from pyclifer import group
 from .apps.tasks import tasks
 from .apps.users import users
 from .commands import commands
@@ -186,7 +186,7 @@ Logique (miroir de `_wire_app_grouped`) :
 
 ### 4. Nouveau fichier de commande
 
-`src/pyclif/apps/project/commands/add/group.py` :
+`src/pyclifer/apps/project/commands/add/group.py` :
 
 ```python
 @command()

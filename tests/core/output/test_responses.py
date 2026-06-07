@@ -2,10 +2,10 @@
 
 from unittest.mock import MagicMock
 
-from pyclif import BaseModel
-from pyclif.core.mixins.output import OutputFormatMixin
-from pyclif.core.output.renderer import BaseRenderer
-from pyclif.core.output.responses import (
+from pyclifer import BaseModel
+from pyclifer.core.mixins.output import OutputFormatMixin
+from pyclifer.core.output.renderer import BaseRenderer
+from pyclifer.core.output.responses import (
     NON_SERIALIZABLE_FIELDS,
     OperationResult,
     PaginatedResponse,
@@ -162,7 +162,7 @@ class TestResponse:
 
     def test_to_json_removes_non_serializable_fields(self) -> None:
         """Test that to_json excludes the renderer and returns serializable data."""
-        from pyclif.core.output.renderer import BaseRenderer
+        from pyclifer.core.output.renderer import BaseRenderer
 
         response = Response(
             success=False,

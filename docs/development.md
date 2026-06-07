@@ -1,6 +1,6 @@
 # Development and Testing
 
-This guide covers development practices, testing, and contribution guidelines for pyclif.
+This guide covers development practices, testing, and contribution guidelines for pyclifer.
 
 ## Development Setup
 
@@ -14,8 +14,8 @@ This guide covers development practices, testing, and contribution guidelines fo
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/bahamut45/pyclif.git
-   cd pyclif
+   git clone https://github.com/bahamut45/pyclifer.git
+   cd pyclifer
    ```
 
 2. **Install dependencies:**
@@ -31,13 +31,13 @@ This guide covers development practices, testing, and contribution guidelines fo
 ## Project Structure
 
 ```
-pyclif/
-├── src/pyclif/              # Main package
+pyclifer/
+├── src/pyclifer/              # Main package
 │   ├── __init__.py          # Public API exports
 │   └── core/                # Core functionality
 │       ├── __init__.py      # Core exports
 │       ├── callbacks.py     # Click callbacks (meta storage)
-│       ├── classes.py       # PyclifOption, PyclifGroup, CustomConfigOption
+│       ├── classes.py       # PycliferOption, PycliferGroup, CustomConfigOption
 │       ├── context.py       # BaseContext
 │       ├── decorators.py    # @app_group, @group, @command, @option
 │       ├── rich_help_config.py  # Rich-click help configuration
@@ -64,7 +64,7 @@ uv run python -m pytest tests/ -v
 uv run python -m pytest tests/core/log/test_verbosity_default.py -v
 
 # With coverage
-uv run python -m pytest tests/ --cov=pyclif --cov-report=html
+uv run python -m pytest tests/ --cov=pyclifer --cov-report=html
 ```
 
 ### Test Categories
@@ -80,7 +80,7 @@ uv run python -m pytest tests/ --cov=pyclif --cov-report=html
 ```python
 import pytest
 from click.testing import CliRunner
-from pyclif import app_group, command, option
+from pyclifer import app_group, command, option
 
 
 @app_group()
@@ -147,7 +147,7 @@ See `CLAUDE.md` for the full style reference.
 
 ## Testing Across Python Versions
 
-pyclif supports Python 3.10, 3.11, 3.12, and 3.13. Use tox to test across all versions:
+pyclifer supports Python 3.10, 3.11, 3.12, and 3.13. Use tox to test across all versions:
 
 ```bash
 # Test all supported versions
@@ -174,7 +174,7 @@ package = "editable"
 extras = ["dev"]
 commands = [
     ["python", "-m", "pytest", "tests/", "-v"],
-    ["pyclif", "--help"],
+    ["pyclifer", "--help"],
 ]
 ```
 
@@ -205,7 +205,7 @@ commands = [
 
 ### Commit Message Convention
 
-pyclif uses conventional commits with emoji prefixes:
+pyclifer uses conventional commits with emoji prefixes:
 
 | Prefix | Type     |
 |--------|----------|
@@ -220,7 +220,7 @@ pyclif uses conventional commits with emoji prefixes:
 ## Release Process
 
 Versions are managed with `bump-my-version`. Version is synced across `pyproject.toml`, `README.md`, and
-`src/pyclif/__init__.py`.
+`src/pyclifer/__init__.py`.
 
 ```bash
 # Bump patch version (1.0.0 → 1.0.1)

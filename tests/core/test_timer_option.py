@@ -5,8 +5,8 @@ import json
 import click
 from click.testing import CliRunner
 
-from pyclif.core import app_group
-from pyclif.core.output import Response
+from pyclifer.core import app_group
+from pyclifer.core.output import Response
 
 
 def _make_timed_app(output_format_default: str = "raw"):

@@ -1,16 +1,16 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/bahamut45/pyclif/main/docs/assets/logo.png" alt="pyclif logo" width="200">
+  <img src="https://raw.githubusercontent.com/bahamut45/pyclifer/main/docs/assets/logo.png" alt="pyclifer logo" width="200">
 </p>
 
-# pyclif
+# pyclifer
 
 ![version](https://img.shields.io/badge/version-0.3.1-green)
-[![codecov](https://codecov.io/gh/bahamut45/pyclif/graph/badge.svg)](https://codecov.io/gh/bahamut45/pyclif)
+[![codecov](https://codecov.io/gh/bahamut45/pyclifer/graph/badge.svg)](https://codecov.io/gh/bahamut45/pyclifer)
 
 **PYthon Command Line Interface Framework** — a decorator-driven CLI framework built on
 [click-extra](https://github.com/kdeldycke/click-extra) and [rich-click](https://github.com/ewels/rich-click).
 
-pyclif provides four decorators (`@app_group`, `@group`, `@command`, `@option`) that give
+pyclifer provides four decorators (`@app_group`, `@group`, `@command`, `@option`) that give
 your CLI applications automatic configuration management, environment variable binding,
 Rich-enhanced logging, global option propagation, and standardized output formatting —
 with zero boilerplate.
@@ -21,13 +21,13 @@ with zero boilerplate.
 
 ```bash
 # pip
-pip install git+https://github.com/bahamut45/pyclif.git
+pip install git+https://github.com/bahamut45/pyclifer.git
 
 # uv
-uv add git+https://github.com/bahamut45/pyclif.git
+uv add git+https://github.com/bahamut45/pyclifer.git
 
 # poetry
-poetry add git+https://github.com/bahamut45/pyclif.git
+poetry add git+https://github.com/bahamut45/pyclifer.git
 ```
 
 Requires Python 3.10+.
@@ -58,8 +58,8 @@ Run `task --list` to see all available tasks.
 ## Quick Start
 
 ```python
-"""CLI application using pyclif."""
-from pyclif import app_group, command, option, Response
+"""CLI application using pyclifer."""
+from pyclifer import app_group, command, option, Response
 
 
 @app_group(handle_response=True)
@@ -146,11 +146,11 @@ $ python app.py hello --help
 - **Rich logging** — colored output, custom `TRACE` level, secret masking, rotating log files
 - **Standardized output** — `Response` dataclass with JSON/YAML/Table/Rich/Raw formatters via `--output-format`
 - **Global options** — options marked `is_global=True` propagate automatically to all subcommands
-- **Project scaffolding** — `pyclif project init` generates a ready-to-use project structure
+- **Project scaffolding** — `pyclifer project init` generates a ready-to-use project structure
 
 ## Documentation
 
-Full documentation at **[bahamut45.github.io/pyclif](https://bahamut45.github.io/pyclif/)**.
+Full documentation at **[bahamut45.github.io/pyclifer](https://bahamut45.github.io/pyclifer/)**.
 
 ## License
 

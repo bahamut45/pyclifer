@@ -1,16 +1,16 @@
 <p align="center">
-  <img src="assets/logo.png" alt="pyclif logo" width="200">
+  <img src="assets/logo.png" alt="pyclifer logo" width="200">
 </p>
 
 # Documentation
 
-Welcome to the comprehensive documentation for pyclif, a decorator-driven CLI framework that provides powerful
+Welcome to the comprehensive documentation for pyclifer, a decorator-driven CLI framework that provides powerful
 decorators for building Python CLI applications with automatic configuration management, environment variable support,
 Rich-enhanced logging, and standardized output formatting.
 
 ## Overview
 
-pyclif is built on top of `click-extra` and `rich-click` and exposes four main decorators from `pyclif.core`:
+pyclifer is built on top of `click-extra` and `rich-click` and exposes four main decorators from `pyclifer.core`:
 
 - `@app_group` — Create the main CLI application group with all features enabled.
 - `@group` — Create command subgroups.
@@ -38,7 +38,7 @@ pyclif is built on top of `click-extra` and `rich-click` and exposes four main d
 ## Quick Example
 
 ```python
-from pyclif import app_group, command, option
+from pyclifer import app_group, command, option
 
 
 @app_group()
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 ## Project Information
 
 - **Author**: Nicolas JOUBERT (njoubert45@gmail.com)
-- **Repository**: https://github.com/bahamut45/pyclif
-- **Issues**: https://github.com/bahamut45/pyclif/issues
+- **Repository**: https://github.com/bahamut45/pyclifer
+- **Issues**: https://github.com/bahamut45/pyclifer/issues
 - **License**: MIT License
 - **Python**: Requires Python 3.10+

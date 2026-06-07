@@ -4,8 +4,8 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from pyclif.core import app_group, command, group, option
-from pyclif.core.mixins.cli import GlobalOptionsMixin
+from pyclifer.core import app_group, command, group, option
+from pyclifer.core.mixins.cli import GlobalOptionsMixin
 
 
 @pytest.fixture

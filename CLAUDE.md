@@ -6,24 +6,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-pyclif (PYthon Command Line Interface Framework) is a decorator-driven CLI framework built on
+pyclifer (PYthon Command Line Interface Framework) is a decorator-driven CLI framework built on
 top of `click-extra` and `rich-click`. It provides four main decorators (`@app_group`, `@group`,
 `@command`, `@option`) that give CLI applications automatic configuration management, environment
 variable binding, Rich-enhanced logging, global option propagation, and standardized output
 formatting.
 
-pyclif also ships a built-in project scaffolding tool (`pyclif project`) that generates
+pyclifer also ships a built-in project scaffolding tool (`pyclifer project`) that generates
 Django-inspired project structures for CLI applications.
 
 ## Context
 
-pyclif is a migration and clean rewrite of `recia-cli` (private GitLab project). All the core
+pyclifer is a migration and clean rewrite of `recia-cli` (private GitLab project). All the core
 framework logic has been ported over with the following improvements:
 
-- Clean public API exposed exclusively through `pyclif.__init__` with `__all__`
-- `core/` internals are never imported directly by users — always via `from pyclif import ...`
-- Built-in scaffolding CLI (`pyclif project init / add app / add command / add integration`)
-- Framework dogfoods its own pattern — scaffolding lives in `src/pyclif/apps/project/`
+- Clean public API exposed exclusively through `pyclifer.__init__` with `__all__`
+- `core/` internals are never imported directly by users — always via `from pyclifer import ...`
+- Built-in scaffolding CLI (`pyclifer project init / add app / add command / add integration`)
+- Framework dogfoods its own pattern — scaffolding lives in `src/pyclifer/apps/project/`
 
 ## Working Style
 
@@ -83,26 +83,26 @@ ruff format src/ tests/
 
 ### Public API
 
-All public symbols are exposed through `src/pyclif/__init__.py` with `__all__`.
-Users always import from `pyclif` directly — never from `pyclif.core.*`:
+All public symbols are exposed through `src/pyclifer/__init__.py` with `__all__`.
+Users always import from `pyclifer` directly — never from `pyclifer.core.*`:
 
 ```python
-from pyclif import app_group, group, command, option
-from pyclif import BaseContext, Response, get_logger
+from pyclifer import app_group, group, command, option
+from pyclifer import BaseContext, Response, get_logger
 ```
 
 ### Core Design Patterns
 
-- **Decorator-driven**: Four decorators in `src/pyclif/core/decorators.py` wrap Click objects
+- **Decorator-driven**: Four decorators in `src/pyclifer/core/decorators.py` wrap Click objects
   with framework features. `@app_group` is the main entry point; `@group` and `@command` add
   subgroups/commands; `@option` extends Click options with env var binding and global propagation.
-- **Mixin composition**: Features are split across reusable mixins (`src/pyclif/core/mixins/`)
+- **Mixin composition**: Features are split across reusable mixins (`src/pyclifer/core/mixins/`)
   and composed into core classes. This keeps the feature surface modular.
 - **Context-based output dispatch**: `BaseContext` (context.py) combines `RichHelpersMixin` +
   `OutputFormatMixin`. All output goes through `ctx.print_result_based_on_format()`, which
   dispatches to JSON/YAML/Table/Rich/Raw formatters based on the `--output-format` flag stored
   in `ctx.meta`.
-- **Global option propagation**: Options marked `is_global=True` via `PyclifOption` are
+- **Global option propagation**: Options marked `is_global=True` via `PycliferOption` are
   automatically propagated from parent groups to all subcommands via `GlobalOptionsMixin`.
 - **Automatic response handling**: `handle_response=True` on `@app_group` automatically wraps
   all commands (including those added via `add_command()` and nested subgroups) with
@@ -113,7 +113,7 @@ from pyclif import BaseContext, Response, get_logger
 | Module                     | Responsibility                                                                            |
 |----------------------------|-------------------------------------------------------------------------------------------|
 | `core/decorators.py`       | The four public decorators + `GroupDecorator` class + `returns_response`                  |
-| `core/classes.py`          | `PyclifOption`, `PyclifExtraGroup`/`PyclifRichGroup`, `CustomConfigOption`, `GroupConfig` |
+| `core/classes.py`          | `PycliferOption`, `PycliferExtraGroup`/`PycliferRichGroup`, `CustomConfigOption`, `GroupConfig` |
 | `core/context.py`          | `BaseContext` — composites RichHelpersMixin + OutputFormatMixin                           |
 | `core/mixins/cli.py`       | `GlobalOptionsMixin`, `StoreInMetaMixin`                                                  |
 | `core/mixins/response.py`  | `HandleResponseMixin` — auto-wraps commands via `command()` and `add_command()`           |
@@ -122,14 +122,14 @@ from pyclif import BaseContext, Response, get_logger
 | `core/output/responses.py` | `Response` dataclass: `(success, message, data, error_code)` + table/rich callbacks       |
 | `core/output/tables.py`    | `CliTable`, `CliTableColumn`, `ExceptionTable`                                            |
 | `core/log/`            | Rich-enhanced logging, custom `TRACE` level (5), `SecretsMasker`, `get_logger()` factory  |
-| `apps/project/`            | Scaffolding CLI — `pyclif project init / add app / add command / add integration`         |
+| `apps/project/`            | Scaffolding CLI — `pyclifer project init / add app / add command / add integration`         |
 
 ### Internal structure
 
 ```
-src/pyclif/
+src/pyclifer/
 ├── __init__.py             # public API — __all__ + re-exports from core/
-├── cli.py                  # pyclif CLI entry point (dogfoods apps/ pattern)
+├── cli.py                  # pyclifer CLI entry point (dogfoods apps/ pattern)
 ├── core/                   # framework internals — never imported directly by users
 │   ├── decorators.py
 │   ├── classes.py
@@ -158,7 +158,7 @@ src/pyclif/
 
 ### Generated project structure
 
-Projects generated by `pyclif project init` follow this convention:
+Projects generated by `pyclifer project init` follow this convention:
 
 ```
 my-project/
@@ -204,5 +204,5 @@ runs the suite against Python 3.10, 3.11, 3.12, and 3.13 using `tox-uv`.
 ## Versioning
 
 Managed with `bumpversion`. Version is synced across `pyproject.toml`, `README.md`, and
-`src/pyclif/__init__.py`. Commits follow conventional commits with emoji prefixes
+`src/pyclifer/__init__.py`. Commits follow conventional commits with emoji prefixes
 (e.g., `✨ feat`, `🐛 fix`, `♻️ refactor`).

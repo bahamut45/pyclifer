@@ -30,7 +30,7 @@ jobs:
       - name: Install doc dependencies
         run: pip install mkdocs-material mkdocstrings[python] mike
 
-      - name: Install pyclif (needed by mkdocstrings to introspect the package)
+      - name: Install pyclifer (needed by mkdocstrings to introspect the package)
         run: pip install -e .
 
       - name: Configure git for mike

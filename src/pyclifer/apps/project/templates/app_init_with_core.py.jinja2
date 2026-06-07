@@ -1,0 +1,21 @@
+"""{{ name_pascal }} app group."""
+
+from pyclifer import group
+
+from .commands import commands
+from .core.context import pass_{{ name_snake }}_context
+
+subgroups = []
+
+
+@group()
+@pass_{{ name_snake }}_context
+def {{ name_snake }}(ctx):
+    """{{ name_pascal }} group."""
+
+
+for grp in subgroups:
+    {{ name_snake }}.add_command(grp)
+
+for cmd in commands:
+    {{ name_snake }}.add_command(cmd)

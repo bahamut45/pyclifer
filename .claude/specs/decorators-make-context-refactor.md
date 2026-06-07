@@ -63,17 +63,17 @@ def _patch_make_context(self, f: click_extra.Group) -> None:
 
         # --- post-call ---
         if self.config.add_verbosity_option and parent is None and level_name:
-            from .log.config import PYCLIF_LOG_LEVELS
+            from .log.config import PYCLIFER_LOG_LEVELS
 
-            if level_name in PYCLIF_LOG_LEVELS:
+            if level_name in PYCLIFER_LOG_LEVELS:
                 for param in ctx.command.params:  # pragma: no branch
                     if param.name == "verbosity" and hasattr(param, "set_level"):
                         param.set_level(ctx, param, level_name)
                         break
 
         if parent is None:
-            ctx.meta.setdefault("pyclif.unhandled_exception_log_level", level)
-            ctx.meta.setdefault("pyclif.exit_codes_class", exit_codes_cls)
+            ctx.meta.setdefault("pyclifer.unhandled_exception_log_level", level)
+            ctx.meta.setdefault("pyclifer.exit_codes_class", exit_codes_cls)
 
         return ctx
 
@@ -105,7 +105,7 @@ self._configure_handle_response(f)
 
 | File | Change |
 |------|--------|
-| `src/pyclif/core/decorators.py` | Add `_patch_make_context`, update `_configure_handle_response`, delete `_inject_dynamic_envvar` and `_inject_early_verbosity`, update `__call__` |
+| `src/pyclifer/core/decorators.py` | Add `_patch_make_context`, update `_configure_handle_response`, delete `_inject_dynamic_envvar` and `_inject_early_verbosity`, update `__call__` |
 | `tests/core/test_decorators.py` | Add/update tests per concern (see below) |
 
 ---
@@ -124,11 +124,11 @@ protection against future edits silently disabling one concern.
 - verbosity extracted pre-parse and applied to context
 - no-op when `add_verbosity_option=False`
 - no-op when no args supplied
-- unknown level in `PYCLIF_LOG_LEVELS` is silently skipped
+- unknown level in `PYCLIFER_LOG_LEVELS` is silently skipped
 
 ### Concern 3 — Framework meta injection
-- `pyclif.unhandled_exception_log_level` stored in `ctx.meta` at root
-- `pyclif.exit_codes_class` stored in `ctx.meta` at root
+- `pyclifer.unhandled_exception_log_level` stored in `ctx.meta` at root
+- `pyclifer.exit_codes_class` stored in `ctx.meta` at root
 - neither key is set on sub-context (`parent is not None`)
 - `setdefault` semantics: pre-existing value not overwritten
 

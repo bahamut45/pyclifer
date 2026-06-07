@@ -6,7 +6,7 @@ import datetime
 
 import pytest
 
-from pyclif.apps.demo.apps.tasks.models import Task
+from pyclifer.apps.demo.apps.tasks.models import Task
 
 _DT = datetime.datetime(2024, 1, 1)
 

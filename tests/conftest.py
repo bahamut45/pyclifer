@@ -1,4 +1,4 @@
-"""Pytest configuration for pyclif tests."""
+"""Pytest configuration for pyclifer tests."""
 
 from importlib.metadata import PackageNotFoundError, version
 from unittest.mock import Mock

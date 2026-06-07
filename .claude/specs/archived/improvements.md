@@ -21,14 +21,14 @@ qui dépend de l'étape 0.
 
 ### Problème
 
-`get_meta_storing_callback` dans `core/callbacks.py` impose la convention `pyclif.{param.name}`
+`get_meta_storing_callback` dans `core/callbacks.py` impose la convention `pyclifer.{param.name}`
 (séparateur point). Mais certaines clés liées au logging ont été écrites à la main avec un
 séparateur underscore, hors convention :
 
 ```python
 # Convention appliquée par get_meta_storing_callback
-ctx.meta["pyclif.output_format"]
-ctx.meta["pyclif.verbosity"]
+ctx.meta["pyclifer.output_format"]
+ctx.meta["pyclifer.verbosity"]
 
 # Hors convention — écrites manuellement ailleurs
 ctx.meta["pyclif_log_file_path"]
@@ -37,11 +37,11 @@ ctx.meta["pyclif_log_file_level"]
 
 ### Décision
 
-Renommer les clés hors convention pour suivre `pyclif.{param.name}` :
+Renommer les clés hors convention pour suivre `pyclifer.{param.name}` :
 
 ```python
-ctx.meta["pyclif_log_file_path"]  →  ctx.meta["pyclif.log_file_path"]
-ctx.meta["pyclif_log_file_level"] →  ctx.meta["pyclif.log_file_level"]
+ctx.meta["pyclif_log_file_path"]  →  ctx.meta["pyclifer.log_file_path"]
+ctx.meta["pyclif_log_file_level"] →  ctx.meta["pyclifer.log_file_level"]
 ```
 
 Mettre à jour tous les sites de lecture pour utiliser les nouveaux noms. Aucun changement
@@ -63,7 +63,7 @@ de logique, uniquement du renommage.
 `ctx.meta` est un dict brut avec des clés string dispersées dans le code, sans convention
 stable. Deux bugs de nommage existent déjà :
 
-- `ctx.meta["pyclif.output_format"]` — séparateur point
+- `ctx.meta["pyclifer.output_format"]` — séparateur point
 - `ctx.meta["pyclif_log_file_path"]` — séparateur underscore
 
 Une faute de frappe retourne `None` silencieusement. Il n'y a ni type safety, ni
@@ -72,7 +72,7 @@ discoverabilité, ni endroit unique pour voir toute la metadata du framework.
 ### Décision de design
 
 Un dataclass `CliMetadata` remplace l'accès direct au dict. Il vit dans `core/context.py`
-aux côtés de `BaseContext` et s'accède via une propriété `pyclif` sur `BaseContext`.
+aux côtés de `BaseContext` et s'accède via une propriété `pyclifer` sur `BaseContext`.
 
 ```python
 @dataclass
@@ -90,12 +90,12 @@ Avant / après :
 
 ```python
 # Avant
-ctx.meta["pyclif.output_format"]
+ctx.meta["pyclifer.output_format"]
 ctx.meta["pyclif_log_file_path"]
 
 # Après
-ctx.pyclif.output_format
-ctx.pyclif.log_file_path
+ctx.pyclifer.output_format
+ctx.pyclifer.log_file_path
 ```
 
 Pour les options utilisateur avec `store_in_meta=True`, le dict `extra` préserve la
@@ -103,7 +103,7 @@ compatibilité :
 
 ```python
 # @option("--my-flag", store_in_meta=True) écrit ici
-ctx.pyclif.extra["my_flag"]
+ctx.pyclifer.extra["my_flag"]
 ```
 
 ### Intégration dans `BaseContext`
@@ -115,7 +115,7 @@ pour rester compatible avec le cycle de vie Click.
 class BaseContext(OutputFormatMixin, RichHelpersMixin):
 
     @property
-    def pyclif(self) -> CliMetadata:
+    def pyclifer(self) -> CliMetadata:
         """Return the framework metadata object for this context."""
         if "pyclif_metadata" not in self.meta:
             self.meta["pyclif_metadata"] = CliMetadata()
@@ -126,19 +126,19 @@ class BaseContext(OutputFormatMixin, RichHelpersMixin):
 
 | Fichier | Changement |
 |---------|-----------|
-| `core/context.py` | Ajouter `CliMetadata` ; propriété `pyclif` sur `BaseContext` |
-| `core/mixins/output.py` | `ctx.meta["pyclif.output_format"]` → `ctx.pyclif.output_format` |
-| `core/mixins/output.py` | `ctx.meta["pyclif.output_filter"]` → `ctx.pyclif.output_filter` |
-| `core/mixins/cli.py` | `ctx.meta["pyclif.verbosity"]` → `ctx.pyclif.verbosity` |
-| `core/log/config.py` | `ctx.meta["pyclif_log_file_*"]` → `ctx.pyclif.log_file_*` |
+| `core/context.py` | Ajouter `CliMetadata` ; propriété `pyclifer` sur `BaseContext` |
+| `core/mixins/output.py` | `ctx.meta["pyclifer.output_format"]` → `ctx.pyclifer.output_format` |
+| `core/mixins/output.py` | `ctx.meta["pyclifer.output_filter"]` → `ctx.pyclifer.output_filter` |
+| `core/mixins/cli.py` | `ctx.meta["pyclifer.verbosity"]` → `ctx.pyclifer.verbosity` |
+| `core/log/config.py` | `ctx.meta["pyclif_log_file_*"]` → `ctx.pyclifer.log_file_*` |
 | `core/decorators.py` | Toutes les écritures `ctx.meta[...]` des clés framework |
-| `core/callbacks.py` | `get_meta_storing_callback` écrit dans `ctx.pyclif.extra` |
-| `pyclif/__init__.py` | Ajouter `CliMetadata` à `__all__` |
+| `core/callbacks.py` | `get_meta_storing_callback` écrit dans `ctx.pyclifer.extra` |
+| `pyclifer/__init__.py` | Ajouter `CliMetadata` à `__all__` |
 
 ### Tests
 
 `tests/core/test_context.py` — nouveaux cas :
-- `pyclif` property initialise `CliMetadata` avec les valeurs par défaut
+- `pyclifer` property initialise `CliMetadata` avec les valeurs par défaut
 - Deuxième accès retourne la même instance (pas de re-création)
 - `extra` dict accessible et modifiable
 
@@ -366,7 +366,7 @@ API qui consomment les sorties.
 Deux ajouts indépendants et opt-in :
 
 - `pagination_options()` — décorateur qui injecte `--page` et `--limit` et les stocke dans
-  `ctx.pyclif` (dépend de l'amélioration 1)
+  `ctx.pyclifer` (dépend de l'amélioration 1)
 - `PaginatedResponse` — sous-classe de `Response` qui ajoute un bloc `pagination` dans
   la sortie JSON/YAML
 
@@ -379,7 +379,7 @@ def pagination_options(
 ) -> Callable:
     """Inject --page and --limit options into a command.
 
-    Options are stored in ctx.meta under the keys 'pyclif.page' and 'pyclif.limit'.
+    Options are stored in ctx.meta under the keys 'pyclifer.page' and 'pyclifer.limit'.
 
     Args:
         default_limit: Default number of results per page.
@@ -417,8 +417,8 @@ def list_articles(ctx) -> Response:
     """List articles."""
     return ArticleInterface(ctx).respond(
         "list",
-        page=ctx.meta["pyclif.page"],
-        limit=ctx.meta["pyclif.limit"],
+        page=ctx.meta["pyclifer.page"],
+        limit=ctx.meta["pyclifer.limit"],
     )
 ```
 
@@ -463,7 +463,7 @@ total. Si le total est inconnu (API sans comptage), `total=None` est sérialisé
 |---------|-----------|
 | `core/decorators.py` | Ajouter `pagination_options()` |
 | `core/output/responses.py` | Ajouter `PaginatedResponse` |
-| `pyclif/__init__.py` | Exporter `pagination_options`, `PaginatedResponse` |
+| `pyclifer/__init__.py` | Exporter `pagination_options`, `PaginatedResponse` |
 | `docs/api/output.md` | Documenter `PaginatedResponse` |
 | `docs/api/decorators.md` | Documenter `pagination_options()` |
 

@@ -9,7 +9,7 @@ remplir `OperationResult.data`, ce qui rend les renderers fragiles et non-typés
 ## Décision : Pydantic comme fondation
 
 `BaseModel` étend directement `pydantic.BaseModel`. Pydantic devient une dépendance
-runtime de pyclif.
+runtime de pyclifer.
 
 **Pourquoi Pydantic et pas `@dataclass` ?**
 
@@ -37,14 +37,14 @@ dépendance transitive de nombreux outils Python modernes.
 ## `BaseModel` — design
 
 `BaseModel` étend `pydantic.BaseModel` avec des helpers framework qui exposent une
-interface cohérente avec le reste de pyclif :
+interface cohérente avec le reste de pyclifer :
 
 ```python
 import pydantic
 from typing import Any, Self
 
 class BaseModel(pydantic.BaseModel):
-    """Base class for pyclif domain models.
+    """Base class for pyclifer domain models.
 
     Extends pydantic.BaseModel with to_dict(), from_dict() and field_names()
     for integration with OperationResult and BaseRenderer.
@@ -69,7 +69,7 @@ class BaseModel(pydantic.BaseModel):
 
 ```python
 # models.py
-from pyclif import BaseModel
+from pyclifer import BaseModel
 from pydantic import field_validator
 
 class Article(BaseModel):
@@ -170,7 +170,7 @@ class BaseRenderer:
 
 ### `_result_to_row()` et `serialize()` — gestion de `BaseModel` en data
 
-La détection se fait via `to_dict` — compatible `BaseModel` pyclif et tout objet
+La détection se fait via `to_dict` — compatible `BaseModel` pyclifer et tout objet
 exposant la même interface.
 
 ```python
@@ -191,7 +191,7 @@ def _result_to_row(self, result: OperationResult, columns: list[str]) -> dict:
 | 2  | `core/models.py` — `BaseModel(pydantic.BaseModel)` avec `to_dict()`, `from_dict()`, `field_names()` | ✅ |
 | 3  | `core/output/renderer.py` — `model_class` sur `BaseRenderer` ; `get_fields()` fallback via `model_class` ; `_result_to_row()` + `serialize()` gèrent `BaseModel` | ✅ |
 | 4  | `core/output/responses.py` — `Response._serialize_data()` gère `BaseModel` dans les valeurs du dict | ✅ |
-| 5  | `pyclif/__init__.py` — ajouter `BaseModel` dans `__all__` | ✅ |
+| 5  | `pyclifer/__init__.py` — ajouter `BaseModel` dans `__all__` | ✅ |
 | 6  | Templates — `app_models.py.jinja2` avec un modèle Pydantic concret + `@field_validator` ; `app_interfaces.py.jinja2` avec `Article.from_dict()` | ✅ |
 | 7  | Tests — `tests/core/test_models.py` : `to_dict`, `from_dict`, `field_names`, validation Pydantic, `ValidationError` sur type invalide | ✅ |
 | 8  | Tests — `tests/core/test_renderer.py` : `model_class` déduit les fields ; `_result_to_row` avec `BaseModel` ; `serialize` avec `BaseModel` | ✅ |

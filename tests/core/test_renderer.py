@@ -5,9 +5,9 @@ from unittest.mock import MagicMock, patch
 from rich.console import Console
 from rich.panel import Panel
 
-from pyclif import BaseModel, OperationResult
-from pyclif.core.output.renderer import BaseRenderer
-from pyclif.core.output.responses import Response
+from pyclifer import BaseModel, OperationResult
+from pyclifer.core.output.renderer import BaseRenderer
+from pyclifer.core.output.responses import Response
 
 # ---------------------------------------------------------------------------
 # Helpers

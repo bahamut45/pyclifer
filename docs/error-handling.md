@@ -1,6 +1,6 @@
 # Error Handling
 
-pyclif enforces a strict separation between the service layer (interface) and the view layer
+pyclifer enforces a strict separation between the service layer (interface) and the view layer
 (command). This makes error handling consistent, testable, and free of boilerplate.
 
 ## The contract
@@ -20,7 +20,7 @@ invariants. The last resort handler catches anything that escapes and formats it
 to construct success or failure outcomes:
 
 ```python
-from pyclif import OperationResult
+from pyclifer import OperationResult
 
 # Success
 result = OperationResult.ok("src/my_app/cli.py", data={"action": "created"})
@@ -50,7 +50,7 @@ raise for expected failures:
 
 ```python
 from collections.abc import Iterator
-from pyclif import BaseInterface, OperationResult
+from pyclifer import BaseInterface, OperationResult
 
 
 class MyInterface(BaseInterface):
@@ -81,7 +81,7 @@ auto-detects whether the method returns a list or a generator, selects the rende
 in `renderers`, and builds the `Response` automatically:
 
 ```python
-from pyclif import command, argument, pass_context, Response
+from pyclifer import command, argument, pass_context, Response
 
 from .interfaces import MyInterface
 
@@ -97,7 +97,7 @@ def create(ctx, name: str) -> Response:
 The renderer is declared once on the interface class:
 
 ```python
-from pyclif import BaseInterface, BaseRenderer, OperationResult
+from pyclifer import BaseInterface, BaseRenderer, OperationResult
 
 
 class MyRenderer(BaseRenderer):
@@ -127,7 +127,7 @@ For cases where you need full control over the message or renderer at call time,
 `from_results()` manually:
 
 ```python
-from pyclif import Response, argument, command, pass_context
+from pyclifer import Response, argument, command, pass_context
 
 from .interfaces import MyInterface
 from .renderers import MyRenderer
@@ -152,7 +152,7 @@ def create(ctx, name: str) -> Response:
 Aggregates a list of `OperationResult` into a single `Response`:
 
 ```python
-from pyclif import Response
+from pyclifer import Response
 
 results = interface.do_something()
 response = Response.from_results(
@@ -194,7 +194,7 @@ is produced. The two streams are always independent:
 The log level for unhandled exceptions is set on `@app_group`:
 
 ```python
-from pyclif import app_group
+from pyclifer import app_group
 
 @app_group(
     unhandled_exception_log_level="error",   # default — always visible

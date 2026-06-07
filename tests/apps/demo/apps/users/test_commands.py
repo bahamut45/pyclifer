@@ -1,4 +1,4 @@
-"""CLI integration tests for user commands — invoked via CliRunner through the full pyclif app."""
+"""CLI integration tests for user commands — invoked via CliRunner through the full pyclifer app."""
 
 from __future__ import annotations
 
@@ -10,11 +10,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from pyclif.apps.demo.apps.users.models import User
-from pyclif.cli import app
+from pyclifer.apps.demo.apps.users.models import User
+from pyclifer.cli import app
 
-_demo_context_mod = importlib.import_module("pyclif.apps.demo.core.context")
-_users_iface_mod = importlib.import_module("pyclif.apps.demo.apps.users.interfaces")
+_demo_context_mod = importlib.import_module("pyclifer.apps.demo.core.context")
+_users_iface_mod = importlib.import_module("pyclifer.apps.demo.apps.users.interfaces")
 
 _DT = datetime.datetime(2024, 1, 1)
 

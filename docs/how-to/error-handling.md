@@ -10,11 +10,11 @@ For the full conceptual explanation of the interface/command contract, see
 
 ```bash
 # not-found error — error_code 404 in the output
-pyclif demo tasks show "nonexistent-id"
-pyclif demo tasks show "nonexistent-id" -o json
+pyclifer demo tasks show "nonexistent-id"
+pyclifer demo tasks show "nonexistent-id" -o json
 
 # already-done error — no error_code, just success=false
-pyclif demo tasks complete <an-already-done-task-id>
+pyclifer demo tasks complete <an-already-done-task-id>
 ```
 
 ## Recipe 1 — Interface layer (standard pattern)
@@ -47,7 +47,7 @@ def show(ctx, task_id: str) -> Response:
     return TaskInterface(ctx).respond("show_task", task_id=task_id)
 ```
 
-Source: [`tasks/interfaces.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/tasks/interfaces.py)
+Source: [`tasks/interfaces.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/interfaces.py)
 
 ### Resource already in desired state
 
@@ -100,7 +100,7 @@ For lightweight commands that do a quick check and don't need an interface, buil
 ```python
 # commands/ping.py
 import httpx
-from pyclif import Response, command, option
+from pyclifer import Response, command, option
 from ..context import pass_my_context
 
 
@@ -134,7 +134,7 @@ Use this pattern when:
 useful for scripts that need to distinguish between failure reasons:
 
 ```bash
-code=$(pyclif demo tasks show "bad-id" -o json | jq .error_code)
+code=$(pyclifer demo tasks show "bad-id" -o json | jq .error_code)
 # code=404 → not found, code=2 → conflict, code=1 → generic failure
 ```
 
@@ -166,4 +166,4 @@ return response
 - [Error Handling — User Guide](../error-handling.md) — contract, boundary rules, last-resort handler
 - [Response Patterns](response-patterns.md) — the full interface → command wiring
 - [Multi-integration Commands](multi-integration-commands.md) — combining results from multiple interfaces
-- [`tasks/interfaces.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/tasks/interfaces.py) — real-world examples of every error pattern above
+- [`tasks/interfaces.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/interfaces.py) — real-world examples of every error pattern above

@@ -8,13 +8,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pyclif import ExitCode
-from pyclif.apps.demo.apps.tasks.interfaces import _FAKE_SYNC_TITLES, TaskInterface
-from pyclif.apps.demo.apps.tasks.models import Task
-from pyclif.apps.demo.core.context import DemoContext
+from pyclifer import ExitCode
+from pyclifer.apps.demo.apps.tasks.interfaces import _FAKE_SYNC_TITLES, TaskInterface
+from pyclifer.apps.demo.apps.tasks.models import Task
+from pyclifer.apps.demo.core.context import DemoContext
 
 _DT = datetime.datetime(2024, 1, 1)
-_interfaces_mod = importlib.import_module("pyclif.apps.demo.apps.tasks.interfaces")
+_interfaces_mod = importlib.import_module("pyclifer.apps.demo.apps.tasks.interfaces")
 
 
 def _task(**kwargs) -> Task:

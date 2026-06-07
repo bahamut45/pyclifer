@@ -2,10 +2,10 @@
 
 import pytest
 
-from pyclif import OperationResult
-from pyclif.core.interfaces import BaseInterface
-from pyclif.core.output.renderer import BaseRenderer
-from pyclif.core.output.responses import Response
+from pyclifer import OperationResult
+from pyclifer.core.interfaces import BaseInterface
+from pyclifer.core.output.renderer import BaseRenderer
+from pyclifer.core.output.responses import Response
 
 # ---------------------------------------------------------------------------
 # Helpers

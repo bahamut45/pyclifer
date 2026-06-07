@@ -2,9 +2,9 @@
 
 import pytest
 
-from pyclif.core import app_group
-from pyclif.core.rich_help_config import (
-    PYCLIF_CONFIGS,
+from pyclifer.core import app_group
+from pyclifer.core.rich_help_config import (
+    PYCLIFER_CONFIGS,
     get_rich_config,
 )
 
@@ -65,11 +65,11 @@ class TestRichHelpConfiguration:
         assert result is instance
 
     def test_pyclif_configs_availability(self):
-        """Test that PYCLIF_CONFIGS contains expected configurations."""
+        """Test that PYCLIFER_CONFIGS contains expected configurations."""
         expected_configs = ["default", "minimal", "verbose"]
         for config_name in expected_configs:
-            assert config_name in PYCLIF_CONFIGS
-            config_func = PYCLIF_CONFIGS[config_name]
+            assert config_name in PYCLIFER_CONFIGS
+            config_func = PYCLIFER_CONFIGS[config_name]
             config = config_func()
             assert config is not None
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from pyclif.core.output.exit_codes import (
+from pyclifer.core.output.exit_codes import (
     _PROJECT_EXIT_CODE_MAX,
     _PROJECT_EXIT_CODE_MIN,
     ExitCode,

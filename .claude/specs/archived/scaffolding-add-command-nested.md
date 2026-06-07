@@ -1,6 +1,6 @@
 # Scaffolding — `add command` dans un sous-groupe imbriqué
 
-Étend `pyclif project add command` pour cibler un sous-groupe imbriqué
+Étend `pyclifer project add command` pour cibler un sous-groupe imbriqué
 (`apps/<app>/apps/<group>/commands/`) en plus des apps de premier niveau.
 
 ## Problème actuel
@@ -10,8 +10,8 @@ Pour les sous-groupes créés par `add group`, le chemin est
 `apps/<parent>/apps/<group>/` — introuvable avec la syntaxe actuelle.
 
 ```bash
-pyclif project add group tasks --app demo        # crée apps/demo/apps/tasks/
-pyclif project add command list --app tasks      # ❌ cherche apps/tasks/ (inexistant)
+pyclifer project add group tasks --app demo        # crée apps/demo/apps/tasks/
+pyclifer project add command list --app tasks      # ❌ cherche apps/tasks/ (inexistant)
 ```
 
 ## Solution — chemin pointé
@@ -19,7 +19,7 @@ pyclif project add command list --app tasks      # ❌ cherche apps/tasks/ (inex
 Étendre `--app` pour accepter une notation pointée `parent.group` :
 
 ```bash
-pyclif project add command list --app demo.tasks   # ✅ résout apps/demo/apps/tasks/
+pyclifer project add command list --app demo.tasks   # ✅ résout apps/demo/apps/tasks/
 ```
 
 La résolution est récursive : `a.b.c` → `apps/a/apps/b/apps/c/`.
@@ -30,16 +30,16 @@ La résolution est récursive : `a.b.c` → `apps/a/apps/b/apps/c/`.
 
 ```bash
 # Commandes tasks
-pyclif project add command list     --app demo.tasks
-pyclif project add command add      --app demo.tasks
-pyclif project add command show     --app demo.tasks
-pyclif project add command complete --app demo.tasks
-pyclif project add command delete   --app demo.tasks
-pyclif project add command sync     --app demo.tasks
+pyclifer project add command list     --app demo.tasks
+pyclifer project add command add      --app demo.tasks
+pyclifer project add command show     --app demo.tasks
+pyclifer project add command complete --app demo.tasks
+pyclifer project add command delete   --app demo.tasks
+pyclifer project add command sync     --app demo.tasks
 
 # Commandes users
-pyclif project add command list     --app demo.users
-pyclif project add command whoami   --app demo.users
+pyclifer project add command list     --app demo.users
+pyclifer project add command whoami   --app demo.users
 ```
 
 Chaque commande génère les mêmes fichiers et câblages qu'aujourd'hui, au bon chemin.

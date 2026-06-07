@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime
 
-from pyclif.apps.demo.apps.users.models import User
+from pyclifer.apps.demo.apps.users.models import User
 
 _DT = datetime.datetime(2024, 1, 1)
 

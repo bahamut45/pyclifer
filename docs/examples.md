@@ -1,11 +1,11 @@
 # Complete Examples
 
-Comprehensive examples of using pyclif decorators to build various types of CLI applications.
+Comprehensive examples of using pyclifer decorators to build various types of CLI applications.
 
 ## Basic CLI Application
 
 ```python
-from pyclif import app_group, command, option
+from pyclifer import app_group, command, option
 
 
 @app_group(
@@ -13,7 +13,7 @@ from pyclif import app_group, command, option
     auto_envvar_prefix="MYAPP"
 )
 def cli():
-    """My Application — a sample CLI built with pyclif."""
+    """My Application — a sample CLI built with pyclifer."""
     pass
 
 
@@ -38,7 +38,7 @@ python myapp.py --log-file /tmp/myapp.log hello
 ## Database Management CLI
 
 ```python
-from pyclif import app_group, group, option
+from pyclifer import app_group, group, option
 import click
 
 
@@ -96,7 +96,7 @@ dbmanager database backup -d /backups --tables users orders --no-compress
 ## Web Service CLI
 
 ```python
-from pyclif import app_group, group, option
+from pyclifer import app_group, group, option
 import click
 
 
@@ -162,7 +162,7 @@ Attach a `BaseRenderer` subclass to control the output for every format — tabl
 JSON fields, and Rich display — from a single class.
 
 ```python
-from pyclif import app_group, BaseRenderer, OperationResult, Response
+from pyclifer import app_group, BaseRenderer, OperationResult, Response
 import click
 
 
@@ -204,7 +204,7 @@ myapp -o text list-users                # plain message only
 ### Custom Validation
 
 ```python
-from pyclif import app_group, option
+from pyclifer import app_group, option
 import click
 
 
@@ -237,7 +237,7 @@ def create_user(email, role):
 ### Global Options
 
 ```python
-from pyclif import app_group, option
+from pyclifer import app_group, option
 import click
 
 

@@ -5,9 +5,9 @@ from __future__ import annotations
 import datetime
 import json
 
-from pyclif.apps.demo.apps.tasks.models import Task
-from pyclif.apps.demo.apps.users.models import User
-from pyclif.apps.demo.core.storage import Storage
+from pyclifer.apps.demo.apps.tasks.models import Task
+from pyclifer.apps.demo.apps.users.models import User
+from pyclifer.apps.demo.core.storage import Storage
 
 _DT = datetime.datetime(2024, 1, 1, 12, 0)
 

@@ -13,9 +13,9 @@ The framework imposes a strict separation of responsibilities:
   No try/except, no business logic, no renderer knowledge.
 
 This mirrors Django's MTV pattern: interface = Model/Service, renderer = Template/Serializer,
-command = View. It is the enforced contract for all pyclif projects.
+command = View. It is the enforced contract for all pyclifer projects.
 
-## Core types (framework-level, `pyclif.core`)
+## Core types (framework-level, `pyclifer.core`)
 
 ### `OperationResult`
 
@@ -81,7 +81,7 @@ class ScaffoldingInterface:
 @argument("name")
 @pass_context
 def init(ctx, name: str) -> Response:
-    """Create a new pyclif project skeleton."""
+    """Create a new pyclifer project skeleton."""
     results = ScaffoldingInterface(ctx).init_project(name)
     return Response.from_results(results, message=f"Project '{name}' created.", table=ScaffoldingTable)
 ```
@@ -95,7 +95,7 @@ def init(ctx, name: str) -> Response:
 | Invalid input (bad name, unknown option)   | `OperationResult.error` |
 | Template file missing (framework bug)      | raise `RuntimeError`    |
 | Jinja2 render failure (corrupt template)   | raise `RuntimeError`    |
-| `src/` absent (not a pyclif project)       | raise `RuntimeError`    |
+| `src/` absent (not a pyclifer project)       | raise `RuntimeError`    |
 
 ## Last resort handler (framework-level)
 
@@ -129,7 +129,7 @@ The log level for unhandled exceptions is configurable per application:
 ```
 
 Default is `"error"` — safe behaviour, the traceback is always visible so nothing is silently
-swallowed. The level is stored in `ctx.meta` alongside `pyclif.output_format` and resolved
+swallowed. The level is stored in `ctx.meta` alongside `pyclifer.output_format` and resolved
 inside `returns_response` at call time.
 
 ## `OperationResult.data` — domain facts, not rendering hints
@@ -522,7 +522,7 @@ This is a breaking change to `Response`. Delivery order:
     to demonstrate the `BaseInterface` + renderer pattern so scaffolded projects inherit
     the contract out of the box.
 
-11. ✅ **`pyclif/__init__.py`** — `BaseRenderer`, `ResponseRenderer`, `BaseInterface`
+11. ✅ **`pyclifer/__init__.py`** — `BaseRenderer`, `ResponseRenderer`, `BaseInterface`
     added to `__all__`.
 
 12. ✅ **Docs** — `api/interfaces.md` created; registered in `mkdocs.yml nav`;
@@ -534,7 +534,7 @@ This is a breaking change to `Response`. Delivery order:
 
 ## Visibility in the framework
 
-Public API exported from `pyclif.__init__` with `__all__`:
+Public API exported from `pyclifer.__init__` with `__all__`:
 
 | Symbol              | Where defined                 |
 |---------------------|-------------------------------|

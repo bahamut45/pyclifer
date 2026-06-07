@@ -4,7 +4,7 @@ import pydantic
 import pytest
 from pydantic import field_validator
 
-from pyclif import BaseModel
+from pyclifer import BaseModel
 
 # ---------------------------------------------------------------------------
 # Fixtures

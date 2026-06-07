@@ -2,8 +2,8 @@
 
 import pytest
 
-from pyclif import ExitCode, OperationResult
-from pyclif.apps.project.interfaces import ScaffoldingInterface
+from pyclifer import ExitCode, OperationResult
+from pyclifer.apps.project.interfaces import ScaffoldingInterface
 
 
 @pytest.fixture

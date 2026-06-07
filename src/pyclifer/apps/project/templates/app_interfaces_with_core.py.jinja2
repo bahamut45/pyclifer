@@ -1,0 +1,29 @@
+"""Renderer and interface for the {{ name_pascal }} app."""
+
+from __future__ import annotations
+
+from pyclifer import BaseInterface, BaseRenderer, OperationResult
+
+from .core.context import {{ name_pascal }}Context
+from .models import {{ name_singular_pascal }}
+
+
+class {{ name_singular_pascal }}Renderer(BaseRenderer):
+    """Output renderer for {{ name_pascal }} commands."""
+
+    model_class = {{ name_singular_pascal }}
+    columns = ["item", "success"]
+    success_message = "{{ name_pascal }} operation completed."
+    failure_message = "{{ name_pascal }} operation failed."
+
+
+class {{ name_singular_pascal }}Interface(BaseInterface):
+    """Interface for {{ name_pascal }} business logic."""
+
+    ctx: {{ name_pascal }}Context
+
+    renderers = {
+        # --- renderers --- (used by `pyclifer project add command` — do not remove)
+    }
+
+    # --- commands --- (used by `pyclifer project add command` — do not remove)

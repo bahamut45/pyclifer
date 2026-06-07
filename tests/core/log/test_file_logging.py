@@ -7,8 +7,8 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from pyclif.core.decorators import app_group
-from pyclif.core.log.config import setup_file_logging
+from pyclifer.core.decorators import app_group
+from pyclifer.core.log.config import setup_file_logging
 
 
 @pytest.fixture(autouse=True)
@@ -132,7 +132,7 @@ def test_setup_file_logging_no_secrets_filter(tmp_path):
     assert len(file_handlers) >= 1
     last_handler = file_handlers[-1]
 
-    from pyclif.core.log.filters import SecretsMasker
+    from pyclifer.core.log.filters import SecretsMasker
 
     assert not any(isinstance(f, SecretsMasker) for f in last_handler.filters)
 

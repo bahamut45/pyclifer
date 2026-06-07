@@ -1,6 +1,6 @@
 # How-to Guides
 
-Task-oriented recipes for common pyclif patterns. Each guide shows the minimum code needed to
+Task-oriented recipes for common pyclifer patterns. Each guide shows the minimum code needed to
 accomplish a specific goal — start here when you know what you want to build.
 
 For conceptual explanations and full API reference, see the [User Guide](../output-formatting.md)
@@ -11,7 +11,7 @@ and [API Reference](../api/decorators.md).
 ### [Response Patterns](response-patterns.md)
 
 Wire together a model, interface, renderer, and command in the simplest possible form. This is
-the foundational pattern every pyclif app follows — read this first.
+the foundational pattern every pyclifer app follows — read this first.
 
 ### [Rich Progressive Output](rich-progressive-output.md)
 

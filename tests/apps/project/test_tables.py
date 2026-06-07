@@ -2,8 +2,8 @@
 
 from unittest.mock import MagicMock
 
-from pyclif import OperationResult
-from pyclif.apps.project.tables import ScaffoldingTable
+from pyclifer import OperationResult
+from pyclifer.apps.project.tables import ScaffoldingTable
 
 
 def _make_response(results: list[OperationResult], message: str = "Project 'my-app' created."):

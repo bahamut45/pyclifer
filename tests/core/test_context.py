@@ -5,9 +5,9 @@ from unittest.mock import patch
 import pytest
 from rich.console import Console
 
-from pyclif.core.context import BaseContext, ContextException
-from pyclif.core.mixins.output import OutputFormatMixin
-from pyclif.core.mixins.rich import RichHelpersMixin
+from pyclifer.core.context import BaseContext, ContextException
+from pyclifer.core.mixins.output import OutputFormatMixin
+from pyclifer.core.mixins.rich import RichHelpersMixin
 
 
 class TestContextException:

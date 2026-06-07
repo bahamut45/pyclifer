@@ -1,17 +1,17 @@
 # Project Scaffolding
 
-pyclif ships a built-in `project` command that generates Django-inspired project structures so
+pyclifer ships a built-in `project` command that generates Django-inspired project structures so
 you can skip the boilerplate and start writing business logic immediately.
 
 ```bash
-pyclif project --help
-pyclif project add --help
+pyclifer project --help
+pyclifer project add --help
 ```
 
 ## Creating a new project
 
 ```bash
-pyclif project init my-project
+pyclifer project init my-project
 ```
 
 This creates a fully wired `my-project/` directory with a `src/` layout, a test suite, a
@@ -26,10 +26,10 @@ This creates a fully wired `my-project/` directory with a `src/` layout, a test 
 
 ```bash
 # Target poetry instead of uv
-pyclif project init my-project --package-manager poetry
+pyclifer project init my-project --package-manager poetry
 
 # Generate a project and immediately scaffold two integrations
-pyclif project init my-project --integrations github,slack
+pyclifer project init my-project --integrations github,slack
 ```
 
 ### Generated structure
@@ -59,7 +59,7 @@ The generated `cli.py` wires app exports dynamically so each new app you add is 
 automatically:
 
 ```python
-from pyclif import app_group, pass_context
+from pyclifer import app_group, pass_context
 from .core.context import MyProjectContext
 from .apps import groups
 
@@ -90,7 +90,7 @@ you want commands to appear directly on the root CLI instead.
 
 ```bash
 # Run from the project root
-pyclif project add app users
+pyclifer project add app users
 ```
 
 **What gets created**
@@ -122,7 +122,7 @@ Use `--with-core` when the app needs to carry its own state — a shared client,
 object, or anything that commands should access via `ctx`.
 
 ```bash
-pyclif project add app repos --with-core
+pyclifer project add app repos --with-core
 ```
 
 **What gets created**
@@ -145,7 +145,7 @@ src/my_project/apps/repos/
 `context.py` gives you a typed context and a pass decorator ready to use:
 
 ```python
-from pyclif import BaseContext, make_pass_decorator
+from pyclifer import BaseContext, make_pass_decorator
 
 class ReposContext(BaseContext):
     """Application context for Repos."""
@@ -177,7 +177,7 @@ Use `--no-group` when you want commands to appear directly on the root CLI
 `--with-core` has no effect when combined with `--no-group`.
 
 ```bash
-pyclif project add app health --no-group
+pyclifer project add app health --no-group
 ```
 
 **What gets created**
@@ -206,7 +206,7 @@ Result: `my-project status`, `my-project ping`, … — no intermediate group le
 **Adding commands to a flat app works exactly the same way:**
 
 ```bash
-pyclif project add command status ping --app health
+pyclifer project add command status ping --app health
 ```
 
 ### Mixing grouped and flat apps
@@ -237,10 +237,10 @@ immediately reachable on the CLI. Pass one or more names to create several comma
 
 ```bash
 # Single command
-pyclif project add command list --app users
+pyclifer project add command list --app users
 
 # Multiple commands at once
-pyclif project add command list get create --app users
+pyclifer project add command list get create --app users
 ```
 
 **Options**
@@ -257,7 +257,7 @@ src/my_project/apps/users/commands/list.py
 ```
 
 ```python
-from pyclif import command, Response
+from pyclifer import command, Response
 from ....core.context import pass_cli_context
 from ..interfaces import UserInterface
 
@@ -284,10 +284,10 @@ context so every command can access it via `ctx`.
 
 ```bash
 # Single-file integration
-pyclif project add integration github
+pyclifer project add integration github
 
 # Package integration (client + helpers + models)
-pyclif project add integration github --package
+pyclifer project add integration github --package
 ```
 
 **Options**
@@ -338,7 +338,7 @@ Every command with a typed context can then reach the integration via `ctx.githu
 
 ## Name conventions
 
-All scaffolding commands accept names in either `kebab-case` or `snake_case`. pyclif derives
+All scaffolding commands accept names in either `kebab-case` or `snake_case`. pyclifer derives
 the other variants automatically:
 
 | Input | `name_snake` | `name_pascal` |
@@ -353,7 +353,7 @@ the other variants automatically:
 - **App not found** (`add command`): suggests running `add app` first.
 - **File already exists** (any command): exits with code 2; no file is touched.
 - **`src/` not found** (`add app`, `add command`, `add integration`): reports that the
-  current directory is not a pyclif project root.
+  current directory is not a pyclifer project root.
 
 ## Typical workflow
 
@@ -361,18 +361,18 @@ the other variants automatically:
 
 ```bash
 # 1. Bootstrap
-pyclif project init my-project
+pyclifer project init my-project
 cd my-project
 uv sync --extra dev
 
 # 2. Add a feature area
-pyclif project add app users
+pyclifer project add app users
 
 # 3. Add commands to it
-pyclif project add command list get create --app users
+pyclifer project add command list get create --app users
 
 # 4. Wrap an external service
-pyclif project add integration github --package
+pyclifer project add integration github --package
 
 # 5. Run the CLI
 uv run my-project --help
@@ -383,15 +383,15 @@ uv run my-project users list
 
 ```bash
 # 1. Bootstrap
-pyclif project init my-project
+pyclifer project init my-project
 cd my-project
 uv sync --extra dev
 
 # 2. Add an app that carries its own state (repos client, config, …)
-pyclif project add app repos --with-core
+pyclifer project add app repos --with-core
 
 # 3. Add commands — they automatically receive ReposContext
-pyclif project add command list show create --app repos
+pyclifer project add command list show create --app repos
 
 # 4. Wire your state into ReposContext (edit core/context.py)
 #    then access it from any command via ctx.<your_attr>
@@ -404,15 +404,15 @@ uv run my-project repos list
 
 ```bash
 # 1. Bootstrap
-pyclif project init deploy-tool
+pyclifer project init deploy-tool
 cd deploy-tool
 uv sync --extra dev
 
 # 2. Add a flat app — commands appear directly on the root
-pyclif project add app deploy --no-group
+pyclifer project add app deploy --no-group
 
 # 3. Add commands
-pyclif project add command up down status --app deploy
+pyclifer project add command up down status --app deploy
 
 # 4. Run the CLI — no group level
 uv run deploy-tool up

@@ -10,17 +10,17 @@ Live hooks.
 ## Try it first
 
 ```bash
-pyclif demo tasks sync
-pyclif demo tasks sync -o json
-pyclif demo tasks sync -o table
+pyclifer demo tasks sync
+pyclifer demo tasks sync -o json
+pyclifer demo tasks sync -o table
 ```
 
 The `rich` format (default) shows a live progress bar. The `json` and `table` formats buffer
 all results and render once the stream is complete.
 
-Source: [`tasks/interfaces.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/tasks/interfaces.py),
-[`tasks/renderers.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/tasks/renderers.py),
-[`tasks/commands/sync.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/tasks/commands/sync.py)
+Source: [`tasks/interfaces.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/interfaces.py),
+[`tasks/renderers.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/renderers.py),
+[`tasks/commands/sync.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/commands/sync.py)
 
 ## How it works
 
@@ -44,7 +44,7 @@ becomes `yield`:
 # tasks/interfaces.py
 import time
 from collections.abc import Iterator
-from pyclif import BaseInterface, OperationResult
+from pyclifer import BaseInterface, OperationResult
 
 
 class TaskInterface(BaseInterface):
@@ -69,7 +69,7 @@ Implement three hooks on `BaseRenderer`:
 ```python
 # tasks/renderers.py
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn
-from pyclif import BaseRenderer
+from pyclifer import BaseRenderer
 
 
 class TaskSyncRenderer(BaseRenderer):
@@ -123,7 +123,7 @@ Identical to a non-streaming command:
 
 ```python
 # tasks/commands/sync.py
-from pyclif import Response, command, option
+from pyclifer import Response, command, option
 from ..context import pass_my_context
 from ..interfaces import TaskInterface
 
@@ -145,9 +145,9 @@ Streaming is only visual — the `json`, `yaml`, `table`, and `raw` formats buff
 and render once the stream is exhausted. The same command works correctly with every format:
 
 ```bash
-pyclif demo tasks sync -o json    # waits for all results, then prints JSON
-pyclif demo tasks sync -o table   # waits for all results, then prints table
-pyclif demo tasks sync -o rich    # live progress bar while streaming
+pyclifer demo tasks sync -o json    # waits for all results, then prints JSON
+pyclifer demo tasks sync -o table   # waits for all results, then prints table
+pyclifer demo tasks sync -o rich    # live progress bar while streaming
 ```
 
 ## Spinner variant
@@ -157,7 +157,7 @@ bar. The scaffolding renderer uses this pattern:
 
 ```python
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from pyclif import BaseRenderer
+from pyclifer import BaseRenderer
 
 
 class SpinnerRenderer(BaseRenderer):
@@ -172,8 +172,8 @@ class SpinnerRenderer(BaseRenderer):
         self._progress.update(self._task, description=f"{icon}  {result.item}")
 ```
 
-Real example: [`project/renderers.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/project/renderers.py)
-(`ScaffoldingRenderer` — used by `pyclif project init` and `pyclif project add`).
+Real example: [`project/renderers.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/project/renderers.py)
+(`ScaffoldingRenderer` — used by `pyclifer project init` and `pyclifer project add`).
 
 ## Using `Response.from_stream()` directly
 
@@ -194,7 +194,7 @@ def init(ctx, name: str) -> Response:
     return Response.from_stream(_stream(), renderer=ScaffoldingRenderer(name=name))
 ```
 
-Real example: [`project/commands/init.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/project/commands/init.py)
+Real example: [`project/commands/init.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/project/commands/init.py)
 
 ## See also
 

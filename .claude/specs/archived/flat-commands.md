@@ -106,14 +106,14 @@ Un seul `add_command()` quelle que soit la forme — pas de branchement dans `cl
 
 ## Scaffolding — changements
 
-### `pyclif project add app` — nouveau flag `--no-group`
+### `pyclifer project add app` — nouveau flag `--no-group`
 
 ```bash
 # Comportement actuel (inchangé)
-pyclif project add app articles
+pyclifer project add app articles
 
 # Nouveau : app plat, commandes sur le root
-pyclif project add app status --no-group
+pyclifer project add app status --no-group
 ```
 
 Avec `--no-group`, le scaffolding génère :
@@ -129,7 +129,7 @@ Avec `--no-group`, le scaffolding génère :
 
 Le template `app_init.py.jinja2` (avec @group) reste inchangé.
 
-### `pyclif project add command` — inchangé
+### `pyclifer project add command` — inchangé
 
 `add command --app <name>` fonctionne pareil, que l'app soit groupée ou plate. Le
 `commands/__init__.py` de l'app est toujours mis à jour de la même façon.
@@ -149,6 +149,6 @@ changement de nommage simple, pas de logique à modifier.
 - Les quatre décorateurs — zéro modification
 - La propagation des options globales — fonctionne déjà à tout niveau
 - La gestion des réponses — fonctionne déjà à tout niveau
-- `pyclif project add command --app <name>` — comportement inchangé
-- `pyclif project add app` sans `--no-group` — comportement inchangé
+- `pyclifer project add command --app <name>` — comportement inchangé
+- `pyclifer project add app` sans `--no-group` — comportement inchangé
 - La structure interne d'un app (`commands/`, `interfaces.py`, `renderers.py`) — inchangée

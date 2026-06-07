@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 from click.testing import CliRunner
 
-_demo_context_mod = importlib.import_module("pyclif.apps.demo.core.context")
+_demo_context_mod = importlib.import_module("pyclifer.apps.demo.core.context")
 
 
 @pytest.fixture

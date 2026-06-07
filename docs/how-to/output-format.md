@@ -23,8 +23,8 @@ For the full API reference (renderers, dispatch mechanics, `--output-filter`), s
 Best for humans scanning results interactively. Columns are defined by the renderer.
 
 ```bash
-pyclif demo tasks list
-pyclif demo tasks list -o table   # explicit, same result
+pyclifer demo tasks list
+pyclifer demo tasks list -o table   # explicit, same result
 ```
 
 ```
@@ -42,8 +42,8 @@ Use for detail views, streaming operations, or when the renderer overrides `rich
 panels, grids, or progress bars.
 
 ```bash
-pyclif demo tasks show <task-id> -o rich
-pyclif demo tasks sync -o rich        # live progress bar while streaming
+pyclifer demo tasks show <task-id> -o rich
+pyclifer demo tasks sync -o rich        # live progress bar while streaming
 ```
 
 `rich` is the only format that displays live output during streaming. Every other format
@@ -55,7 +55,7 @@ Single-line compact JSON — no indentation, no syntax highlighting. Use when th
 another command.
 
 ```bash
-pyclif demo tasks list -o raw
+pyclifer demo tasks list -o raw
 ```
 
 ```
@@ -66,11 +66,11 @@ Pipe to `jq` to extract values:
 
 ```bash
 # without -o raw (table output) — jq sees nothing useful
-$ pyclif demo tasks list | jq '.data.results[].title'
+$ pyclifer demo tasks list | jq '.data.results[].title'
 parse error (Invalid numeric literal at EOF on line 1)
 
 # with -o raw — jq gets valid JSON
-$ pyclif demo tasks list -o raw | jq -r '.data.results[].title'
+$ pyclifer demo tasks list -o raw | jq -r '.data.results[].title'
 Test task
 Fix login bug
 E2E test
@@ -81,7 +81,7 @@ Rich test
 Check command success in a script:
 
 ```bash
-output=$(pyclif demo tasks show "$id" -o raw)
+output=$(pyclifer demo tasks show "$id" -o raw)
 if [ "$(echo "$output" | jq -r .success)" = "false" ]; then
     echo "Error: $(echo "$output" | jq -r .message)" >&2
     exit 1
@@ -96,18 +96,18 @@ quotes. Useful when the value feeds directly into a shell variable or another co
 
 ```bash
 # without -f — you get the full JSON and must parse it
-$ pyclif demo tasks list -o raw | jq -r '.data.results[0].title'
+$ pyclifer demo tasks list -o raw | jq -r '.data.results[0].title'
 Test task
 
 # with -f — plain value, no parsing needed
-$ pyclif demo tasks list -o raw -f results.0.title
+$ pyclifer demo tasks list -o raw -f results.0.title
 Test task
 
 # capture into a variable in one step
-title=$(pyclif demo tasks list -o raw -f results.0.title)
+title=$(pyclifer demo tasks list -o raw -f results.0.title)
 
 # pipe the id directly to another command
-pyclif demo tasks list -o raw -f results.0.id | xargs pyclif demo tasks show
+pyclifer demo tasks list -o raw -f results.0.id | xargs pyclifer demo tasks show
 ```
 
 Nested paths use dot notation. Numeric segments are list indices; negative indices count from
@@ -119,7 +119,7 @@ Indented and syntax-highlighted. Same data as `raw` but formatted for human insp
 Still valid JSON — tools like `jq` parse it correctly.
 
 ```bash
-pyclif demo tasks list -o json
+pyclifer demo tasks list -o json
 ```
 
 ```json
@@ -144,7 +144,7 @@ pyclif demo tasks list -o json
 
 ```bash
 # jq works on json too, but raw is faster in scripts (no indentation overhead)
-pyclif demo tasks list -o json | jq -r '.data.results[].title'
+pyclifer demo tasks list -o json | jq -r '.data.results[].title'
 ```
 
 ## yaml — YAML consumers and config generation
@@ -153,8 +153,8 @@ Use when the output feeds a YAML-aware tool or when you want a structured human-
 format without JSON punctuation.
 
 ```bash
-pyclif demo tasks list -o yaml
-pyclif demo tasks list -o yaml > tasks-snapshot.yml
+pyclifer demo tasks list -o yaml
+pyclifer demo tasks list -o yaml > tasks-snapshot.yml
 ```
 
 ```yaml
@@ -175,10 +175,10 @@ Prints `response.message` only. Use for simple status lines in logs or wrapper s
 structured data is not needed.
 
 ```bash
-pyclif demo tasks add --title "Fix bug" -o text
+pyclifer demo tasks add --title "Fix bug" -o text
 # Task 'Fix bug' created.
 
-pyclif demo tasks list -o text
+pyclifer demo tasks list -o text
 # Tasks retrieved successfully.
 ```
 
@@ -189,9 +189,9 @@ variable name follows the pattern `<APP_PREFIX>_OUTPUT_FORMAT`:
 
 ```bash
 # all commands use JSON in this shell session
-export PYCLIF_DEMO_OUTPUT_FORMAT=json
-pyclif demo tasks list          # outputs JSON without -o json
-pyclif demo tasks add --title …  # also outputs JSON
+export PYCLIFER_DEMO_OUTPUT_FORMAT=json
+pyclifer demo tasks list          # outputs JSON without -o json
+pyclifer demo tasks add --title …  # also outputs JSON
 ```
 
 Or set a permanent default in a config file:

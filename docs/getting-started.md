@@ -1,11 +1,11 @@
-# Getting Started with pyclif
+# Getting Started with pyclifer
 
 ## Installation
 
-Install pyclif using pip:
+Install pyclifer using pip:
 
 ```bash
-pip install pyclif
+pip install pyclifer
 ```
 
 ## Requirements
@@ -15,11 +15,11 @@ pip install pyclif
 
 ## Quickstart with scaffolding
 
-The fastest way to get a production-ready project is to let pyclif generate it for you:
+The fastest way to get a production-ready project is to let pyclifer generate it for you:
 
 ```bash
 # Create a new project
-pyclif project init my-project
+pyclifer project init my-project
 cd my-project
 
 # Install dependencies
@@ -33,14 +33,14 @@ From there, add feature areas and commands incrementally:
 
 ```bash
 # Add a feature area (app)
-pyclif project add app users
+pyclifer project add app users
 
 # Add commands to it
-pyclif project add command list   --app users
-pyclif project add command create --app users
+pyclifer project add command list   --app users
+pyclifer project add command create --app users
 
 # Wrap an external service
-pyclif project add integration github --package
+pyclifer project add integration github --package
 ```
 
 Everything gets wired automatically — no manual imports to update. See the
@@ -48,11 +48,11 @@ Everything gets wired automatically — no manual imports to update. See the
 
 ## Manual setup
 
-If you prefer to understand each piece or are adding pyclif to an existing project,
+If you prefer to understand each piece or are adding pyclifer to an existing project,
 here's a minimal example to get you started:
 
 ```python
-from pyclif import app_group, command, option
+from pyclifer import app_group, command, option
 
 
 @app_group()
@@ -85,7 +85,7 @@ python my_cli.py hello -n "Alice"
 ### Step 1: Create the main group
 
 ```python
-from pyclif import app_group
+from pyclifer import app_group
 
 
 @app_group(
@@ -93,14 +93,14 @@ from pyclif import app_group
     auto_envvar_prefix="MYAPP"
 )
 def cli():
-    """My Application — a sample CLI built with pyclif."""
+    """My Application — a sample CLI built with pyclifer."""
     pass
 ```
 
 ### Step 2: Add a simple command
 
 ```python
-from pyclif import app_group, option
+from pyclifer import app_group, option
 
 
 @app_group(name="myapp", auto_envvar_prefix="MYAPP")
@@ -119,7 +119,7 @@ def hello(message):
 ### Step 3: Add a command group
 
 ```python
-from pyclif import group, option
+from pyclifer import group, option
 
 
 @group(name="database")

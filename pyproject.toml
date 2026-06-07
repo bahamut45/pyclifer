@@ -1,5 +1,5 @@
 [project]
-name = "pyclif"
+name = "pyclifer"
 version = "0.3.1"
 description = "PYthon Command Line Interface Framework — decorator-driven CLI framework built on click-extra and rich-click"
 readme = "README.md"
@@ -33,13 +33,13 @@ classifiers = [
 ]
 
 [project.scripts]
-pyclif = "pyclif.cli:app"
+pyclifer = "pyclifer.cli:app"
 
 [project.urls]
-Homepage = "https://bahamut45.github.io/pyclif"
-Repository = "https://github.com/bahamut45/pyclif"
-Issues = "https://github.com/bahamut45/pyclif/issues"
-Documentation = "https://bahamut45.github.io/pyclif"
+Homepage = "https://bahamut45.github.io/pyclifer"
+Repository = "https://github.com/bahamut45/pyclifer"
+Issues = "https://github.com/bahamut45/pyclifer/issues"
+Documentation = "https://bahamut45.github.io/pyclifer"
 
 [project.optional-dependencies]
 dev = [
@@ -67,7 +67,7 @@ build-backend = "hatchling.build"
 package = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pyclif"]
+packages = ["src/pyclifer"]
 
 [tool.tox]
 env_list = ["py310", "py311", "py312", "py313"]
@@ -90,8 +90,8 @@ commands_pre = [
     ["python", "--version"],
 ]
 commands = [
-    ["python", "-m", "pytest", "tests/", "-v", "--cov=pyclif", "--cov-report=term-missing", "--cov-report=xml:coverage.xml", "--no-cov-on-fail", "--override-ini=addopts="],
-    ["pyclif", "--help"],
+    ["python", "-m", "pytest", "tests/", "-v", "--cov=pyclifer", "--cov-report=term-missing", "--cov-report=xml:coverage.xml", "--no-cov-on-fail", "--override-ini=addopts="],
+    ["pyclifer", "--help"],
 ]
 
 [tool.tox.env.py310]
@@ -109,17 +109,17 @@ base_python = ["python3.13"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "--cov=pyclif --cov-report=term-missing --cov-fail-under=80"
+addopts = "--cov=pyclifer --cov-report=term-missing --cov-fail-under=80"
 markers = [
     "tox: marks tests as tox compatibility tests (deselect with '-m \"not tox\"')",
 ]
 
 [tool.coverage.run]
-source = ["pyclif"]
+source = ["pyclifer"]
 branch = true
 omit = [
-    "*/pyclif/apps/*",
-    "*/pyclif/cli.py",
+    "*/pyclifer/apps/*",
+    "*/pyclifer/cli.py",
 ]
 
 [tool.coverage.report]
@@ -141,7 +141,7 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 ignore = []
 
 [tool.ruff.lint.isort]
-known-first-party = ["pyclif"]
+known-first-party = ["pyclifer"]
 
 [tool.bumpversion]
 current_version = "0.3.1"
@@ -172,6 +172,6 @@ search = 'version-{current_version}-green'
 replace = 'version-{new_version}-green'
 
 [[tool.bumpversion.files]]
-filename = "src/pyclif/__init__.py"
+filename = "src/pyclifer/__init__.py"
 search = '__version__ = "{current_version}"'
 replace = '__version__ = "{new_version}"'

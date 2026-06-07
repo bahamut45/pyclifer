@@ -1,6 +1,6 @@
 # Output Formatting and Responses
 
-pyclif provides a built-in system to standardize and format CLI output. It supports JSON, YAML,
+pyclifer provides a built-in system to standardize and format CLI output. It supports JSON, YAML,
 interactive tables, Rich text, plain text, and raw values — all driven by `BaseContext`, the
 `Response` dataclass, and `BaseRenderer`.
 
@@ -20,13 +20,13 @@ The output system is built around four parts:
 ## Automatic Output Format Option
 
 `@app_group` and `@group` automatically add `--output-format` / `-o` to the CLI. It is propagated
-globally to all subcommands. The selected format is stored in `ctx.meta['pyclif.output_format']`
+globally to all subcommands. The selected format is stored in `ctx.meta['pyclifer.output_format']`
 and read automatically by `BaseContext` — you do not need to declare an `output_format` parameter
 in your functions.
 
 ## Automatic Response Dispatch
 
-pyclif provides three complementary mechanisms to print a `Response` automatically when a command
+pyclifer provides three complementary mechanisms to print a `Response` automatically when a command
 returns one, without manually calling `ctx.print_result_based_on_format(response)`.
 
 ### Level 1 — App-wide (default)
@@ -36,7 +36,7 @@ Response handling is **on by default** for `@app_group`. Every command that retu
 `handle_response=False`, or app-wide with `@app_group(handle_response=False)`.
 
 ```python
-from pyclif import app_group, option, Response
+from pyclifer import app_group, option, Response
 import click
 
 
@@ -68,7 +68,7 @@ def raw_cmd(ctx):
 ### Level 2 — Standalone command: `@command(handle_response=True)`
 
 ```python
-from pyclif import command, option, Response
+from pyclifer import command, option, Response
 import click
 
 
@@ -86,7 +86,7 @@ app.add_command(hello)
 ### Level 3 — Explicit decorator: `@returns_response`
 
 ```python
-from pyclif import returns_response, Response
+from pyclifer import returns_response, Response
 import click
 
 
@@ -100,7 +100,7 @@ def hello(ctx):
 
 ### Output Format Resolution
 
-All three mechanisms read the format from `ctx.meta['pyclif.output_format']`, set by
+All three mechanisms read the format from `ctx.meta['pyclifer.output_format']`, set by
 `--output-format`. Explicit values (command-line or environment variable) always take precedence.
 
 ```bash
@@ -114,7 +114,7 @@ Add `@output_filter_option()` to expose `--output-filter` / `-f`. Works with `ra
 and `yaml`. Accepts a **dotted key path** — single keys and nested traversal both work.
 
 ```python
-from pyclif import app_group, output_filter_option, Response
+from pyclifer import app_group, output_filter_option, Response
 import click
 
 
@@ -135,7 +135,7 @@ def list_articles(ctx):
         message="2 articles retrieved",
         data={
             "results": [
-                {"id": 1, "title": "Hello pyclif", "author": "Alice"},
+                {"id": 1, "title": "Hello pyclifer", "author": "Alice"},
                 {"id": 2, "title": "Advanced usage", "author": "Bob"},
             ]
         },
@@ -151,21 +151,21 @@ The output format determines how the extracted value is printed:
 ```bash
 # raw: value as-is — best for shell scripting and piping
 myapp -o raw list-articles -f results           # [{"id": 1, ...}, {"id": 2, ...}]
-myapp -o raw list-articles -f results.0.title   # Hello pyclif
+myapp -o raw list-articles -f results.0.title   # Hello pyclifer
 myapp -o raw list-articles -f results.-1.title  # Advanced usage  (last element)
 myapp -o raw list-articles -f message           # 2 articles retrieved
 
 # json: value re-serialized as valid JSON
-myapp -o json list-articles -f results.0        # {"id": 1, "title": "Hello pyclif", ...}
+myapp -o json list-articles -f results.0        # {"id": 1, "title": "Hello pyclifer", ...}
 myapp -o json list-articles -f results.0.id     # 1
 
 # yaml: value re-serialized as valid YAML
-myapp -o yaml list-articles -f results.0.title  # 'Hello pyclif'\n
+myapp -o yaml list-articles -f results.0.title  # 'Hello pyclifer'\n
 ```
 
 ### Invalid filter paths
 
-When the path cannot be resolved, pyclif prints an error in the **active output format**
+When the path cannot be resolved, pyclifer prints an error in the **active output format**
 with the available keys at the last valid node, then exits with code 2.
 
 With `-o json`:
@@ -195,7 +195,7 @@ Exit code is always `2` regardless of format.
 and a renderer that controls the output for every format.
 
 ```python
-from pyclif import Response
+from pyclifer import Response
 
 # Minimal response — uses BaseRenderer defaults for all formats
 response = Response(
@@ -208,7 +208,7 @@ response = Response(
 Attach a `BaseRenderer` subclass to control table columns, JSON fields, and Rich display:
 
 ```python
-from pyclif import Response, BaseRenderer
+from pyclifer import Response, BaseRenderer
 
 
 class ArticleRenderer(BaseRenderer):
@@ -267,7 +267,7 @@ class attributes — the framework calls the right method automatically based on
 ### Declarative renderer
 
 ```python
-from pyclif import BaseRenderer
+from pyclifer import BaseRenderer
 
 
 class ArticleRenderer(BaseRenderer):
@@ -296,7 +296,7 @@ Override only what the declarative attributes cannot express:
 ```python
 from rich.console import Console
 from rich.table import Table as RichTable
-from pyclif import BaseRenderer, Response
+from pyclifer import BaseRenderer, Response
 
 
 class UserRenderer(BaseRenderer):
@@ -328,7 +328,7 @@ each `OperationResult` arrives, and `rich_summary()` is called once the generato
 
 ```python
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from pyclif import BaseRenderer, Response, OperationResult
+from pyclifer import BaseRenderer, Response, OperationResult
 
 
 class DeployRenderer(BaseRenderer):
@@ -357,7 +357,7 @@ class DeployRenderer(BaseRenderer):
 Use `Response.from_stream()` in the command to wire a generator to this renderer:
 
 ```python
-from pyclif import Response, command, pass_context
+from pyclifer import Response, command, pass_context
 
 
 @command()
@@ -407,7 +407,7 @@ Commands can print a `Response` manually by calling `ctx.print_result_based_on_f
 
 ```python
 import click
-from pyclif import app_group, BaseContext, Response
+from pyclifer import app_group, BaseContext, Response
 
 
 @app_group()
@@ -452,7 +452,7 @@ def interactive_command(ctx):
 
 ## Table Utilities
 
-pyclif provides built-in table components used internally by `BaseRenderer.table()`. You can
+pyclifer provides built-in table components used internally by `BaseRenderer.table()`. You can
 also construct them directly for custom renderers:
 
 - **`CliTable`**: Pre-styled Rich table for structured data.
@@ -460,7 +460,7 @@ also construct them directly for custom renderers:
 - **`ExceptionTable`**: Specialized table for displaying formatted exception details.
 
 ```python
-from pyclif import CliTable, CliTableColumn
+from pyclifer import CliTable, CliTableColumn
 
 fields = {
     "id": CliTableColumn(header="ID", justify="right"),
@@ -481,7 +481,7 @@ For commands that list resources, `pagination_options()` injects `--page` / `-p`
 command without being passed as function arguments.
 
 ```python
-from pyclif import app_group, command, pagination_options, PaginatedResponse, pass_context
+from pyclifer import app_group, command, pagination_options, PaginatedResponse, pass_context
 
 
 @app_group()
@@ -495,8 +495,8 @@ def app(ctx):
 @pass_context
 def list_articles(ctx):
     """List articles."""
-    page = ctx.meta["pyclif.page"]
-    limit = ctx.meta["pyclif.limit"]
+    page = ctx.meta["pyclifer.page"]
+    limit = ctx.meta["pyclifer.limit"]
     results, total = ArticleService.list(page=page, limit=limit)
     return PaginatedResponse(
         success=True,

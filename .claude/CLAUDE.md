@@ -64,7 +64,7 @@ Docstrings must use **plain prose** — no reStructuredText or Sphinx markup.
 """
 
 # Wrong — double-backtick / cross-reference markup
-"""Store value in ``ctx.meta``. See :class:`~pyclif.Response`."""
+"""Store value in ``ctx.meta``. See :class:`~pyclifer.Response`."""
 
 # Wrong — directive blocks
 """Example:
@@ -98,7 +98,7 @@ from rich.console import Console
 
 # 3. Local (relative preferred inside the package)
 from .mixins import OutputFormatMixin
-from pyclif.core.output import Response
+from pyclifer.core.output import Response
 ```
 
 - Prefer `from x import y` over `import x.y`.
@@ -116,7 +116,7 @@ from pyclif.core.output import Response
 | Class                 | `PascalCase`         | `HandleResponseMixin`      |
 | Function / method     | `snake_case`         | `configure_rich_logging()` |
 | Private method / attr | `_single_underscore` | `_apply_click_group()`     |
-| Constant              | `UPPER_SNAKE`        | `PYCLIF_LOG_LEVELS`        |
+| Constant              | `UPPER_SNAKE`        | `PYCLIFER_LOG_LEVELS`        |
 
 Never use double-underscore (`__dunder`) for private names — reserve those for Python protocol
 methods.
@@ -126,7 +126,7 @@ methods.
 - **Mixin inheritance order**: mixins first, concrete base class last.
 
 ```python
-class PyclifRichGroup(HandleResponseMixin, GlobalOptionsMixin, RichGroup):
+class PycliferRichGroup(HandleResponseMixin, GlobalOptionsMixin, RichGroup):
 ```
 
 - Use `@dataclass` for configuration / data-holding objects (`GroupConfig`, `Response`).
@@ -139,7 +139,7 @@ or `@click.pass_context` → function.
 
 ```python
 @app.command()  # registers with group
-@output_filter_option()  # custom pyclif decorators
+@output_filter_option()  # custom pyclifer decorators
 @returns_response  # closest to function
 @option("--name", default="world")  # click options
 @pass_cli_context  # always last before def (or @click.pass_context in cli.py)
@@ -206,7 +206,7 @@ The API docs in `docs/api/` mirror this structure — a symbol documented in the
 | Doc page            | What belongs there                                                                                  |
 |---------------------|-----------------------------------------------------------------------------------------------------|
 | `api/decorators.md` | The four decorators + `returns_response` + `output_filter_option`                                   |
-| `api/classes.md`    | `PyclifOption`, `PyclifGroup`, `CustomConfigOption`, `PyclifTimerOption` and any new Click subclass |
+| `api/classes.md`    | `PycliferOption`, `PycliferGroup`, `CustomConfigOption`, `PycliferTimerOption` and any new Click subclass |
 | `api/mixins.md`     | All mixin classes from `core/mixins/`                                                               |
 | `api/context.md`    | `BaseContext` and context helpers                                                                   |
 | `api/output.md`     | `Response`, `OperationResult`, tables, `BaseRenderer`, `ResponseRenderer`                           |

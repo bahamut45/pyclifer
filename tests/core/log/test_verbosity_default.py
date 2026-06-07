@@ -4,8 +4,8 @@ import logging
 
 from click.testing import CliRunner
 
-from pyclif.core.decorators import app_group
-from pyclif.core.log.config import configure_rich_logging
+from pyclifer.core.decorators import app_group
+from pyclifer.core.log.config import configure_rich_logging
 
 # Store original logging state to restore after tests
 original_level = logging.getLogger().level

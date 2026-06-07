@@ -5,8 +5,8 @@ from unittest.mock import patch
 import click
 from click.testing import CliRunner
 
-from pyclif.core.classes import GroupConfig
-from pyclif.core.decorators import (
+from pyclifer.core.classes import GroupConfig
+from pyclifer.core.decorators import (
     GroupDecorator,
     app_group,
     config_option,
@@ -29,7 +29,7 @@ class TestGroupDecoratorSetupLogging:
 
     def test_use_rich_logging_false_skips_configure(self):
         """use_rich_logging=False must not call configure_rich_logging."""
-        with patch("pyclif.core.log.config.configure_rich_logging") as mock_cfg:
+        with patch("pyclifer.core.log.config.configure_rich_logging") as mock_cfg:
 
             @app_group(use_rich_logging=False)
             @click.pass_context
@@ -50,7 +50,7 @@ class TestGroupDecoratorApplyRichHelp:
 
     def test_rich_help_skipped_when_get_rich_config_returns_none(self):
         """When get_rich_config returns None, the rich_config decorator is not applied."""
-        with patch("pyclif.core.rich_help_config.get_rich_config", return_value=None):
+        with patch("pyclifer.core.rich_help_config.get_rich_config", return_value=None):
 
             @app_group(use_rich_help=True)
             @click.pass_context
@@ -160,7 +160,7 @@ class TestGroupDecoratorInjectEarlyVerbosity:
         assert "root" in result.output
 
     def test_invalid_verbosity_level_extracted_is_silently_ignored(self):
-        """Extracted level not in PYCLIF_LOG_LEVELS is silently ignored."""
+        """Extracted level not in PYCLIFER_LOG_LEVELS is silently ignored."""
 
         @app_group(add_verbosity_option=True)
         @click.pass_context
@@ -250,7 +250,7 @@ class TestOptionStoreInMetaFallback:
 
         runner = CliRunner()
         runner.invoke(app, ["--tag", "hello"])
-        assert captured["meta"].get("pyclif.tag") == "hello"
+        assert captured["meta"].get("pyclifer.tag") == "hello"
 
 
 # ---------------------------------------------------------------------------
@@ -432,8 +432,8 @@ class TestPaginationOptions:
         @click.pass_context
         def cmd(ctx):
             """Cmd"""
-            captured["page"] = ctx.meta.get("pyclif.page")
-            captured["limit"] = ctx.meta.get("pyclif.limit")
+            captured["page"] = ctx.meta.get("pyclifer.page")
+            captured["limit"] = ctx.meta.get("pyclifer.limit")
 
         runner.invoke(app, ["cmd", "--page", "3", "--limit", "5"])
         assert captured["page"] == 3

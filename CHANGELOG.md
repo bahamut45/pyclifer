@@ -83,7 +83,7 @@ All notable changes to this project will be documented in this file.
 ### Documentation
 
 - **README**: Update installation instructions with GitHub link
-- **how-to**: Add comprehensive guides for pyclif patterns
+- **how-to**: Add comprehensive guides for pyclifer patterns
 
 ### Miscellaneous
 
@@ -265,7 +265,7 @@ All notable changes to this project will be documented in this file.
 
 - Add repository guidelines for contribution and code style
 - Refine `CLAUDE.md` formatting and update `.gitignore`
-- Add comprehensive documentation for `pyclif` features and usage
+- Add comprehensive documentation for `pyclifer` features and usage
 - Streamline imports across documentation examples
 - Add API documentation and deployment workflow
 - Add comprehensive `README.md` for project overview and usage
@@ -274,11 +274,11 @@ All notable changes to this project will be documented in this file.
 ### Features
 
 - **project**: Add `pyproject.toml` for project configuration
-- **core**: Introduce foundational modules for `pyclif` framework
-- **cli**: Add initial CLI entry point and scaffolding for `pyclif`
+- **core**: Introduce foundational modules for `pyclifer` framework
+- **cli**: Add initial CLI entry point and scaffolding for `pyclifer`
 - **core**: Expand imports and `__all__` for extended functionality
 - **core**: Expand `__all__` and imports for enhanced CLI capabilities
-- **project**: Add scaffolding for `pyclif project` commands
+- **project**: Add scaffolding for `pyclifer project` commands
 - **tables**: Add `ScaffoldingTable` for enriched CLI output
 - **project**: Integrate `git-cliff` for auto-generated changelogs
 - **dev**: Integrate pre-commit hooks with Ruff for code linting and formatting
@@ -293,7 +293,7 @@ All notable changes to this project will be documented in this file.
 
 ### Tests
 
-- **core**: Add comprehensive unit tests for `pyclif` core modules
+- **core**: Add comprehensive unit tests for `pyclifer` core modules
 - **project**: Add unit tests for `ScaffoldingInterface` and `ScaffoldingTable`
 
 ### Style

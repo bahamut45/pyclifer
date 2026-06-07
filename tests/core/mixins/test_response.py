@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 import click
 
 # noinspection PyProtectedMember
-from pyclif.core.mixins.response import (
-    _PYCLIF_RESPONSE_DECIDED,
+from pyclifer.core.mixins.response import (
+    _PYCLIFER_RESPONSE_DECIDED,
     HandleResponseMixin,
     _apply_handle_response_to_group,
 )
@@ -50,7 +50,8 @@ class TestApplyHandleResponseToGroup:
         outer = _PlainGroup()
         outer.commands = {"sub": inner_group}
 
-        with patch("pyclif.core.decorators.returns_response", side_effect=lambda f: f) as mock_wrap:
+        patch_target = "pyclifer.core.decorators.returns_response"
+        with patch(patch_target, side_effect=lambda f: f) as mock_wrap:
             _apply_handle_response_to_group(outer)
 
         mock_wrap.assert_called_once_with(leaf_callback)
@@ -69,13 +70,13 @@ class TestApplyHandleResponseToGroup:
         assert cmd.callback is None
 
     def test_already_decided_callback_is_not_rewrapped(self):
-        """Commands marked _PYCLIF_RESPONSE_DECIDED are skipped (lines 44-48)."""
+        """Commands marked _PYCLIFER_RESPONSE_DECIDED are skipped (lines 44-48)."""
 
         # noinspection PyMissingOrEmptyDocstring
         def my_callback():
             pass
 
-        setattr(my_callback, _PYCLIF_RESPONSE_DECIDED, True)
+        setattr(my_callback, _PYCLIFER_RESPONSE_DECIDED, True)
 
         cmd = MagicMock()
         cmd.commands = None

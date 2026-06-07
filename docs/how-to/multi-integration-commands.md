@@ -28,7 +28,7 @@ not exist.
 
 ```python
 # tasks/commands/add_assigned.py
-from pyclif import Response, command, option
+from pyclifer import Response, command, option
 from ..context import pass_my_context
 from ..interfaces import TaskInterface
 from ...users.interfaces import UserInterface
@@ -68,7 +68,7 @@ welcome task assigned to them. Both operations appear in the final output.
 
 ```python
 # users/commands/provision.py
-from pyclif import Response, command, option
+from pyclifer import Response, command, option
 from ..context import pass_my_context
 from ..interfaces import UserInterface
 from ...tasks.interfaces import TaskInterface
@@ -134,7 +134,7 @@ displayed. Define one renderer per command rather than reusing a domain renderer
 
 ```python
 # users/renderers.py
-from pyclif import BaseRenderer
+from pyclifer import BaseRenderer
 
 
 class ProvisionRenderer(BaseRenderer):
@@ -152,8 +152,8 @@ summary across heterogeneous results from different interfaces.
 
 The demo app ships `TaskInterface` and `UserInterface` as independent building blocks:
 
-- [`tasks/interfaces.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/tasks/interfaces.py)
-- [`users/interfaces.py`](https://github.com/bahamut45/pyclif/blob/main/src/pyclif/apps/demo/apps/users/interfaces.py)
+- [`tasks/interfaces.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/interfaces.py)
+- [`users/interfaces.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/users/interfaces.py)
 
 ## See also
 

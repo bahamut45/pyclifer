@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from pyclif.core.classes import CustomConfigOption
+from pyclifer.core.classes import CustomConfigOption
 
 
 def patch_option_formats(option, formats_dict=None):
@@ -44,7 +44,7 @@ class TestCustomConfigOption:
         pattern = option._get_extension_pattern()
         assert pattern == "*"
 
-    @patch("pyclif.core.classes.get_current_context")
+    @patch("pyclifer.core.classes.get_current_context")
     def test_get_all_config_patterns_no_context(self, mock_get_context):
         """Test _get_all_config_patterns when no click context is available."""
         mock_get_context.side_effect = RuntimeError("No context available")
@@ -55,7 +55,7 @@ class TestCustomConfigOption:
         patterns = option._get_all_config_patterns()
         assert patterns == []
 
-    @patch("pyclif.core.classes.get_current_context")
+    @patch("pyclifer.core.classes.get_current_context")
     def test_get_all_config_patterns_no_cli_name(self, mock_get_context):
         """Test _get_all_config_patterns when the CLI name is None."""
         mock_context = Mock()
@@ -68,9 +68,9 @@ class TestCustomConfigOption:
         patterns = option._get_all_config_patterns()
         assert patterns == []
 
-    @patch("pyclif.core.classes.is_linux")
-    @patch("pyclif.core.classes.get_app_dir")
-    @patch("pyclif.core.classes.get_current_context")
+    @patch("pyclifer.core.classes.is_linux")
+    @patch("pyclifer.core.classes.get_app_dir")
+    @patch("pyclifer.core.classes.get_current_context")
     def test_get_all_config_patterns_linux(self, mock_get_context, mock_get_app_dir, mock_is_linux):
         """Test _get_all_config_patterns on a Linux platform."""
         mock_is_linux.return_value = True
@@ -92,9 +92,9 @@ class TestCustomConfigOption:
         assert "*.toml" in patterns[0]
         assert "*.toml" in patterns[1]
 
-    @patch("pyclif.core.classes.is_linux")
-    @patch("pyclif.core.classes.get_app_dir")
-    @patch("pyclif.core.classes.get_current_context")
+    @patch("pyclifer.core.classes.is_linux")
+    @patch("pyclifer.core.classes.get_app_dir")
+    @patch("pyclifer.core.classes.get_current_context")
     def test_get_all_config_patterns_non_linux(
         self, mock_get_context, mock_get_app_dir, mock_is_linux
     ):
@@ -116,8 +116,8 @@ class TestCustomConfigOption:
         assert "/Users/user/Library/Application Support/test-cli" in patterns[0]
         assert "yaml" in patterns[0]
 
-    @patch("pyclif.core.classes.get_app_dir")
-    @patch("pyclif.core.classes.get_current_context")
+    @patch("pyclifer.core.classes.get_app_dir")
+    @patch("pyclifer.core.classes.get_current_context")
     def test_get_all_config_patterns_app_dir_error(self, mock_get_context, mock_get_app_dir):
         """Test _get_all_config_patterns handles get_app_dir errors gracefully."""
         mock_context = Mock()
@@ -125,7 +125,7 @@ class TestCustomConfigOption:
         mock_get_context.return_value = mock_context
         mock_get_app_dir.side_effect = OSError("Permission denied")
 
-        with patch("pyclif.core.classes.is_linux", return_value=False):
+        with patch("pyclifer.core.classes.is_linux", return_value=False):
             option = CustomConfigOption()
             patch_option_formats(option, {"json": ["*.json"]})
 
@@ -141,7 +141,7 @@ class TestCustomConfigOption:
         fallback = option._get_fallback_pattern()
         assert fallback == "*.conf"
 
-    @patch("pyclif.core.classes.get_current_context")
+    @patch("pyclifer.core.classes.get_current_context")
     def test_default_pattern_with_patterns(self, mock_get_context):
         """Test default_pattern when patterns are available."""
         mock_context = Mock()
@@ -149,9 +149,9 @@ class TestCustomConfigOption:
         mock_get_context.return_value = mock_context
 
         with (
-            patch("pyclif.core.classes.is_linux", return_value=True),
+            patch("pyclifer.core.classes.is_linux", return_value=True),
             patch(
-                "pyclif.core.classes.get_app_dir",
+                "pyclifer.core.classes.get_app_dir",
                 return_value="/home/user/.config/test-cli",
             ),
         ):
@@ -168,7 +168,7 @@ class TestCustomConfigOption:
             assert "|" in pattern
             assert ", " not in pattern
 
-    @patch("pyclif.core.classes.get_current_context")
+    @patch("pyclifer.core.classes.get_current_context")
     def test_default_pattern_fallback(self, mock_get_context):
         """Test default_pattern falls back when no patterns available."""
         mock_get_context.side_effect = RuntimeError("No context")
@@ -321,7 +321,7 @@ class TestCustomConfigOptionForTox:
         from click_extra.config import ConfigOption
         from extra_platforms import is_linux
 
-        from pyclif.core.classes import CustomConfigOption
+        from pyclifer.core.classes import CustomConfigOption
 
         assert CustomConfigOption
         assert get_app_dir

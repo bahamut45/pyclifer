@@ -8,9 +8,9 @@ from unittest.mock import MagicMock
 
 from rich.console import Console
 
-from pyclif import OperationResult, Response
-from pyclif.apps.demo.apps.tasks.models import Task
-from pyclif.apps.demo.apps.tasks.renderers import (
+from pyclifer import OperationResult, Response
+from pyclifer.apps.demo.apps.tasks.models import Task
+from pyclifer.apps.demo.apps.tasks.renderers import (
     TaskAddRenderer,
     TaskCompleteRenderer,
     TaskDeleteRenderer,

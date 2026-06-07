@@ -6,8 +6,8 @@ import inspect
 import pytest
 from rich.table import Table
 
-import pyclif.core.output.tables as tables_module
-from pyclif.core.output.tables import (
+import pyclifer.core.output.tables as tables_module
+from pyclifer.core.output.tables import (
     CliTable,
     CliTableColumn,
     ExceptionTable,

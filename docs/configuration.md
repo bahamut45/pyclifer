@@ -1,6 +1,6 @@
 # Configuration Management
 
-pyclif provides powerful configuration management through the `CustomConfigOption` class, which extends
+pyclifer provides powerful configuration management through the `CustomConfigOption` class, which extends
 click-extra's configuration support with multi-location search and Linux system conventions.
 
 ## Overview
@@ -25,7 +25,7 @@ The configuration system searches for files in multiple locations automatically:
 
 ### 2. Linux System Integration
 
-On Linux, pyclif follows standard conventions by looking for system-wide configuration in `/etc/<cli_name>/`.
+On Linux, pyclifer follows standard conventions by looking for system-wide configuration in `/etc/<cli_name>/`.
 This allows system administrators to set default configurations for all users.
 
 ### 3. Multiple Format Support
@@ -70,7 +70,7 @@ For a CLI named "myapp" with prefix "MYAPP":
 ### Setting the Environment Variable Prefix
 
 ```python
-from pyclif import app_group
+from pyclifer import app_group
 
 
 @app_group(auto_envvar_prefix="MYAPP")
@@ -81,7 +81,7 @@ def cli():
 
 ## Configuration File Structure
 
-Configuration files in click-extra (and pyclif) automatically derive their structure from your CLI commands and
+Configuration files in click-extra (and pyclifer) automatically derive their structure from your CLI commands and
 options. The structure mirrors your command hierarchy — you don't manually create arbitrary sections.
 
 ### How It Works
@@ -93,7 +93,7 @@ options. The structure mirrors your command hierarchy — you don't manually cre
 ### Example CLI Structure
 
 ```python
-from pyclif import app_group, command, option
+from pyclifer import app_group, command, option
 import click
 
 
@@ -233,7 +233,7 @@ myapp --config /path/to/custom-config.toml connect
 `@app_group` adds the configuration option automatically:
 
 ```python
-from pyclif import app_group
+from pyclifer import app_group
 
 
 @app_group(add_config_option=True)  # default
@@ -245,7 +245,7 @@ def cli():
 ### Disabling Automatic Configuration
 
 ```python
-from pyclif import app_group
+from pyclifer import app_group
 
 
 @app_group(add_config_option=False)
@@ -258,7 +258,7 @@ def cli():
 
 ```python
 import click_extra
-from pyclif import app_group, CustomConfigOption
+from pyclifer import app_group, CustomConfigOption
 
 
 @click_extra.option(

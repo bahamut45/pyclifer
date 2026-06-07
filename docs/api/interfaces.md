@@ -2,12 +2,12 @@
 
 ## BaseInterface
 
-Base class for the pyclif service layer. Subclass it to group all data-access and
+Base class for the pyclifer service layer. Subclass it to group all data-access and
 business-logic operations for a resource. Declare a `renderers` dict to associate each method
 with its renderer, then call `respond()` from commands — it handles list vs generator
 detection, renderer selection, and `Response` construction automatically.
 
-::: pyclif.BaseInterface
+::: pyclifer.BaseInterface
 
 ---
 
@@ -16,7 +16,7 @@ detection, renderer selection, and `Response` construction automatically.
 ### 1. Declare the renderer
 
 ```python
-from pyclif import BaseRenderer
+from pyclifer import BaseRenderer
 
 
 class ArticleRenderer(BaseRenderer):
@@ -43,7 +43,7 @@ failures — return `OperationResult.error()` instead.
 
 ```python
 from collections.abc import Iterator
-from pyclif import BaseInterface, OperationResult
+from pyclifer import BaseInterface, OperationResult
 
 
 class ArticleInterface(BaseInterface):
@@ -84,7 +84,7 @@ Commands are thin views. Call `respond()` and return the result — no try/excep
 wiring.
 
 ```python
-from pyclif import Response, argument, command, option, pass_context
+from pyclifer import Response, argument, command, option, pass_context
 
 from .interfaces import ArticleInterface
 

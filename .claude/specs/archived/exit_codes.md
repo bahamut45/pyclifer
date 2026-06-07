@@ -25,25 +25,25 @@ Introduce `ExitCode`, a plain class with integer class attributes that:
    in `settings.py`: declare once in the app entry point, framework uses it everywhere.
 
 Wire `returns_response` to call `ctx.exit(result.error_code)` when
-`result.success is False`, reading the active class from `ctx.meta["pyclif.exit_codes_class"]`.
+`result.success is False`, reading the active class from `ctx.meta["pyclifer.exit_codes_class"]`.
 
 ## ExitCode definition
 
-Lives in `src/pyclif/core/output/exit_codes.py`:
+Lives in `src/pyclifer/core/output/exit_codes.py`:
 
 ```python
 class ExitCode:
-    """Standard exit codes for pyclif commands.
+    """Standard exit codes for pyclifer commands.
 
     Values are POSIX-safe (0–127) and serve as both the classification code
     in structured output (JSON, YAML) and the actual OS exit code.
 
     Projects register a subclass via @app_group(exit_codes_class=MyExitCode).
     Subclasses inherit all base codes and add project-specific ones in the
-    6–125 range (0–5 are reserved for pyclif, 126+ are reserved by the shell).
+    6–125 range (0–5 are reserved for pyclifer, 126+ are reserved by the shell).
 
     Example:
-        from pyclif import ExitCode as _Base
+        from pyclifer import ExitCode as _Base
 
         class ExitCode(_Base):
             QUOTA_EXCEEDED = 10
@@ -73,7 +73,7 @@ Rationale for the default set:
 
 | Range   | Reserved for                              | Verdict         |
 |---------|-------------------------------------------|-----------------|
-| 0–5     | pyclif framework codes                    | reserved        |
+| 0–5     | pyclifer framework codes                    | reserved        |
 | 6–125   | Application-specific codes                | **use this**    |
 | 126     | Command found but not executable (shell)  | do not use      |
 | 127     | Command not found (shell)                 | do not use      |
@@ -88,7 +88,7 @@ dependency.
 
 ```python
 # core/constants.py — project defines its subclass
-from pyclif import ExitCode as _Base
+from pyclifer import ExitCode as _Base
 
 class ExitCode(_Base):
     QUOTA_EXCEEDED = 10   # inherits SUCCESS, ERROR, NOT_FOUND, etc.
@@ -97,18 +97,18 @@ class ExitCode(_Base):
 
 ```python
 # cli.py — single registration point, like settings.py
-from pyclif import app_group
+from pyclifer import app_group
 from my_project.core.constants import ExitCode
 
 @app_group(exit_codes_class=ExitCode)
 def cli(): ...
 ```
 
-The framework stores the class in `ctx.meta["pyclif.exit_codes_class"]`.
-`returns_response` reads it via `meta.get("pyclif.exit_codes_class", ExitCode)` —
+The framework stores the class in `ctx.meta["pyclifer.exit_codes_class"]`.
+`returns_response` reads it via `meta.get("pyclifer.exit_codes_class", ExitCode)` —
 base class when nothing is registered, project subclass when one is.
 
-Interfaces use `from pyclif import ExitCode` for base codes. Only files that reference
+Interfaces use `from pyclifer import ExitCode` for base codes. Only files that reference
 project-specific codes import from `constants.py`:
 
 ```python
@@ -118,7 +118,7 @@ from my_project.core.constants import ExitCode
 OperationResult.error(item=plan, message="Quota exceeded.", error_code=ExitCode.QUOTA_EXCEEDED)
 ```
 
-For base codes, `from pyclif import ExitCode` is always sufficient — the integer value
+For base codes, `from pyclifer import ExitCode` is always sufficient — the integer value
 is identical whether it comes from the base class or the subclass.
 
 ## Validation
@@ -149,7 +149,7 @@ def _validate_exit_codes_class(cls: type) -> None:
     if invalid:
         details = ", ".join(f"{k}={v}" for k, v in invalid.items())
         raise ValueError(
-            f"Project exit code values must be in 6–125 (pyclif uses 0–5, "
+            f"Project exit code values must be in 6–125 (pyclifer uses 0–5, "
             f"shell reserves 126+). Invalid: {details}"
         )
 ```
@@ -175,15 +175,15 @@ left unchanged — it is a framework-level hard failure unrelated to `error_code
 
 ## Changes required
 
-### 1. New file: `src/pyclif/core/output/exit_codes.py`
+### 1. New file: `src/pyclifer/core/output/exit_codes.py`
 
 `ExitCode` plain class + `_validate_exit_codes_class()` + `_PROJECT_EXIT_CODE_MIN/MAX`.
 
-### 2. `src/pyclif/core/output/__init__.py`
+### 2. `src/pyclifer/core/output/__init__.py`
 
 Add `ExitCode` to imports and `__all__`.
 
-### 3. `src/pyclif/__init__.py`
+### 3. `src/pyclifer/__init__.py`
 
 Add `ExitCode` to `__all__` and the re-export block.
 
@@ -191,7 +191,7 @@ Add `ExitCode` to `__all__` and the re-export block.
 
 Add `exit_codes_class: type[ExitCode] = ExitCode` to `GroupConfig` in `core/classes.py`.
 `@app_group` calls `_validate_exit_codes_class(exit_codes_class)` then stores the class
-in `GroupConfig` and forwards it into `ctx.meta["pyclif.exit_codes_class"]` when the
+in `GroupConfig` and forwards it into `ctx.meta["pyclifer.exit_codes_class"]` when the
 group is invoked.
 
 ### 5. `OperationResult.error()` default
@@ -258,7 +258,7 @@ def cli(): ...
   - Failed `Response` triggers `ctx.exit()` with `result.error_code`
   - Successful `Response` does not call `ctx.exit()`
   - Unhandled-exception `Response` carries `ExitCode.ERROR`
-  - Registered subclass is stored in `ctx.meta["pyclif.exit_codes_class"]`
+  - Registered subclass is stored in `ctx.meta["pyclifer.exit_codes_class"]`
 
 - `tests/apps/project/test_interfaces.py`:
   - `ALREADY_EXISTS` results carry `error_code == ExitCode.ALREADY_EXISTS`
@@ -284,9 +284,9 @@ Add a section documenting `ExitCode` covering:
 
 ## Delivery checklist
 
-1. [ ] `src/pyclif/core/output/exit_codes.py` — `ExitCode` + `_validate_exit_codes_class`
-2. [ ] `src/pyclif/core/output/__init__.py` — re-export `ExitCode`
-3. [ ] `src/pyclif/__init__.py` — add to `__all__`
+1. [ ] `src/pyclifer/core/output/exit_codes.py` — `ExitCode` + `_validate_exit_codes_class`
+2. [ ] `src/pyclifer/core/output/__init__.py` — re-export `ExitCode`
+3. [ ] `src/pyclifer/__init__.py` — add to `__all__`
 4. [ ] `core/classes.py` — `exit_codes_class` field on `GroupConfig`
 5. [ ] `core/decorators.py` — validate + store `exit_codes_class` in `ctx.meta`
 6. [ ] `OperationResult.error()` — update default to `ExitCode.ERROR`
