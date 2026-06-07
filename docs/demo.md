@@ -84,6 +84,77 @@ pyclifer demo tasks list --priority high
 pyclifer demo tasks list --status open --priority high
 ```
 
+### Show a task
+
+Copy an id from the list output:
+
+```bash
+pyclifer demo tasks show <task-id>
+```
+
+A Rich detail panel appears with every field and a colored status/priority badge.
+
+### Error handling
+
+Complete a task, then try again:
+
+```bash
+pyclifer demo tasks complete <task-id>
+# ✔ Task 'Fix login bug' marked as done.
+
+pyclifer demo tasks complete <task-id>
+# ✘ Task '…' is already done.
+```
+
+Fetch a non-existent id in JSON to inspect the error structure:
+
+```bash
+pyclifer demo tasks show "bad-id" -o json
+```
+
+```json
+{
+  "success": false,
+  "message": "Task 'bad-id' not found.",
+  "data": {},
+  "error_code": 4
+}
+```
+
+`error_code: 4` maps to `ExitCode.NOT_FOUND`. The process exits with code 1.
+
+### Streaming sync
+
+```bash
+pyclifer demo tasks sync
+```
+
+A live progress bar animates as 8 tasks are imported one by one. When the stream closes,
+a green rule prints the total count.
+
+Switch to JSON to consume the same operation in a script:
+
+```bash
+pyclifer demo tasks sync -o json
+```
+
+The output is silent until all results are collected, then a single JSON object is printed
+with all 8 tasks in `data.results`.
+
+### Users sub-group
+
+```bash
+pyclifer demo users list
+```
+
+Three seed users (`alice`, `bob`, `carol`) appear in a Rich table on the first call.
+
+```bash
+pyclifer demo users whoami
+```
+
+A Rich panel titled **Logged in as \<your-unix-user\>** shows your auto-created profile.
+
 ## Part 2 — Code Walkthrough
 
 <!-- walkthrough sections go here -->
