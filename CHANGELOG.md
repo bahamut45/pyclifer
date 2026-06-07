@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.2] - 2026-06-07
+
+### Documentation
+
+- **readme**: Clarify PYCLIFER acronym formatting and add French response rule
+- Expand API reference and update project metadata
+- **specs**: Add demo page design spec
+- **plans**: Add demo page implementation plan
+- **demo**: Scaffold demo page and add nav entry
+- **demo**: Add introduction and page skeleton
+- **demo**: Add CLI tour — explore, add, list
+- **demo**: Add CLI tour — show, errors, sync, users
+- **demo**: Add walkthrough — structure and model layer
+- **demo**: Add walkthrough — renderer layer
+- **demo**: Add walkthrough — interface layer
+- **demo**: Add walkthrough — command layer
+- **demo**: Add walkthrough — core layer and next steps
+- **specs**: Archive demo-page-design spec
+- **demo**: Translate tip admonition titles to English
+
 ## [0.4.1] - 2026-06-07
 
 ### Miscellaneous
