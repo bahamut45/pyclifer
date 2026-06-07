@@ -5,6 +5,7 @@
 # pyclifer
 
 ![version](https://img.shields.io/badge/version-0.4.0-green)
+[![PyPI](https://img.shields.io/pypi/v/pyclifer)](https://pypi.org/project/pyclifer/)
 [![codecov](https://codecov.io/gh/bahamut45/pyclifer/graph/badge.svg)](https://codecov.io/gh/bahamut45/pyclifer)
 
 **PYthon Command Line Interface Framework** — a decorator-driven CLI framework built on
@@ -17,17 +18,15 @@ with zero boilerplate.
 
 ## Installation
 
-> **Note:** PyPI release is pending ([pypi/support#10302](https://github.com/pypi/support/issues/10302)). In the meantime, install directly from GitHub:
-
 ```bash
 # pip
-pip install git+https://github.com/bahamut45/pyclifer.git
+pip install pyclifer
 
 # uv
-uv add git+https://github.com/bahamut45/pyclifer.git
+uv add pyclifer
 
 # poetry
-poetry add git+https://github.com/bahamut45/pyclifer.git
+poetry add pyclifer
 ```
 
 Requires Python 3.10+.
