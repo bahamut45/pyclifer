@@ -203,7 +203,7 @@ class Task(BaseModel):
 `BaseModel` is pyclifer's re-export of `pydantic.BaseModel`. Pydantic validators on
 `priority` and `status` reject values outside the allowed sets at construction time.
 
-!!! tip "Dans ton projet"
+!!! tip "In your project"
     Run `pyclifer project init my-app` and `pyclifer project add app tasks` — the generated
     `apps/tasks/models.py` has the same shape, ready to fill with your own fields.
 
@@ -255,7 +255,7 @@ class TaskSyncRenderer(BaseRenderer):
 When `-o json` is passed, none of these hooks are called — the framework waits for all
 results and serialises them directly. The renderer stays format-agnostic.
 
-!!! tip "Dans ton projet"
+!!! tip "In your project"
     See [Rich Progressive Output](how-to/rich-progressive-output.md) for the full guide on
     building streaming commands with live renderers.
 
@@ -317,7 +317,7 @@ class TaskInterface(BaseInterface):
 `ExitCode.NOT_FOUND` is 4. The framework serialises this into `"error_code": 4` in JSON
 and exits with code 1.
 
-!!! tip "Dans ton projet"
+!!! tip "In your project"
     See [Response Patterns](how-to/response-patterns.md) for the full interface + renderer
     wiring, and [Error Handling](how-to/error-handling.md) for the complete error recipe.
 
@@ -367,7 +367,7 @@ def show(ctx, task_id) -> Response:
     return TaskInterface(ctx).respond("show_task", task_id=task_id)
 ```
 
-!!! tip "Dans ton projet"
+!!! tip "In your project"
     Run `pyclifer project add command list --app tasks` to generate a pre-wired command stub
     following this exact pattern.
 
@@ -422,7 +422,7 @@ In a real project you would replace `Storage` with a client for your actual back
 (database, API, cloud service). The interface layer never touches storage directly —
 only through `ctx.storage` — so swapping the backend requires changing one file.
 
-!!! tip "Dans ton projet"
+!!! tip "In your project"
     `pyclifer project init my-app` generates `core/context.py` with the same `BaseContext`
     extension pattern. Add your own service clients as properties there.
 
