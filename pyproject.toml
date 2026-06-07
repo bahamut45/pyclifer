@@ -1,7 +1,7 @@
 [project]
 name = "pyclifer"
 version = "0.4.1"
-description = "PYthon Command Line Interface Framework — decorator-driven CLI framework built on click-extra and rich-click"
+description = "PYthon Command Line Interface FramEwoRk — decorator-driven CLI framework built on click-extra and rich-click"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -165,11 +165,6 @@ pre_commit_hooks = ["uv sync --extra dev,docs", "git add uv.lock", "git-cliff --
 filename = "pyproject.toml"
 search = 'version = "{current_version}"'
 replace = 'version = "{new_version}"'
-
-[[tool.bumpversion.files]]
-filename = "README.md"
-search = 'version-{current_version}-green'
-replace = 'version-{new_version}-green'
 
 [[tool.bumpversion.files]]
 filename = "src/pyclifer/__init__.py"

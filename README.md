@@ -4,7 +4,6 @@
 
 # pyclifer
 
-![version](https://img.shields.io/badge/version-0.4.1-green)
 [![PyPI](https://img.shields.io/pypi/v/pyclifer)](https://pypi.org/project/pyclifer/)
 [![codecov](https://codecov.io/gh/bahamut45/pyclifer/graph/badge.svg)](https://codecov.io/gh/bahamut45/pyclifer)
 
@@ -19,14 +18,7 @@ with zero boilerplate.
 ## Installation
 
 ```bash
-# pip
 pip install pyclifer
-
-# uv
-uv add pyclifer
-
-# poetry
-poetry add pyclifer
 ```
 
 Requires Python 3.10+.
@@ -139,13 +131,16 @@ $ python app.py hello --help
 
 ## Features
 
-- **Decorator-driven** — four decorators cover the full CLI surface
-- **Autoconfiguration** — TOML/YAML/JSON config files with Linux path conventions (`/etc/<app>/`, `~/.config/<app>/`)
+- **Decorator-driven** — four decorators (`@app_group`, `@group`, `@command`, `@option`) cover the full CLI surface
+- **Autoconfiguration** — TOML/YAML/JSON/XML config files with Linux path conventions (`/etc/<app>/`, `~/.config/<app>/`)
 - **Environment variables** — automatic prefix-based binding for every option
 - **Rich logging** — colored output, custom `TRACE` level, secret masking, rotating log files
-- **Standardized output** — `Response` dataclass with JSON/YAML/Table/Rich/Raw formatters via `--output-format`
+- **Structured output** — `Response` + `OperationResult` with JSON/YAML/Table/Rich/Raw formatters via `--output-format`
+- **Renderer system** — declarative `BaseRenderer` controls all output formats from a single class; streaming generators drive a Live Rich display via `rich_on_item` hooks
+- **Service layer** — `BaseInterface.respond()` auto-detects list vs generator, picks the right renderer, and builds the `Response` — commands stay thin
 - **Global options** — options marked `is_global=True` propagate automatically to all subcommands
-- **Project scaffolding** — `pyclifer project init` generates a ready-to-use project structure
+- **Pagination** — built-in `PaginatedResponse` with page/limit/total in JSON and YAML output
+- **Project scaffolding** — `pyclifer project init / add app / add command / add integration` generates a ready-to-use project structure
 
 ## Documentation
 

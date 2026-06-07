@@ -1,5 +1,5 @@
 site_name: pyclifer
-site_description: PYthon Command Line Interface Framework — decorator-driven CLI framework built on click-extra and rich-click
+site_description: PYthon Command Line Interface FramEwoRk — decorator-driven CLI framework built on click-extra and rich-click
 site_url: https://bahamut45.github.io/pyclifer
 repo_url: https://github.com/bahamut45/pyclifer
 repo_name: bahamut45/pyclifer
@@ -53,6 +53,7 @@ nav:
       - how-to/output-format.md
   - Development: development.md
   - API Reference:
+      - Overview: api/index.md
       - Decorators: api/decorators.md
       - Context: api/context.md
       - Output & Response: api/output.md
