@@ -320,3 +320,53 @@ and exits with code 1.
 !!! tip "Dans ton projet"
     See [Response Patterns](how-to/response-patterns.md) for the full interface + renderer
     wiring, and [Error Handling](how-to/error-handling.md) for the complete error recipe.
+
+### Layer 4 — Command
+
+Source: [`apps/tasks/commands/add.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/commands/add.py)
+
+Commands are thin wiring. They declare options, call `respond()`, and return the result.
+No formatting, no business logic.
+
+```python
+@command()
+@option("--title", required=True, help="Task title.")
+@option("--description", default="", help="Task description.")
+@option("--priority", type=PRIORITY_CHOICE, default="medium", help="Task priority.")
+@option("--due", type=DateTime(formats=["%Y-%m-%d"]), default=None, help="Due date (YYYY-MM-DD).")
+@option("--tags", default="", help="Comma-separated list of tags.")
+@option("--assignee", default="", help="Assignee username.")
+@pass_demo_context
+def add(ctx, title, description, priority, due, tags, assignee) -> Response:
+    """Add a new task."""
+    tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
+    return TaskInterface(ctx).respond(
+        "add_task",
+        title=title,
+        description=description,
+        priority=priority,
+        due_date=due.date() if due else None,
+        tags=tag_list,
+        assignee=assignee,
+    )
+```
+
+`respond("add_task", …)` looks up `renderers["add_task"]`, calls `add_task(…)`, wraps the
+results in a `Response`, and returns it. The `@app_group(handle_response=True)` decorator
+intercepts that `Response` and dispatches it to the right formatter.
+
+Commands that use an `@argument` instead of `--option` (e.g. `show`, `complete`) are even
+shorter:
+
+```python
+@command()
+@argument("task_id")
+@pass_demo_context
+def show(ctx, task_id) -> Response:
+    """Show details of a specific task."""
+    return TaskInterface(ctx).respond("show_task", task_id=task_id)
+```
+
+!!! tip "Dans ton projet"
+    Run `pyclifer project add command list --app tasks` to generate a pre-wired command stub
+    following this exact pattern.
