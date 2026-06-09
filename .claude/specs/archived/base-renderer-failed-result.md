@@ -6,7 +6,7 @@ concept of a *failed* `OperationResult`, forcing every renderer to override boil
 
 ---
 
-## Item 1 — `get_failure_message` must propagate single-result failure message
+## ✅ Item 1 — `get_failure_message` must propagate single-result failure message
 
 ### Problem
 
@@ -89,7 +89,7 @@ immediately — confirms the resolution order is correct.
 
 ---
 
-## Item 2 — `serialize` must preserve `item` and model fields for failed results
+## ✅ Item 2 — `serialize` must preserve `item` and model fields for failed results
 
 ### Problem
 
@@ -237,7 +237,7 @@ Expected failure: `KeyError: 'item'` (current `serialize` only emits declared `f
 
 ---
 
-## Item 3 — `serialize` must carry per-row `success` and `error_code` in mixed batches
+## ✅ Item 3 — `serialize` must carry per-row `success` and `error_code` in mixed batches
 
 ### Problem
 
@@ -312,7 +312,7 @@ Expected failure: `AssertionError: assert "success" not in {"item": ..., "succes
 
 ---
 
-## Item 4 — `table()` visual consistency: `_row_style` hook for failed rows
+## ✅ Item 4 — `table()` visual consistency: `_row_style` hook for failed rows
 
 ### Problem (not in the original issue — identified during spec analysis)
 

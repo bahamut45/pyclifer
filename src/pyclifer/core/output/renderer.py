@@ -95,6 +95,7 @@ class BaseRenderer:
     model_class: ClassVar[type[BaseModel] | None] = None
     datetime_format: ClassVar[str] = "%Y-%m-%d %H:%M"
     date_format: ClassVar[str] = "%Y-%m-%d"
+    include_row_meta: ClassVar[bool] = True
 
     def get_fields(self) -> list[str]:
         """Return the effective field list.
@@ -140,11 +141,42 @@ class BaseRenderer:
                 row[col] = getattr(result, col, None)
         return row
 
+    def _serialize_result(self, r: OperationResult, fields: list[str]) -> dict:
+        """Serialize one OperationResult into a row dict.
+
+        Always includes item, and success/error_code when include_row_meta is True.
+        For failed results, model fields are set to None; data extraction is skipped.
+
+        Args:
+            r: The operation result to serialize.
+            fields: The field names to include (from get_fields()).
+
+        Returns:
+            Dict representing one row in the serialized output.
+        """
+        if r.success:
+            data = r.data
+            if hasattr(data, "to_dict") and callable(data.to_dict):
+                data = data.to_dict()
+            row = {
+                f: data.get(f) if isinstance(data, dict) and f in data else getattr(r, f, None)
+                for f in fields
+            }
+        else:
+            row = {f: None for f in fields}
+
+        row["item"] = r.item
+        if self.include_row_meta:
+            row["success"] = r.success
+            row["error_code"] = r.error_code
+        return row
+
     def serialize(self, response: Response) -> dict:
         """Return a JSON-serializable dict filtered to self.fields.
 
         When fields are empty, delegates to response.to_json() for full
-        serialization with standard exclusions.
+        serialization with standard exclusions. Each row always carries item,
+        and success/error_code when include_row_meta is True.
 
         Args:
             response: The command response to serialize.
@@ -157,22 +189,26 @@ class BaseRenderer:
             return response.to_json()
 
         results = response.data.get("results", [])
-        serialized = []
-        for r in results:
-            data = r.data
-            if hasattr(data, "to_dict") and callable(data.to_dict):
-                data = data.to_dict()
-            row = {
-                f: data.get(f) if isinstance(data, dict) and f in data else getattr(r, f, None)
-                for f in fields
-            }
-            serialized.append(row)
+        serialized = [self._serialize_result(r, fields) for r in results]
         return {
             "success": response.success,
             "message": response.message,
             "error_code": response.error_code,
             "data": {"results": serialized},
         }
+
+    def _row_style(self, result: OperationResult) -> str | None:
+        """Return a Rich style string for a table row, or None for the default style.
+
+        Override to customize row styles. The default marks failed rows red.
+
+        Args:
+            result: The OperationResult for the row.
+
+        Returns:
+            A Rich style string or None.
+        """
+        return "red" if not result.success else None
 
     def table(self, response: Response) -> CliTable:
         """Build a CliTable from response.data["results"] using self.columns.
@@ -181,7 +217,7 @@ class BaseRenderer:
             response: The command response carrying the result list.
 
         Returns:
-            A CliTable instance is ready for console.print().
+            A CliTable instance ready for console.print().
         """
         # Lazy import — renderer.py and tables.py are in the same package;
         # importing at module level would create a circular dependency via
@@ -194,10 +230,12 @@ class BaseRenderer:
         }
         results = response.data.get("results", [])
         rows = [self._result_to_row(r, cols) for r in results]
+        row_styles = [self._row_style(r) for r in results]
         title = self.rich_title or response.message or None
         return CliTable(
             fields=fields_dict,
             rows=rows,
+            row_styles=row_styles,
             table_style={"title": title} if title else None,
             datetime_format=self.datetime_format,
             date_format=self.date_format,
@@ -316,13 +354,18 @@ class BaseRenderer:
     def get_failure_message(self, results: list) -> str:
         """Return the failure message for a partially or fully failed batch.
 
+        Resolution order: static failure_message attribute, then single failed
+        result message, then count string.
+
         Args:
             results: All OperationResult items from the batch.
 
         Returns:
-            Human-readable failure message with failure count.
+            Human-readable failure message.
         """
         if self.failure_message:
             return self.failure_message
+        if len(results) == 1 and not results[0].success:
+            return results[0].message
         failed = sum(1 for r in results if not r.success)
         return f"{failed}/{len(results)} operation(s) failed."

@@ -62,6 +62,7 @@ class CliTable:
         table_style: dict | None = None,
         datetime_format: str = "%Y-%m-%d %H:%M",
         date_format: str = "%Y-%m-%d",
+        row_styles: list[str | None] | None = None,
     ):
         """Initialize the CLI table with columns and rows.
 
@@ -71,6 +72,7 @@ class CliTable:
             table_style: Optional dictionary to override default table styling.
             datetime_format: strftime format string for datetime values.
             date_format: strftime format string for date values.
+            row_styles: Optional per-row Rich style strings, parallel to rows.
         """
         if isinstance(table_style, dict):
             self.table_style |= table_style
@@ -79,7 +81,7 @@ class CliTable:
         # noinspection PyArgumentList
         self.table = Table(**self.table_style)
         self.update_columns(fields)
-        self.update_rows(fields, rows)
+        self.update_rows(fields, rows, row_styles)
 
     def __rich__(self) -> Table | str:
         """Return the table for rich rendering.
@@ -98,7 +100,12 @@ class CliTable:
         for field in fields.values():
             self.table.add_column(**field.to_dict())
 
-    def update_rows(self, fields: dict, rows: list | dict) -> None:
+    def update_rows(
+        self,
+        fields: dict,
+        rows: list | dict,
+        row_styles: list[str | None] | None = None,
+    ) -> None:
         """Add rows to the table.
 
         Accepts either a single dictionary or list of dictionaries representing
@@ -107,13 +114,22 @@ class CliTable:
         Args:
             fields: Dictionary of field names to column definitions.
             rows: Single dictionary or list of dictionaries for rows.
+            row_styles: Optional per-row Rich style strings, parallel to rows.
+
+        Raises:
+            ValueError: When row_styles length does not match rows length.
         """
         if rows is not None:
             if isinstance(rows, dict):
                 rows = [rows]
-            for row in rows:
+            if row_styles is not None and len(row_styles) != len(rows):
+                raise ValueError(
+                    f"row_styles length ({len(row_styles)}) must match rows length ({len(rows)})"
+                )
+            for i, row in enumerate(rows):
                 columns = self._generate_columns(fields, row)
-                self.table.add_row(*columns)
+                style = row_styles[i] if row_styles is not None else None
+                self.table.add_row(*columns, style=style)
 
     def _generate_columns(self, fields: dict, row: dict) -> list:
         """Generate column values from a row and field definition.

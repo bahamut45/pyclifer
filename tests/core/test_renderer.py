@@ -165,7 +165,7 @@ class TestSerialize:
         assert "data" in serialized
         rows = serialized["data"]["results"]
         assert len(rows) == 2
-        assert set(rows[0].keys()) == {"item", "success", "message"}
+        assert set(rows[0].keys()) == {"item", "success", "message", "error_code"}
 
     def test_serialized_row_values(self) -> None:
         results = [_ok("x", action="created")]
@@ -192,7 +192,18 @@ class TestSerialize:
         response = _response([result], renderer=_ModelClassRenderer())
         serialized = _ModelClassRenderer().serialize(response)
         row = serialized["data"]["results"][0]
-        assert set(row.keys()) == {"id", "title", "status"}
+        assert set(row.keys()) == {"id", "title", "status", "item", "success", "error_code"}
+
+    def test_serialize_failed_result_preserves_item(self) -> None:
+        class _StorageRenderer(BaseRenderer):
+            fields = ["total", "used"]
+
+        result = OperationResult.error("px-store", "not found", error_code=3)
+        response = _response([result])
+        serialized = _StorageRenderer().serialize(response)
+        row = serialized["data"]["results"][0]
+        assert row["item"] == "px-store"
+        assert row["total"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -341,3 +352,134 @@ class TestGetFailureMessage:
         results = [_err("a"), _err("b")]
         msg = BaseRenderer().get_failure_message(results)
         assert "2/2" in msg
+
+    def test_single_failed_result_returns_result_message(self) -> None:
+        result = OperationResult.error("px-store", "Storage pool not found.")
+        assert BaseRenderer().get_failure_message([result]) == "Storage pool not found."
+
+    def test_single_successful_result_falls_through_to_count(self) -> None:
+        result = OperationResult.ok("px-store")
+        assert BaseRenderer().get_failure_message([result]) == "0/1 operation(s) failed."
+
+    def test_static_failure_message_takes_precedence_over_single_result(self) -> None:
+        result = OperationResult.error("px-store", "Storage pool not found.")
+        assert _FullRenderer().get_failure_message([result]) == "Something failed."
+
+
+# ---------------------------------------------------------------------------
+# TestSerializeResult
+# ---------------------------------------------------------------------------
+
+
+class TestSerializeResult:
+    def test_failed_result_item_always_in_row(self) -> None:
+        result = OperationResult.error("px-store", "not found", error_code=3)
+        row = BaseRenderer()._serialize_result(result, ["total", "used"])
+        assert row["item"] == "px-store"
+
+    def test_successful_result_extracts_fields_from_data(self) -> None:
+        result = OperationResult.ok("px-store", data={"total": 1000, "used": 400})
+        row = BaseRenderer()._serialize_result(result, ["total", "used"])
+        assert row["total"] == 1000
+        assert row["used"] == 400
+        assert row["item"] == "px-store"
+
+    def test_item_in_fields_is_overwritten_by_result_item(self) -> None:
+        result = OperationResult.ok("authoritative", data={"item": "from-data", "total": 5})
+        row = BaseRenderer()._serialize_result(result, ["item", "total"])
+        assert row["item"] == "authoritative"
+
+    def test_row_contains_success_and_error_code_by_default(self) -> None:
+        result = OperationResult.error("px-store", "not found", error_code=3)
+        row = BaseRenderer()._serialize_result(result, ["total"])
+        assert row["success"] is False
+        assert row["error_code"] == 3
+
+    def test_include_row_meta_false_suppresses_meta(self) -> None:
+        class _NoMetaRenderer(BaseRenderer):
+            include_row_meta = False
+
+        result = OperationResult.error("px-store", "not found")
+        row = _NoMetaRenderer()._serialize_result(result, ["total"])
+        assert "success" not in row
+        assert "error_code" not in row
+
+
+# ---------------------------------------------------------------------------
+# TestRowStyle
+# ---------------------------------------------------------------------------
+
+
+class TestRowStyle:
+    def test_row_style_returns_red_for_failed_result(self) -> None:
+        result = OperationResult.error("px-store", "fail")
+        assert BaseRenderer()._row_style(result) == "red"
+
+    def test_row_style_returns_none_for_successful_result(self) -> None:
+        result = OperationResult.ok("px-store")
+        assert BaseRenderer()._row_style(result) is None
+
+
+# ---------------------------------------------------------------------------
+# TestTable
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# TestDetailGrid
+# ---------------------------------------------------------------------------
+
+
+class TestDetailGrid:
+    def test_returns_two_column_grid(self) -> None:
+        grid = BaseRenderer._detail_grid()
+        assert len(grid.columns) == 2
+
+    def test_first_column_bold_cyan(self) -> None:
+        grid = BaseRenderer._detail_grid()
+        assert grid.columns[0].style == "bold cyan"
+        assert grid.columns[0].no_wrap is True
+
+
+# ---------------------------------------------------------------------------
+# TestFirstResult
+# ---------------------------------------------------------------------------
+
+
+class TestFirstResult:
+    def test_returns_first_result_when_successful(self) -> None:
+        console = MagicMock(spec=Console)
+        result = _ok("file.py")
+        response = _response([result])
+        response.data["results"] = [result]
+        assert BaseRenderer()._first_result(response, console) is result
+
+    def test_returns_none_and_prints_panel_when_empty(self) -> None:
+        console = MagicMock(spec=Console)
+        response = Response(success=False, message="nothing")
+        response.data["results"] = []
+        assert BaseRenderer()._first_result(response, console) is None
+        console.print.assert_called_once()
+
+    def test_returns_none_and_prints_panel_when_first_failed(self) -> None:
+        console = MagicMock(spec=Console)
+        result = _err("file.py")
+        response = _response([result])
+        response.data["results"] = [result]
+        assert BaseRenderer()._first_result(response, console) is None
+        console.print.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# TestTable
+# ---------------------------------------------------------------------------
+
+
+class TestTable:
+    def test_table_failed_row_styled_red(self) -> None:
+        ok = OperationResult.ok("a")
+        err = OperationResult.error("b", "fail")
+        response = _response([ok, err], renderer=_FullRenderer())
+        cli_table = _FullRenderer().table(response)
+        assert cli_table.table.rows[0].style is None
+        assert cli_table.table.rows[1].style == "red"

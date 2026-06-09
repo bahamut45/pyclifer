@@ -167,6 +167,25 @@ class TestCliTable:
         assert t.__rich_field__(datetime.datetime(2024, 6, 1, 14, 30)) == "01/06/2024 14:30"
         assert t.__rich_field__(datetime.date(2024, 6, 1)) == "01/06/2024"
 
+    def test_row_style_applied_to_row(self) -> None:
+        """Test that row_styles list applies Rich style strings per row."""
+        table = CliTable(
+            fields={"name": CliTableColumn(header="Name")},
+            rows=[{"name": "ok"}, {"name": "err"}],
+            row_styles=[None, "red"],
+        )
+        assert table.table.rows[0].style is None
+        assert table.table.rows[1].style == "red"
+
+    def test_row_styles_length_mismatch_raises(self) -> None:
+        """Test that mismatched row_styles length raises ValueError."""
+        with pytest.raises(ValueError, match="row_styles length"):
+            CliTable(
+                fields={"name": CliTableColumn(header="Name")},
+                rows=[{"name": "a"}, {"name": "b"}],
+                row_styles=["red"],
+            )
+
 
 class TestExceptionTable:
     """Test suite for the ExceptionTable class."""
