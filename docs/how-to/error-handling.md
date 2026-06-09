@@ -37,6 +37,11 @@ def show_task(self, task_id: str) -> list[OperationResult]:
     return [OperationResult.ok(item=task.id, data=task)]
 ```
 
+`BaseRenderer.get_failure_message()` automatically propagates `results[0].message` when the
+batch contains exactly one failed result. Renderers for single-result commands (show, delete,
+add) do not need to override `get_failure_message` or set `failure_message` — the interface
+message reaches the output for free.
+
 ```python
 # tasks/commands/show.py
 @command()

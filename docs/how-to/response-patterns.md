@@ -79,6 +79,8 @@ class TaskAddRenderer(BaseRenderer):
 
 `fields` drives JSON/YAML/raw serialization. `columns` drives the table. Both default to all
 dataclass fields when left empty — set them explicitly to control ordering and visibility.
+`failure_message` is optional for single-result commands: when omitted, the `OperationResult.message`
+set in the interface propagates automatically (see [Error Handling](error-handling.md)).
 
 **Interface** — returns `list[OperationResult]` ([`tasks/interfaces.py`](https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/interfaces.py)):
 

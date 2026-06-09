@@ -280,14 +280,102 @@ class ArticleRenderer(BaseRenderer):
     # Panel title used by the default rich() display
     rich_title = "Articles"
 
-    # Messages used by get_success_message() / get_failure_message()
+    # Static success / failure messages (optional — see below)
     success_message = "Articles retrieved."
     failure_message = "Failed to retrieve articles."
 ```
 
-`serialize()` builds a dict from the `fields` list by reading each result's `data` payload and
-`OperationResult` attributes. `table()` uses `columns` to build a `CliTable`. Both are
-auto-called by the framework — you only need to override them for genuinely custom behavior.
+`serialize()` builds a dict from the `fields` list. Every row always carries `item` (from
+`OperationResult.item`), and `success` + `error_code` by default (`include_row_meta=True`).
+For failed results, model fields are set to `null` so the consumer knows which resource failed.
+`table()` uses `columns` to build a `CliTable`, with failed rows highlighted in red by default.
+Both are auto-called by the framework.
+
+#### `failure_message` — resolution order
+
+`get_failure_message()` uses the first rule that matches:
+
+1. **Static `failure_message` attribute** — set on the class; always wins when present.
+2. **Single failed result** — when the batch has exactly one result and it failed,
+   `results[0].message` is used directly. This means renderers for single-result commands
+   (add, delete, show) get the per-resource error message for free without overriding anything.
+3. **Count string** — `"N/M operation(s) failed."` for mixed or multi-failure batches.
+
+Omitting `failure_message` is safe for any renderer whose command returns a single result —
+the interface-layer message propagates automatically.
+
+#### `include_row_meta` — per-row metadata in serialized output
+
+`include_row_meta = True` (default) injects `success` and `error_code` into every row of
+`serialize()` output. This lets consumers of JSON/YAML distinguish failed rows from
+successful rows with empty data:
+
+```json
+{
+  "success": false,
+  "message": "1/2 operation(s) failed.",
+  "error_code": 3,
+  "data": {
+    "results": [
+      {"item": "pool_01", "success": true,  "error_code": 0,  "total": 1000, "used": 400},
+      {"item": "pool_02", "success": false, "error_code": 3,  "total": null, "used": null}
+    ]
+  }
+}
+```
+
+Set `include_row_meta = False` for read-only commands that never produce failures (e.g., a
+task list) to keep the output clean:
+
+```python
+class TaskListRenderer(BaseRenderer):
+    fields = ["id", "title", "status"]
+    include_row_meta = False  # suppress success/error_code from every row
+```
+
+#### `_serialize_result` — per-row serialization hook
+
+Override `_serialize_result()` to customize how a single `OperationResult` is serialized,
+without replacing the batch logic in `serialize()`:
+
+```python
+class StorageRenderer(BaseRenderer):
+    fields = ["total", "used", "available"]
+
+    def _serialize_result(self, r, fields):
+        row = super()._serialize_result(r, fields)
+        if r.success and r.data:
+            row["utilization"] = round(r.data.get("used", 0) / r.data.get("total", 1) * 100, 1)
+        return row
+```
+
+`item`, `success`, and `error_code` are injected by the base implementation after your
+field extraction runs, so they are always authoritative — do not set them yourself.
+
+#### `_row_style` — per-row table style hook
+
+`_row_style()` controls the Rich style applied to each row in the table. The default marks
+failed rows red:
+
+```python
+def _row_style(self, result: OperationResult) -> str | None:
+    return "red" if not result.success else None
+```
+
+Override it to use different styles — for example, to colour rows by status:
+
+```python
+_STATUS_STYLE = {"done": "dim", "in_progress": "yellow", "blocked": "red bold"}
+
+class TaskListRenderer(BaseRenderer):
+    def _row_style(self, result: OperationResult) -> str | None:
+        if not result.success:
+            return "red"
+        status = result.data.get("status") if isinstance(result.data, dict) else None
+        return _STATUS_STYLE.get(status)
+```
+
+Return `None` for the default table style (alternating `none`/`dim` rows).
 
 ### Overriding individual methods
 
