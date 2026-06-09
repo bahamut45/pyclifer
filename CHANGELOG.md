@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-06-09
+
+### Documentation
+
+- **specs**: Add anywhere-passable options spec
+- Add context-options how-to guide and update API docs
+
+### Features
+
+- **classes,decorators**: Add context= option and context_factory
+- **scaffold**: Use context_factory pattern in generated projects
+- Anywhere-passable options and declarative context construction
+
+### Miscellaneous
+
+- Add .worktrees/ to .gitignore
+
 ## [0.4.2] - 2026-06-07
 
 ### Documentation
