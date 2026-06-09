@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-06-09
+
+### Documentation
+
+- **specs**: Add base-renderer-failed-result spec
+- **output**: Document failed OperationResult handling in BaseRenderer
+
+### Features
+
+- **renderer,tables**: First-class failed OperationResult handling
+
+### Tests
+
+- **log**: Cover set_level more-verbose branch in PycliferVerbosityOption
+
 ## [0.5.0] - 2026-06-09
 
 ### Documentation
