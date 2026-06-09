@@ -8,6 +8,12 @@ standardized response handling.
 
 Entry point decorator. Creates the root CLI group with all framework features enabled.
 
+Key parameters:
+
+- `context_factory` — callable that receives all `context=True` option values as keyword
+  arguments and returns the `ctx.obj` instance. Enables declarative context construction
+  without a manual `ctx.obj =` assignment in the group callback.
+
 ::: pyclifer.app_group
 
 ---
@@ -30,7 +36,11 @@ Creates a CLI command. Use inside a group or app_group.
 
 ## option
 
-Extends Click options with environment variable binding and optional global propagation.
+Extends Click options with environment variable binding and optional global/context propagation.
+
+- `is_global=True` — propagates this option to all subcommands (see `GlobalOptionsMixin`).
+- `context=True` — marks this option as a *context option*: its value feeds `context_factory`
+  and is accepted at any position in the command chain (see *Anywhere-passable options*).
 
 ::: pyclifer.option
 

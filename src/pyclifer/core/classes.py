@@ -1,6 +1,7 @@
 """Custom Click classes for pyclifer."""
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import perf_counter
@@ -20,15 +21,20 @@ from .output.exit_codes import ExitCode
 class PycliferOption(StoreInMetaMixin, click_extra.Option):
     """Custom Click Option that can be marked as global for propagation."""
 
-    def __init__(self, *args: Any, is_global: bool = False, **kwargs: Any) -> None:
+    def __init__(
+        self, *args: Any, is_global: bool = False, context: bool = False, **kwargs: Any
+    ) -> None:
         """Initialize the option.
 
         Args:
             *args: Positional arguments for click.Option.
             is_global: If True, this option will be propagated to subcommands.
+            context: If True, this option feeds ctx.obj construction and is
+                accepted at any position in the command chain.
             **kwargs: Keyword arguments for click.Option.
         """
         self.is_global = is_global
+        self.context = context
         super().__init__(*args, **kwargs)
 
 
@@ -268,3 +274,6 @@ class GroupConfig:
 
     # Security
     sensitive_fields: list[str] = field(default_factory=list)
+
+    # Context construction
+    context_factory: Callable[..., Any] | None = None

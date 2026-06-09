@@ -52,6 +52,7 @@ nav:
       - how-to/multi-integration-commands.md
       - how-to/error-handling.md
       - how-to/output-format.md
+      - how-to/context-options.md
   - Development: development.md
   - API Reference:
       - Overview: api/index.md

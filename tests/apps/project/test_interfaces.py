@@ -95,6 +95,23 @@ class TestInitProject:
         assert not results[0].success
         assert "already exists" in results[0].message
 
+    def test_cli_uses_context_factory_pattern(self, tmp_path, monkeypatch) -> None:
+        """Generated cli.py uses context_factory= instead of manual ctx.obj assignment."""
+        monkeypatch.chdir(tmp_path)
+        iface = ScaffoldingInterface(ctx=None)
+        list(iface.init_project("my-app"))
+        cli_content = (tmp_path / "my-app" / "src" / "my_app" / "cli.py").read_text()
+        assert "context_factory=" in cli_content
+        assert "ctx.obj =" not in cli_content
+
+    def test_context_uses_kwargs_constructor(self, tmp_path, monkeypatch) -> None:
+        """Generated context.py constructor accepts **kwargs for context_factory."""
+        monkeypatch.chdir(tmp_path)
+        iface = ScaffoldingInterface(ctx=None)
+        list(iface.init_project("my-app"))
+        ctx_content = (tmp_path / "my-app" / "src" / "my_app" / "core" / "context.py").read_text()
+        assert "**kwargs" in ctx_content
+
     def test_uv_pyproject(self, tmp_path, monkeypatch) -> None:
         """uv template includes hatchling build backend."""
         monkeypatch.chdir(tmp_path)

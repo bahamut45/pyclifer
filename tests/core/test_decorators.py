@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import click
 from click.testing import CliRunner
 
-from pyclifer.core.classes import GroupConfig
+from pyclifer.core.classes import GroupConfig, PycliferOption
 from pyclifer.core.decorators import (
     GroupDecorator,
     app_group,
@@ -592,3 +592,605 @@ class TestPatchMakeContextIntegration:
         assert result.exit_code == 0
         assert "pyclifer.unhandled_exception_log_level" in captured["meta"]
         assert "pyclifer.exit_codes_class" in captured["meta"]
+
+
+# ---------------------------------------------------------------------------
+# option() — context kwarg forwarded to PycliferOption
+# ---------------------------------------------------------------------------
+
+
+class TestOptionContextKwarg:
+    """option() forwards context kwarg to PycliferOption."""
+
+    def test_option_context_true_sets_attribute(self):
+        """option(..., context=True) creates a PycliferOption with context=True."""
+
+        @app_group(
+            add_verbosity_option=False,
+            add_config_option=False,
+            add_log_file_option=False,
+            add_version_option=False,
+            invoke_without_command=True,
+        )
+        @option("--host", context=True, default="localhost")
+        @click.pass_context
+        def app(ctx, host):
+            """App"""
+
+        host_param = next(p for p in app.params if p.name == "host")
+        assert isinstance(host_param, PycliferOption)
+        assert host_param.context is True
+
+    def test_option_context_false_by_default(self):
+        """option() without context= defaults to context=False."""
+
+        @app_group(
+            add_verbosity_option=False,
+            add_config_option=False,
+            add_log_file_option=False,
+            add_version_option=False,
+            invoke_without_command=True,
+        )
+        @option("--host", default="localhost")
+        @click.pass_context
+        def app(ctx, host):
+            """App"""
+
+        host_param = next(p for p in app.params if p.name == "host")
+        assert isinstance(host_param, PycliferOption)
+        assert host_param.context is False
+
+
+# ---------------------------------------------------------------------------
+# app_group() — context_factory kwarg forwarded to GroupConfig
+# ---------------------------------------------------------------------------
+
+
+class TestAppGroupContextFactory:
+    """app_group() accepts and stores context_factory."""
+
+    def test_context_factory_forwarded_to_group_config(self):
+        """context_factory kwarg is stored in the GroupConfig on the decorator."""
+
+        class AppCtx:
+            """App context."""
+
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+
+        # We capture the GroupDecorator before it is called.
+        captured: list = []
+        original_init = GroupDecorator.__init__
+
+        def patched_init(self, config, click_kwargs):
+            """Record the config and call original."""
+            captured.append(config)
+            original_init(self, config, click_kwargs)
+
+        with patch.object(GroupDecorator, "__init__", patched_init):
+            app_group(
+                context_factory=AppCtx,
+                add_verbosity_option=False,
+                add_config_option=False,
+                add_log_file_option=False,
+                add_version_option=False,
+            )
+
+        assert captured[0].context_factory is AppCtx
+
+
+# ---------------------------------------------------------------------------
+# Helpers shared by prescan integration tests
+# ---------------------------------------------------------------------------
+
+
+def _minimal_app_group(**extra_kwargs):
+    """Return an app_group decorator with framework options stripped for isolation."""
+    defaults = dict(
+        add_verbosity_option=False,
+        add_config_option=False,
+        add_log_file_option=False,
+        add_version_option=False,
+        add_output_format_option=False,
+    )
+    defaults.update(extra_kwargs)
+    return app_group(**defaults)
+
+
+# ---------------------------------------------------------------------------
+# _find_subcommand_boundary
+# ---------------------------------------------------------------------------
+
+
+class TestFindSubcommandBoundary:
+    """Unit tests for GroupDecorator._find_subcommand_boundary static helper."""
+
+    def _make_group(self, commands: list[str]) -> click.Group:
+        """Build a minimal Click group with the given subcommand names."""
+
+        @_minimal_app_group()
+        @click.pass_context
+        def grp(ctx):
+            """Group"""
+
+        for name in commands:
+
+            @grp.command(name=name)
+            def _cmd():
+                """Sub"""
+
+        return grp
+
+    def test_no_subcommand_returns_len_args(self):
+        """Returns len(args) when no subcommand name found."""
+        grp = self._make_group(["serve"])
+        result = GroupDecorator._find_subcommand_boundary(["--host", "prod"], grp)
+        assert result == 2
+
+    def test_subcommand_at_index_zero(self):
+        """Returns 0 when the first token is the subcommand name."""
+        grp = self._make_group(["serve"])
+        result = GroupDecorator._find_subcommand_boundary(["serve", "--port", "8080"], grp)
+        assert result == 0
+
+    def test_subcommand_after_options(self):
+        """Returns correct index when options precede the subcommand."""
+        grp = self._make_group(["serve"])
+
+        @option("--host", context=True, default="localhost")
+        @click.pass_context
+        def _f(ctx, host):
+            """f"""
+
+        host_param = _f.__click_params__[0]
+        grp.params.append(host_param)
+        result = GroupDecorator._find_subcommand_boundary(["--host", "prod", "serve"], grp)
+        assert result == 2
+
+    def test_option_value_looks_like_subcommand_not_treated_as_boundary(self):
+        """A value token matching a subcommand name is skipped if preceded by an option."""
+        grp = self._make_group(["serve"])
+
+        @option("--output", default="table")
+        @click.pass_context
+        def _f(ctx, output):
+            """f"""
+
+        out_param = _f.__click_params__[0]
+        grp.params.append(out_param)
+        # "serve" here is the value of --output, not the subcommand invocation
+        result = GroupDecorator._find_subcommand_boundary(
+            ["--output", "serve", "--host", "prod"], grp
+        )
+        assert result == 4  # no subcommand boundary found
+
+    def test_key_equals_value_form_subcommand_index_unchanged(self):
+        """--key=val inline form does not consume the next token."""
+        grp = self._make_group(["serve"])
+
+        @option("--output", default="table")
+        @click.pass_context
+        def _f(ctx, output):
+            """f"""
+
+        out_param = _f.__click_params__[0]
+        grp.params.append(out_param)
+        result = GroupDecorator._find_subcommand_boundary(["--output=table", "serve"], grp)
+        assert result == 1
+
+    def test_double_dash_before_subcommand_returns_len_args(self):
+        """-- argument terminator stops boundary search; returns len(args)."""
+        grp = self._make_group(["serve"])
+        result = GroupDecorator._find_subcommand_boundary(["--", "serve"], grp)
+        assert result == 2
+
+    def test_group_with_no_commands_returns_len_args(self):
+        """Group with no registered commands always returns len(args)."""
+        grp = self._make_group([])
+        result = GroupDecorator._find_subcommand_boundary(["serve", "--host", "prod"], grp)
+        assert result == 3
+
+    def test_non_option_param_skipped_in_option_nargs_map(self):
+        """Argument params (non-Option) in f.params are skipped without error."""
+        grp = self._make_group(["serve"])
+        # Inject a click Argument into the group's params to exercise the isinstance guard
+        grp.params.append(click.Argument(["name"]))
+        result = GroupDecorator._find_subcommand_boundary(["serve"], grp)
+        assert result == 0
+
+
+# ---------------------------------------------------------------------------
+# _extract_params
+# ---------------------------------------------------------------------------
+
+
+class TestExtractParams:
+    """Unit tests for GroupDecorator._extract_params static helper."""
+
+    def _make_param(self, name: str, short: str | None = None, **kwargs) -> PycliferOption:
+        """Build a PycliferOption for testing."""
+        decls = [f"--{name}"]
+        if short:
+            decls.append(short)
+        return PycliferOption(decls, **kwargs)
+
+    def test_long_form_space_separated(self):
+        """--option VALUE → opts dict and consumed tokens."""
+        p = self._make_param("host")
+        opts, consumed, remainder = GroupDecorator._extract_params(["--host", "prod", "serve"], [p])
+        assert opts == {"host": "prod"}
+        assert consumed == ["--host", "prod"]
+        assert remainder == ["serve"]
+
+    def test_key_equals_value_form(self):
+        """--option=VALUE → single consumed token."""
+        p = self._make_param("host")
+        opts, consumed, remainder = GroupDecorator._extract_params(["--host=prod", "serve"], [p])
+        assert opts == {"host": "prod"}
+        assert consumed == ["--host=prod"]
+        assert remainder == ["serve"]
+
+    def test_short_form(self):
+        """-s VALUE short form extracted correctly."""
+        p = self._make_param("host", short="-H")
+        opts, consumed, remainder = GroupDecorator._extract_params(["-H", "prod", "serve"], [p])
+        assert opts == {"host": "prod"}
+        assert consumed == ["-H", "prod"]
+        assert remainder == ["serve"]
+
+    def test_flag_option(self):
+        """is_flag=True option extracted as True, no value token consumed."""
+        p = self._make_param("verbose", is_flag=True)
+        opts, consumed, remainder = GroupDecorator._extract_params(["--verbose", "serve"], [p])
+        assert opts == {"verbose": True}
+        assert consumed == ["--verbose"]
+        assert remainder == ["serve"]
+
+    def test_absent_option_not_in_result(self):
+        """Option not present → not in opts dict and not in consumed."""
+        p = self._make_param("host")
+        opts, consumed, remainder = GroupDecorator._extract_params(["serve"], [p])
+        assert "host" not in opts
+        assert consumed == []
+        assert remainder == ["serve"]
+
+    def test_first_occurrence_wins_in_opts(self):
+        """opts dict records first occurrence; all occurrences in consumed."""
+        p = self._make_param("host")
+        opts, consumed, remainder = GroupDecorator._extract_params(
+            ["--host", "first", "--host", "second"], [p]
+        )
+        assert opts["host"] == "first"
+        assert consumed == ["--host", "first", "--host", "second"]
+
+    def test_nargs_2_consumes_two_value_tokens(self):
+        """nargs=2 option consumes exactly two value tokens."""
+        p = self._make_param("coord", nargs=2)
+        opts, consumed, remainder = GroupDecorator._extract_params(
+            ["--coord", "1.0", "2.0", "serve"], [p]
+        )
+        assert opts == {"coord": ("1.0", "2.0")}
+        assert consumed == ["--coord", "1.0", "2.0"]
+        assert remainder == ["serve"]
+
+    def test_double_dash_stops_extraction(self):
+        """Everything from -- onward goes to remainder; extraction stops."""
+        p = self._make_param("host")
+        opts, consumed, remainder = GroupDecorator._extract_params(["--", "--host", "prod"], [p])
+        assert opts == {}
+        assert consumed == []
+        assert remainder == ["--", "--host", "prod"]
+
+    def test_empty_args(self):
+        """Empty args returns empty results."""
+        p = self._make_param("host")
+        opts, consumed, remainder = GroupDecorator._extract_params([], [p])
+        assert opts == {}
+        assert consumed == []
+        assert remainder == []
+
+    def test_empty_params(self):
+        """Empty params list → all tokens go to remainder."""
+        opts, consumed, remainder = GroupDecorator._extract_params(["--host", "prod"], [])
+        assert opts == {}
+        assert consumed == []
+        assert remainder == ["--host", "prod"]
+
+    def test_unknown_option_key_equals_value_goes_to_remainder(self):
+        """--unknown=val where unknown is not in params goes to remainder."""
+        p = self._make_param("host")
+        opts, consumed, remainder = GroupDecorator._extract_params(
+            ["--unknown=val", "--host", "prod"], [p]
+        )
+        assert opts == {"host": "prod"}
+        assert "--unknown=val" in remainder
+
+    def test_not_enough_value_tokens_goes_to_remainder(self):
+        """Option at end of args without enough value tokens is left in remainder."""
+        p = self._make_param("host")
+        opts, consumed, remainder = GroupDecorator._extract_params(["--host"], [p])
+        assert opts == {}
+        assert consumed == []
+        assert remainder == ["--host"]
+
+
+# ---------------------------------------------------------------------------
+# Pass 1 — context=True, is_global=False
+# ---------------------------------------------------------------------------
+
+
+class TestContextTrueNonGlobal:
+    """Pass 1: context=True (non-global) tokens reordered before boundary."""
+
+    def _make_app(self, required: bool = True):
+        """Build a test app with a context=True --host option."""
+        captured: dict = {}
+
+        @_minimal_app_group()
+        @option("--host", required=required, context=True, default=None)
+        @click.pass_context
+        def app(ctx, host):
+            """App"""
+            captured["host"] = host
+
+        @app.command()
+        @click.pass_context
+        def serve(ctx):
+            """Serve"""
+            click.echo("serving")
+
+        return app, captured
+
+    def test_token_after_boundary_received_by_root_callback(self):
+        """Token placed after subcommand name is received by root callback."""
+        app, captured = self._make_app(required=True)
+        runner = CliRunner()
+        result = runner.invoke(app, ["serve", "--host", "prod"])
+        assert result.exit_code == 0, result.output
+        assert captured["host"] == "prod"
+
+    def test_token_before_boundary_wins_over_after_boundary(self):
+        """Pre-boundary value wins when same option appears both before and after."""
+        app, captured = self._make_app(required=False)
+        runner = CliRunner()
+        result = runner.invoke(app, ["--host", "before", "serve", "--host", "after"])
+        assert result.exit_code == 0, result.output
+        assert captured["host"] == "before"
+
+    def test_required_option_after_boundary_no_missing_parameter(self):
+        """required=True option placed after boundary does not raise MissingParameter."""
+        app, captured = self._make_app(required=True)
+        runner = CliRunner()
+        result = runner.invoke(app, ["serve", "--host", "prod"])
+        assert result.exit_code == 0, result.output
+
+    def test_env_var_does_not_override_token_after_boundary(self):
+        """Explicit token after boundary wins over env var (direct CLI parse priority)."""
+        app, captured = self._make_app(required=False)
+        runner = CliRunner()
+        result = runner.invoke(app, ["serve", "--host", "from-cli"], env={"APP_HOST": "from-env"})
+        assert result.exit_code == 0, result.output
+        assert captured["host"] == "from-cli"
+
+    def test_context_factory_not_set_root_callback_receives_value(self):
+        """Without context_factory, root callback still receives the value."""
+        app, captured = self._make_app(required=True)
+        runner = CliRunner()
+        result = runner.invoke(app, ["serve", "--host", "direct"])
+        assert result.exit_code == 0, result.output
+        assert captured["host"] == "direct"
+
+
+# ---------------------------------------------------------------------------
+# Pass 2 — is_global=True prescan
+# ---------------------------------------------------------------------------
+
+
+class TestIsGlobalPrescan:
+    """Pass 2: is_global=True tokens copied before boundary for root callback."""
+
+    def _make_app(self):
+        """Build a test app with an is_global=True --resource option."""
+        root_captured: dict = {}
+        sub_captured: dict = {}
+
+        @_minimal_app_group()
+        @option("--resource", is_global=True, default=None)
+        @click.pass_context
+        def app(ctx, resource):
+            """App"""
+            root_captured["resource"] = resource
+
+        @app.command()
+        @option("--resource", default=None)
+        @click.pass_context
+        def items(ctx, resource):
+            """Items"""
+            sub_captured["resource"] = resource
+
+        return app, root_captured, sub_captured
+
+    def test_post_boundary_token_received_by_root_callback(self):
+        """Token after subcommand boundary reaches root callback."""
+        app, root, _ = self._make_app()
+        runner = CliRunner()
+        result = runner.invoke(app, ["items", "--resource", "acme"])
+        assert result.exit_code == 0, result.output
+        assert root["resource"] == "acme"
+
+    def test_subcommand_still_sees_its_token(self):
+        """Subcommand receives its own copy of the token (not consumed)."""
+        app, _, sub = self._make_app()
+        runner = CliRunner()
+        result = runner.invoke(app, ["items", "--resource", "acme"])
+        assert result.exit_code == 0, result.output
+        assert sub["resource"] == "acme"
+
+    def test_pre_boundary_value_wins_over_post_boundary(self):
+        """Pre-boundary explicit arg wins when same option appears on both sides."""
+        app, root, _ = self._make_app()
+        runner = CliRunner()
+        result = runner.invoke(app, ["--resource", "before", "items", "--resource", "after"])
+        assert result.exit_code == 0, result.output
+        assert root["resource"] == "before"
+
+    def test_no_op_when_no_post_boundary_global_tokens(self):
+        """No-op when all global tokens are already before the boundary."""
+        app, root, _ = self._make_app()
+        runner = CliRunner()
+        result = runner.invoke(app, ["--resource", "explicit", "items"])
+        assert result.exit_code == 0, result.output
+        assert root["resource"] == "explicit"
+
+
+# ---------------------------------------------------------------------------
+# context=True + is_global=True combo
+# ---------------------------------------------------------------------------
+
+
+class TestContextTrueIsGlobalCombo:
+    """Options with both context=True and is_global=True."""
+
+    def _make_app(self):
+        """Build a test app with context=True, is_global=True --resource."""
+        root_captured: dict = {}
+        sub_captured: dict = {}
+
+        @_minimal_app_group()
+        @option("--resource", context=True, is_global=True, default=None)
+        @click.pass_context
+        def app(ctx, resource):
+            """App"""
+            root_captured["resource"] = resource
+
+        @app.command()
+        @click.pass_context
+        def items(ctx, **kwargs):
+            """Items"""
+            # GlobalOptionsMixin injects --resource; it arrives as a kwarg
+            sub_captured["resource"] = kwargs.get("resource")
+
+        return app, root_captured, sub_captured
+
+    def test_root_callback_receives_post_boundary_value(self):
+        """Root callback gets the value even when placed after subcommand name."""
+        app, root, _ = self._make_app()
+        runner = CliRunner()
+        result = runner.invoke(app, ["items", "--resource", "acme"])
+        assert result.exit_code == 0, result.output
+        assert root["resource"] == "acme"
+
+    def test_subcommand_receives_propagated_value(self):
+        """Subcommand receives its own copy via GlobalOptionsMixin propagation."""
+        app, _, sub = self._make_app()
+        runner = CliRunner()
+        result = runner.invoke(app, ["items", "--resource", "acme"])
+        assert result.exit_code == 0, result.output
+        assert sub["resource"] == "acme"
+
+
+# ---------------------------------------------------------------------------
+# context_factory
+# ---------------------------------------------------------------------------
+
+
+class TestContextFactoryBehavior:
+    """Tests for GroupConfig.context_factory integration."""
+
+    def _make_app_with_factory(self, factory=None, required: bool = True):
+        """Build a test app with a context_factory."""
+        obj_captured: dict = {}
+
+        @_minimal_app_group(context_factory=factory, invoke_without_command=True)
+        @option("--host", required=required, context=True, default=None)
+        @click.pass_context
+        def app(ctx, host):
+            """App"""
+            obj_captured["obj"] = ctx.obj
+
+        @app.command()
+        @click.pass_context
+        def serve(ctx):
+            """Serve"""
+
+        return app, obj_captured
+
+    def test_ctx_obj_set_before_root_callback(self):
+        """ctx.obj is populated by context_factory before root callback runs."""
+
+        class AppCtx:
+            """App context."""
+
+            def __init__(self, host=None, **kwargs):
+                self.host = host
+
+        app, captured = self._make_app_with_factory(factory=AppCtx)
+        runner = CliRunner()
+        result = runner.invoke(app, ["--host", "prod"])
+        assert result.exit_code == 0, result.output
+        assert isinstance(captured["obj"], AppCtx)
+        assert captured["obj"].host == "prod"
+
+    def test_ctx_obj_built_from_context_true_params(self):
+        """context_factory receives context=True param values as kwargs."""
+        received: dict = {}
+
+        def factory(**kwargs):
+            """Factory."""
+            received.update(kwargs)
+            return object()
+
+        app, _ = self._make_app_with_factory(factory=factory)
+        runner = CliRunner()
+        runner.invoke(app, ["--host", "myhost"])
+        assert received.get("host") == "myhost"
+
+    def test_context_factory_none_ctx_obj_not_set(self):
+        """When context_factory=None, ctx.obj is not set by pyclifer."""
+        app, captured = self._make_app_with_factory(factory=None, required=False)
+        runner = CliRunner()
+        result = runner.invoke(app, [])
+        assert result.exit_code == 0, result.output
+        assert captured["obj"] is None
+
+    def test_context_factory_only_at_root_level(self):
+        """context_factory is called only at root level (parent is None)."""
+        call_count: list = []
+
+        def factory(**kwargs):
+            """Factory."""
+            call_count.append(1)
+            return object()
+
+        app, _ = self._make_app_with_factory(factory=factory)
+        runner = CliRunner()
+        runner.invoke(app, ["serve"])
+        # factory called once: for root context, not for subcommand context
+        assert len(call_count) == 1
+
+    def test_absent_optional_param_passes_none_to_factory(self):
+        """An absent optional context=True param passes None to context_factory."""
+        received: dict = {}
+
+        def factory(**kwargs):
+            """Factory."""
+            received.update(kwargs)
+            return object()
+
+        app, _ = self._make_app_with_factory(factory=factory, required=False)
+        runner = CliRunner()
+        runner.invoke(app, [])
+        assert "host" in received
+        assert received["host"] is None
+
+    def test_exception_in_context_factory_propagates(self):
+        """Exception raised in context_factory propagates to the caller."""
+
+        def broken_factory(**kwargs):
+            """Broken factory."""
+            raise ValueError("factory broken")
+
+        app, _ = self._make_app_with_factory(factory=broken_factory)
+        runner = CliRunner()
+        result = runner.invoke(app, ["--host", "x"])
+        assert result.exit_code != 0

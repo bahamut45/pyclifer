@@ -156,13 +156,16 @@ class GroupDecorator:
     def _patch_make_context(self, f: click_extra.Group) -> None:
         """Patch make_context once with all framework hooks applied in order.
 
-        Three concerns are composed here — each guarded by its config flag:
+        Concerns composed here (each guarded by its config flag):
 
         1. Dynamic auto_envvar_prefix (pre-call): derive prefix from CLI name when not set.
         2. Early verbosity (pre-call + post-call): extract level before Click parses args,
            apply it after the context is built.
         3. Framework meta injection (post-call): store log level and exit codes in ctx.meta
            so returns_response can read them without a GroupConfig reference.
+        4. context=True / is_global=True prescan (pre-call): reorder tokens so root options
+           placed after a subcommand boundary are parsed directly by Click.
+        5. context_factory (post-call): build ctx.obj from context=True param values.
 
         Args:
             f: The Click group to patch.
@@ -175,18 +178,53 @@ class GroupDecorator:
         def custom_make_context(info_name, args, parent=None, **extra):
             """Apply all make_context hooks in a single wrapper."""
             # --- pre-call ---
+
+            # Concern 1 — dynamic auto_envvar_prefix
             if self.config.auto_envvar_prefix is None and parent is None and info_name:
                 derived_prefix = info_name.upper().replace("-", "_").replace(" ", "_")
                 extra.setdefault("auto_envvar_prefix", derived_prefix)
 
+            # Concern 2 — early verbosity extraction
             level_name = None
             if self.config.add_verbosity_option and parent is None and args:
                 level_name = self._extract_early_verbosity(args)
+
+            # Concern 4a — Pass 1: context=True, is_global=False — move after-boundary
+            # tokens before the boundary so Click parses them directly (CLI priority > env var).
+            if parent is None and args:
+                context_only_params = [
+                    p
+                    for p in f.params
+                    if getattr(p, "context", False) and not getattr(p, "is_global", False)
+                ]
+                if context_only_params:
+                    boundary = GroupDecorator._find_subcommand_boundary(args, f)
+                    before, after = args[:boundary], args[boundary:]
+                    if after:
+                        _, consumed, after_remainder = GroupDecorator._extract_params(
+                            after, context_only_params
+                        )
+                        if consumed:
+                            args = consumed + before + after_remainder
+
+            # Concern 4b — Pass 2: is_global=True — copy after-boundary tokens before
+            # the boundary so root callback receives them via direct CLI parse.
+            if parent is None and args:
+                global_params = [p for p in f.params if getattr(p, "is_global", False)]
+                if global_params:
+                    boundary = GroupDecorator._find_subcommand_boundary(args, f)
+                    before, after = args[:boundary], args[boundary:]
+                    if after:
+                        _, consumed_after, _ = GroupDecorator._extract_params(after, global_params)
+                        if consumed_after:
+                            args = consumed_after + before + after
 
             # --- call ---
             ctx = original_make_context(info_name, args, parent=parent, **extra)
 
             # --- post-call ---
+
+            # Concern 2 — early verbosity application
             if self.config.add_verbosity_option and parent is None and level_name:
                 from .log.config import PYCLIFER_LOG_LEVELS
 
@@ -196,13 +234,154 @@ class GroupDecorator:
                             param.set_level(ctx, param, level_name)
                             break
 
+            # Concern 3 — framework meta injection
             if parent is None:
                 ctx.meta.setdefault("pyclifer.unhandled_exception_log_level", level)
                 ctx.meta.setdefault("pyclifer.exit_codes_class", exit_codes_cls)
 
+            # Concern 5 — context_factory: build ctx.obj from context=True param values
+            if parent is None and self.config.context_factory is not None:
+                context_values = {
+                    p.name: ctx.params.get(p.name) for p in f.params if getattr(p, "context", False)
+                }
+                ctx.obj = self.config.context_factory(**context_values)
+
             return ctx
 
         f.make_context = custom_make_context
+
+    @staticmethod
+    def _find_subcommand_boundary(args: list[str], f: click_extra.Group) -> int:
+        """Return the index of the first subcommand token in args.
+
+        Skips option value tokens correctly so a subcommand name that happens
+        to be an option value is not misidentified as a boundary.
+        Returns len(args) when no subcommand boundary is found.
+
+        Args:
+            args: The raw argument list.
+            f: The Click group whose registered commands define valid boundaries.
+
+        Returns:
+            Index of the first subcommand token, or len(args) if none found.
+        """
+        # Map every declared option form to its nargs (0 for flags, n otherwise).
+        # nargs=-1 (variadic) is treated as 0 — these options must be placed before
+        # the boundary manually; the pre-scan skips them.
+        option_nargs: dict[str, int] = {}
+        for param in f.params:
+            if not isinstance(param, click_extra.Option):
+                continue
+            nargs = getattr(param, "nargs", 1)
+            if param.is_flag or nargs == -1:  # pragma: no cover
+                nargs = 0
+            for decl in param.opts:
+                option_nargs[decl] = nargs
+
+        commands = getattr(f, "commands", {}) or {}
+        i = 0
+        while i < len(args):
+            token = args[i]
+            if token == "--":
+                return len(args)
+            if token.startswith("-"):
+                if "=" in token:
+                    i += 1  # --key=val — value is inline, no next token consumed
+                else:
+                    nargs = option_nargs.get(token)
+                    if nargs is None or nargs == -1:
+                        i += 1  # unknown or variadic — treat as flag
+                    else:
+                        i += 1 + nargs
+            else:
+                if token in commands:
+                    return i
+                i += 1
+        return len(args)
+
+    @staticmethod
+    def _extract_params(
+        args: list[str], params: list[click_extra.Option]
+    ) -> tuple[dict[str, Any], list[str], list[str]]:
+        """Extract option tokens matching params from args via linear scan.
+
+        Does not use Click internals. Returns a 3-tuple:
+        - opts_dict: {param.name: value} — first occurrence per param.
+        - consumed_tokens: raw token strings matched and consumed, in order.
+        - remainder: tokens not matched.
+
+        nargs=-1 params are skipped entirely (not extracted).
+        Stops at '--' (argument terminator); everything from '--' onwards
+        goes to remainder unchanged.
+
+        Args:
+            args: The raw argument list to scan.
+            params: The option params to extract.
+
+        Returns:
+            Tuple of (opts_dict, consumed_tokens, remainder).
+        """
+        if not args or not params:
+            return {}, [], list(args)
+
+        # Build lookup: option declaration → (param_name, nargs, is_flag)
+        lookup: dict[str, tuple[str, int, bool]] = {}
+        for param in params:
+            nargs = getattr(param, "nargs", 1)
+            if nargs == -1:  # pragma: no cover
+                continue  # variadic — Click rejects nargs=-1 on Options; defensive guard
+            is_flag = bool(getattr(param, "is_flag", False))
+            effective_nargs = 0 if is_flag else nargs
+            for decl in param.opts:
+                lookup[decl] = (param.name, effective_nargs, is_flag)
+
+        opts: dict[str, Any] = {}
+        consumed: list[str] = []
+        remainder: list[str] = []
+        i = 0
+
+        while i < len(args):
+            token = args[i]
+
+            if token == "--":
+                remainder.extend(args[i:])
+                break
+
+            if token.startswith("-") and "=" in token:
+                key, _, val = token.partition("=")
+                if key in lookup:
+                    name, _, _ = lookup[key]
+                    consumed.append(token)
+                    opts.setdefault(name, val)
+                    i += 1
+                else:
+                    remainder.append(token)
+                    i += 1
+                continue
+
+            if token in lookup:
+                name, nargs, is_flag = lookup[token]
+                if is_flag:
+                    consumed.append(token)
+                    opts.setdefault(name, True)
+                    i += 1
+                else:
+                    value_tokens = args[i + 1 : i + 1 + nargs]
+                    if len(value_tokens) == nargs:
+                        consumed.append(token)
+                        consumed.extend(value_tokens)
+                        parsed_value = value_tokens[0] if nargs == 1 else tuple(value_tokens)
+                        opts.setdefault(name, parsed_value)
+                        i += 1 + nargs
+                    else:
+                        # Not enough value tokens — leave as remainder
+                        remainder.append(token)
+                        i += 1
+            else:
+                remainder.append(token)
+                i += 1
+
+        return opts, consumed, remainder
 
     def _configure_handle_response(self, f: click_extra.Group) -> None:
         """Validate exit codes and propagate handle_response to the group instance.
@@ -441,6 +620,7 @@ def command(
 def option(
     *param_decls: str,
     is_global: bool = False,
+    context: bool = False,
     show_envvar: bool = True,
     store_in_meta: bool = False,
     **kwargs: Any,
@@ -453,6 +633,8 @@ def option(
     Args:
         *param_decls: Parameter declarations for the option.
         is_global: If True, the option is propagated to all subcommands.
+        context: If True, the option feeds ctx.obj construction and is accepted
+            at any position in the command chain.
         show_envvar: Show environment variables in the help output.
         store_in_meta: If True, stores the option value in ctx.meta automatically.
         **kwargs: Additional arguments passed to click_extra.option().
@@ -464,6 +646,10 @@ def option(
     kwargs["cls"] = cls
     kwargs["is_global"] = is_global
     kwargs.setdefault("show_envvar", show_envvar)
+
+    # Only forward context to classes that declare the attribute (PycliferOption subclasses).
+    if isinstance(cls, type) and issubclass(cls, PycliferOption):
+        kwargs["context"] = context
 
     # Delegate to the Mixin if the class supports it
     if isinstance(cls, type) and issubclass(cls, StoreInMetaMixin):

@@ -528,10 +528,11 @@ class ScaffoldingInterface(BaseInterface):
             count=1,
             flags=re.MULTILINE,
         )
-        content = content.replace(
-            "        super().__init__()\n",
-            f"        super().__init__()\n        self.{name_snake} = {name_pascal}Integration()\n",
-            1,
+        content = re.sub(
+            r"(        super\(\)\.__init__\([^)]*\)\n)",
+            rf"\1        self.{name_snake} = {name_pascal}Integration()\n",
+            content,
+            count=1,
         )
         context_file.write_text(content)
         yield OperationResult.ok(str(context_file), message="modified", data={"action": "modified"})
