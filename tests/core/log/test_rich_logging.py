@@ -543,6 +543,22 @@ class TestPycliferVerbosityOption:
         assert "--verbosity" in verbosity_option.opts
 
     @patch("pyclifer.core.log.config.configure_rich_logging")
+    def test_set_level_more_verbose_overrides_current_level(self, mock_configure, verbosity_option):
+        """set_level proceeds when new level is more verbose than current (not skipped)."""
+        mock_ctx = Mock()
+        mock_ctx.meta = {"click_extra.verbosity_level": "WARNING"}
+        mock_param = Mock()
+
+        with patch.object(
+            type(verbosity_option), "all_loggers", new_callable=PropertyMock
+        ) as mock_all_loggers:
+            mock_all_loggers.return_value = iter([])
+            with patch.object(verbosity_option, "reset_loggers"):
+                verbosity_option.set_level(mock_ctx, mock_param, "DEBUG")
+
+        assert mock_ctx.meta["click_extra.verbosity_level"] == "DEBUG"
+
+    @patch("pyclifer.core.log.config.configure_rich_logging")
     def test_set_level_calls_configure_rich_logging(self, mock_configure, verbosity_option):
         """Test that set_level calls configure_rich_logging."""
         mock_ctx = Mock()
