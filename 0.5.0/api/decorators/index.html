@@ -1,0 +1,3210 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="PYthon Command Line Interface FramEwoRk — decorator-driven CLI framework built on click-extra and rich-click">
+      
+      
+      
+        <link rel="canonical" href="https://bahamut45.github.io/pyclifer/0.5.0/api/decorators/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../context/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon-96x96.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Decorators - pyclifer</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#decorators" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="pyclifer" class="md-header__button md-logo" aria-label="pyclifer" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pyclifer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Decorators
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/bahamut45/pyclifer" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    bahamut45/pyclifer
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../configuration/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../examples/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Examples
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../demo/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Demo App
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../how-to/" class="md-tabs__link">
+          
+  
+  
+  How-to Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="pyclifer" class="md-nav__button md-logo" aria-label="pyclifer" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    pyclifer
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/bahamut45/pyclifer" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    bahamut45/pyclifer
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../output-formatting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output Formatting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../error-handling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Error Handling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scaffolding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scaffolding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo App
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-to Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    How-to Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-to Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/response-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Response Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/rich-progressive-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rich Progressive Output
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/multi-integration-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multi-integration Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/error-handling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Error Handling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/output-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choosing an Output Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/context-options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Context construction and anywhere-passable options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decorators
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decorators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#app_group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        app_group
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.app_group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;app_group
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        group
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;group
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        command
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;command
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output_filter_option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output_filter_option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.output_filter_option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;output_filter_option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        returns_response
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.returns_response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;returns_response
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pagination_options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pagination_options
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.pagination_options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;pagination_options
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Context
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output & Response
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../classes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Classes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mixins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mixins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#app_group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        app_group
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.app_group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;app_group
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        group
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;group
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        command
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;command
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output_filter_option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output_filter_option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.output_filter_option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;output_filter_option
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        returns_response
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.returns_response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;returns_response
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pagination_options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pagination_options
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyclifer.pagination_options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;pagination_options
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="decorators">Decorators<a class="headerlink" href="#decorators" title="Permanent link">&para;</a></h1>
+<p>The four main decorators are the public surface of pyclifer. They wrap Click objects with
+framework features: automatic configuration, global option propagation, Rich logging, and
+standardized response handling.</p>
+<h2 id="app_group">app_group<a class="headerlink" href="#app_group" title="Permanent link">&para;</a></h2>
+<p>Entry point decorator. Creates the root CLI group with all framework features enabled.</p>
+<p>Key parameters:</p>
+<ul>
+<li><code>context_factory</code> — callable that receives all <code>context=True</code> option values as keyword
+  arguments and returns the <code>ctx.obj</code> instance. Enables declarative context construction
+  without a manual <code>ctx.obj =</code> assignment in the group callback.</li>
+</ul>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="pyclifer.app_group" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">pyclifer</span><span class="o">.</span><span class="n">app_group</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#pyclifer.app_group" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents first">
+
+        <p>Decorator for the main CLI application entry point.</p>
+<p>Enables all automatic features (config, logging, version, etc.) by default.
+Options like --verbosity will be propagated to all subcommands.</p>
+<p>All keyword arguments map to <code>GroupConfig</code> fields or are forwarded to Click.
+Notable options:</p>
+<ul>
+<li><code>handle_response</code> (bool): intercept and print <code>Response</code> objects automatically.</li>
+<li><code>timer</code> (bool): inject <code>--time/--no-time</code>. Prints elapsed time in rich/table/raw;
+  injects <code>execution_time</code> and <code>execution_time_str</code> into <code>Response.data</code> in json/yaml.</li>
+<li><code>output_format_default</code> (str): default for <code>--output-format</code>
+  (json, yaml, table, rich, raw, text).</li>
+</ul>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>**kwargs</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>GroupConfig fields or Click group arguments.</p>
+              </div>
+            </td>
+            <td>
+                  <code>{}</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span>[[<span title="collections.abc.Callable">Callable</span>[..., <span title="typing.Any">Any</span>]], <span title="click_extra.Group">Group</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A decorator that wraps the function as a pyclifer CLI group.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/pyclifer/core/decorators.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-420">420</a></span>
+<span class="normal"><a href="#__codelineno-0-421">421</a></span>
+<span class="normal"><a href="#__codelineno-0-422">422</a></span>
+<span class="normal"><a href="#__codelineno-0-423">423</a></span>
+<span class="normal"><a href="#__codelineno-0-424">424</a></span>
+<span class="normal"><a href="#__codelineno-0-425">425</a></span>
+<span class="normal"><a href="#__codelineno-0-426">426</a></span>
+<span class="normal"><a href="#__codelineno-0-427">427</a></span>
+<span class="normal"><a href="#__codelineno-0-428">428</a></span>
+<span class="normal"><a href="#__codelineno-0-429">429</a></span>
+<span class="normal"><a href="#__codelineno-0-430">430</a></span>
+<span class="normal"><a href="#__codelineno-0-431">431</a></span>
+<span class="normal"><a href="#__codelineno-0-432">432</a></span>
+<span class="normal"><a href="#__codelineno-0-433">433</a></span>
+<span class="normal"><a href="#__codelineno-0-434">434</a></span>
+<span class="normal"><a href="#__codelineno-0-435">435</a></span>
+<span class="normal"><a href="#__codelineno-0-436">436</a></span>
+<span class="normal"><a href="#__codelineno-0-437">437</a></span>
+<span class="normal"><a href="#__codelineno-0-438">438</a></span>
+<span class="normal"><a href="#__codelineno-0-439">439</a></span>
+<span class="normal"><a href="#__codelineno-0-440">440</a></span>
+<span class="normal"><a href="#__codelineno-0-441">441</a></span>
+<span class="normal"><a href="#__codelineno-0-442">442</a></span>
+<span class="normal"><a href="#__codelineno-0-443">443</a></span>
+<span class="normal"><a href="#__codelineno-0-444">444</a></span>
+<span class="normal"><a href="#__codelineno-0-445">445</a></span>
+<span class="normal"><a href="#__codelineno-0-446">446</a></span>
+<span class="normal"><a href="#__codelineno-0-447">447</a></span>
+<span class="normal"><a href="#__codelineno-0-448">448</a></span>
+<span class="normal"><a href="#__codelineno-0-449">449</a></span>
+<span class="normal"><a href="#__codelineno-0-450">450</a></span>
+<span class="normal"><a href="#__codelineno-0-451">451</a></span>
+<span class="normal"><a href="#__codelineno-0-452">452</a></span>
+<span class="normal"><a href="#__codelineno-0-453">453</a></span>
+<span class="normal"><a href="#__codelineno-0-454">454</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-420" name="__codelineno-0-420"></a><span class="k">def</span><span class="w"> </span><span class="nf">app_group</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">click_extra</span><span class="o">.</span><span class="n">Group</span><span class="p">]:</span>
+<a id="__codelineno-0-421" name="__codelineno-0-421"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator for the main CLI application entry point.</span>
+<a id="__codelineno-0-422" name="__codelineno-0-422"></a>
+<a id="__codelineno-0-423" name="__codelineno-0-423"></a><span class="sd">    Enables all automatic features (config, logging, version, etc.) by default.</span>
+<a id="__codelineno-0-424" name="__codelineno-0-424"></a><span class="sd">    Options like --verbosity will be propagated to all subcommands.</span>
+<a id="__codelineno-0-425" name="__codelineno-0-425"></a>
+<a id="__codelineno-0-426" name="__codelineno-0-426"></a><span class="sd">    All keyword arguments map to `GroupConfig` fields or are forwarded to Click.</span>
+<a id="__codelineno-0-427" name="__codelineno-0-427"></a><span class="sd">    Notable options:</span>
+<a id="__codelineno-0-428" name="__codelineno-0-428"></a>
+<a id="__codelineno-0-429" name="__codelineno-0-429"></a><span class="sd">    - `handle_response` (bool): intercept and print `Response` objects automatically.</span>
+<a id="__codelineno-0-430" name="__codelineno-0-430"></a><span class="sd">    - `timer` (bool): inject `--time/--no-time`. Prints elapsed time in rich/table/raw;</span>
+<a id="__codelineno-0-431" name="__codelineno-0-431"></a><span class="sd">      injects `execution_time` and `execution_time_str` into `Response.data` in json/yaml.</span>
+<a id="__codelineno-0-432" name="__codelineno-0-432"></a><span class="sd">    - `output_format_default` (str): default for `--output-format`</span>
+<a id="__codelineno-0-433" name="__codelineno-0-433"></a><span class="sd">      (json, yaml, table, rich, raw, text).</span>
+<a id="__codelineno-0-434" name="__codelineno-0-434"></a>
+<a id="__codelineno-0-435" name="__codelineno-0-435"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-436" name="__codelineno-0-436"></a><span class="sd">        **kwargs: GroupConfig fields or Click group arguments.</span>
+<a id="__codelineno-0-437" name="__codelineno-0-437"></a>
+<a id="__codelineno-0-438" name="__codelineno-0-438"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-439" name="__codelineno-0-439"></a><span class="sd">        A decorator that wraps the function as a pyclifer CLI group.</span>
+<a id="__codelineno-0-440" name="__codelineno-0-440"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-441" name="__codelineno-0-441"></a>    <span class="n">config_kwargs</span><span class="p">,</span> <span class="n">click_kwargs</span> <span class="o">=</span> <span class="n">_split_group_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-442" name="__codelineno-0-442"></a>
+<a id="__codelineno-0-443" name="__codelineno-0-443"></a>    <span class="c1"># Create config with App defaults</span>
+<a id="__codelineno-0-444" name="__codelineno-0-444"></a>    <span class="n">config</span> <span class="o">=</span> <span class="n">GroupConfig</span><span class="p">(</span>
+<a id="__codelineno-0-445" name="__codelineno-0-445"></a>        <span class="n">add_config_option</span><span class="o">=</span><span class="n">config_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;add_config_option&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+<a id="__codelineno-0-446" name="__codelineno-0-446"></a>        <span class="n">add_verbosity_option</span><span class="o">=</span><span class="n">config_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;add_verbosity_option&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+<a id="__codelineno-0-447" name="__codelineno-0-447"></a>        <span class="n">add_log_file_option</span><span class="o">=</span><span class="n">config_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;add_log_file_option&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+<a id="__codelineno-0-448" name="__codelineno-0-448"></a>        <span class="n">add_version_option</span><span class="o">=</span><span class="n">config_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;add_version_option&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+<a id="__codelineno-0-449" name="__codelineno-0-449"></a>        <span class="n">add_output_format_option</span><span class="o">=</span><span class="n">config_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;add_output_format_option&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+<a id="__codelineno-0-450" name="__codelineno-0-450"></a>        <span class="n">handle_response</span><span class="o">=</span><span class="n">config_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;handle_response&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+<a id="__codelineno-0-451" name="__codelineno-0-451"></a>        <span class="o">**</span><span class="n">config_kwargs</span><span class="p">,</span>
+<a id="__codelineno-0-452" name="__codelineno-0-452"></a>    <span class="p">)</span>
+<a id="__codelineno-0-453" name="__codelineno-0-453"></a>
+<a id="__codelineno-0-454" name="__codelineno-0-454"></a>    <span class="k">return</span> <span class="n">GroupDecorator</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">click_kwargs</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div><hr />
+<h2 id="group">group<a class="headerlink" href="#group" title="Permanent link">&para;</a></h2>
+<p>Creates a subgroup that inherits global options from its parent.</p>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="pyclifer.group" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">pyclifer</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#pyclifer.group" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents first">
+
+        <p>Decorator for CLI subgroups.</p>
+<p>Creates a standard group without global application options by default.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/pyclifer/core/decorators.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-457">457</a></span>
+<span class="normal"><a href="#__codelineno-0-458">458</a></span>
+<span class="normal"><a href="#__codelineno-0-459">459</a></span>
+<span class="normal"><a href="#__codelineno-0-460">460</a></span>
+<span class="normal"><a href="#__codelineno-0-461">461</a></span>
+<span class="normal"><a href="#__codelineno-0-462">462</a></span>
+<span class="normal"><a href="#__codelineno-0-463">463</a></span>
+<span class="normal"><a href="#__codelineno-0-464">464</a></span>
+<span class="normal"><a href="#__codelineno-0-465">465</a></span>
+<span class="normal"><a href="#__codelineno-0-466">466</a></span>
+<span class="normal"><a href="#__codelineno-0-467">467</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-457" name="__codelineno-0-457"></a><span class="k">def</span><span class="w"> </span><span class="nf">group</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">click_extra</span><span class="o">.</span><span class="n">Group</span><span class="p">]:</span>
+<a id="__codelineno-0-458" name="__codelineno-0-458"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator for CLI subgroups.</span>
+<a id="__codelineno-0-459" name="__codelineno-0-459"></a>
+<a id="__codelineno-0-460" name="__codelineno-0-460"></a><span class="sd">    Creates a standard group without global application options by default.</span>
+<a id="__codelineno-0-461" name="__codelineno-0-461"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-462" name="__codelineno-0-462"></a>    <span class="n">config_kwargs</span><span class="p">,</span> <span class="n">click_kwargs</span> <span class="o">=</span> <span class="n">_split_group_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-463" name="__codelineno-0-463"></a>
+<a id="__codelineno-0-464" name="__codelineno-0-464"></a>    <span class="c1"># Create config with Sub-group defaults (mostly False from the dataclass)</span>
+<a id="__codelineno-0-465" name="__codelineno-0-465"></a>    <span class="n">config</span> <span class="o">=</span> <span class="n">GroupConfig</span><span class="p">(</span><span class="o">**</span><span class="n">config_kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-466" name="__codelineno-0-466"></a>
+<a id="__codelineno-0-467" name="__codelineno-0-467"></a>    <span class="k">return</span> <span class="n">GroupDecorator</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">click_kwargs</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div><hr />
+<h2 id="command">command<a class="headerlink" href="#command" title="Permanent link">&para;</a></h2>
+<p>Creates a CLI command. Use inside a group or app_group.</p>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="pyclifer.command" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">pyclifer</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">handle_response</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#pyclifer.command" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents first">
+
+        <p>Create a Click command with optional automatic response handling.</p>
+<p>When handle_response=True, any Response returned by the command function
+is automatically printed using the output format resolved from ctx.meta
+(--output-format option). This is equivalent to manually applying the
+returns_response decorator.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Name of the command.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>handle_response</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, wrap the function with returns_response.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>**kwargs</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Additional arguments passed to click_extra.command().</p>
+              </div>
+            </td>
+            <td>
+                  <code>{}</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span>[[<span title="pyclifer.core.decorators._F">_F</span>], <span title="click_extra.Command">Command</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Decorated function as a Click command.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/pyclifer/core/decorators.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-584">584</a></span>
+<span class="normal"><a href="#__codelineno-0-585">585</a></span>
+<span class="normal"><a href="#__codelineno-0-586">586</a></span>
+<span class="normal"><a href="#__codelineno-0-587">587</a></span>
+<span class="normal"><a href="#__codelineno-0-588">588</a></span>
+<span class="normal"><a href="#__codelineno-0-589">589</a></span>
+<span class="normal"><a href="#__codelineno-0-590">590</a></span>
+<span class="normal"><a href="#__codelineno-0-591">591</a></span>
+<span class="normal"><a href="#__codelineno-0-592">592</a></span>
+<span class="normal"><a href="#__codelineno-0-593">593</a></span>
+<span class="normal"><a href="#__codelineno-0-594">594</a></span>
+<span class="normal"><a href="#__codelineno-0-595">595</a></span>
+<span class="normal"><a href="#__codelineno-0-596">596</a></span>
+<span class="normal"><a href="#__codelineno-0-597">597</a></span>
+<span class="normal"><a href="#__codelineno-0-598">598</a></span>
+<span class="normal"><a href="#__codelineno-0-599">599</a></span>
+<span class="normal"><a href="#__codelineno-0-600">600</a></span>
+<span class="normal"><a href="#__codelineno-0-601">601</a></span>
+<span class="normal"><a href="#__codelineno-0-602">602</a></span>
+<span class="normal"><a href="#__codelineno-0-603">603</a></span>
+<span class="normal"><a href="#__codelineno-0-604">604</a></span>
+<span class="normal"><a href="#__codelineno-0-605">605</a></span>
+<span class="normal"><a href="#__codelineno-0-606">606</a></span>
+<span class="normal"><a href="#__codelineno-0-607">607</a></span>
+<span class="normal"><a href="#__codelineno-0-608">608</a></span>
+<span class="normal"><a href="#__codelineno-0-609">609</a></span>
+<span class="normal"><a href="#__codelineno-0-610">610</a></span>
+<span class="normal"><a href="#__codelineno-0-611">611</a></span>
+<span class="normal"><a href="#__codelineno-0-612">612</a></span>
+<span class="normal"><a href="#__codelineno-0-613">613</a></span>
+<span class="normal"><a href="#__codelineno-0-614">614</a></span>
+<span class="normal"><a href="#__codelineno-0-615">615</a></span>
+<span class="normal"><a href="#__codelineno-0-616">616</a></span>
+<span class="normal"><a href="#__codelineno-0-617">617</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-584" name="__codelineno-0-584"></a><span class="k">def</span><span class="w"> </span><span class="nf">command</span><span class="p">(</span>
+<a id="__codelineno-0-585" name="__codelineno-0-585"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-586" name="__codelineno-0-586"></a>    <span class="n">handle_response</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-587" name="__codelineno-0-587"></a>    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<a id="__codelineno-0-588" name="__codelineno-0-588"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_F</span><span class="p">],</span> <span class="n">click_extra</span><span class="o">.</span><span class="n">Command</span><span class="p">]:</span>
+<a id="__codelineno-0-589" name="__codelineno-0-589"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Click command with optional automatic response handling.</span>
+<a id="__codelineno-0-590" name="__codelineno-0-590"></a>
+<a id="__codelineno-0-591" name="__codelineno-0-591"></a><span class="sd">    When handle_response=True, any Response returned by the command function</span>
+<a id="__codelineno-0-592" name="__codelineno-0-592"></a><span class="sd">    is automatically printed using the output format resolved from ctx.meta</span>
+<a id="__codelineno-0-593" name="__codelineno-0-593"></a><span class="sd">    (--output-format option). This is equivalent to manually applying the</span>
+<a id="__codelineno-0-594" name="__codelineno-0-594"></a><span class="sd">    returns_response decorator.</span>
+<a id="__codelineno-0-595" name="__codelineno-0-595"></a>
+<a id="__codelineno-0-596" name="__codelineno-0-596"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-597" name="__codelineno-0-597"></a><span class="sd">        name: Name of the command.</span>
+<a id="__codelineno-0-598" name="__codelineno-0-598"></a><span class="sd">        handle_response: If True, wrap the function with returns_response.</span>
+<a id="__codelineno-0-599" name="__codelineno-0-599"></a><span class="sd">        **kwargs: Additional arguments passed to click_extra.command().</span>
+<a id="__codelineno-0-600" name="__codelineno-0-600"></a>
+<a id="__codelineno-0-601" name="__codelineno-0-601"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-602" name="__codelineno-0-602"></a><span class="sd">        Decorated function as a Click command.</span>
+<a id="__codelineno-0-603" name="__codelineno-0-603"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-604" name="__codelineno-0-604"></a>    <span class="n">command_decorator</span> <span class="o">=</span> <span class="n">rich_command_decorator</span>
+<a id="__codelineno-0-605" name="__codelineno-0-605"></a>
+<a id="__codelineno-0-606" name="__codelineno-0-606"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">handle_response</span><span class="p">:</span>
+<a id="__codelineno-0-607" name="__codelineno-0-607"></a>        <span class="n">decorate</span> <span class="o">=</span> <span class="n">command_decorator</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">if</span> <span class="n">name</span> <span class="k">else</span> <span class="n">command_decorator</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-608" name="__codelineno-0-608"></a>        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">Callable</span><span class="p">[[</span><span class="n">_F</span><span class="p">],</span> <span class="n">click_extra</span><span class="o">.</span><span class="n">Command</span><span class="p">],</span> <span class="n">decorate</span><span class="p">)</span>
+<a id="__codelineno-0-609" name="__codelineno-0-609"></a>
+<a id="__codelineno-0-610" name="__codelineno-0-610"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">_F</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">click_extra</span><span class="o">.</span><span class="n">Command</span><span class="p">:</span>
+<a id="__codelineno-0-611" name="__codelineno-0-611"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Decorator for Click commands with automatic response handling&quot;&quot;&quot;</span>
+<a id="__codelineno-0-612" name="__codelineno-0-612"></a>        <span class="n">wrapped</span> <span class="o">=</span> <span class="n">returns_response</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<a id="__codelineno-0-613" name="__codelineno-0-613"></a>        <span class="n">deco</span> <span class="o">=</span> <span class="n">command_decorator</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">if</span> <span class="n">name</span> <span class="k">else</span> <span class="n">command_decorator</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-614" name="__codelineno-0-614"></a>        <span class="n">cmd</span> <span class="o">=</span> <span class="n">deco</span><span class="p">(</span><span class="n">wrapped</span><span class="p">)</span>
+<a id="__codelineno-0-615" name="__codelineno-0-615"></a>        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">click_extra</span><span class="o">.</span><span class="n">Command</span><span class="p">,</span> <span class="n">cmd</span><span class="p">)</span>
+<a id="__codelineno-0-616" name="__codelineno-0-616"></a>
+<a id="__codelineno-0-617" name="__codelineno-0-617"></a>    <span class="k">return</span> <span class="n">decorator</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div><hr />
+<h2 id="option">option<a class="headerlink" href="#option" title="Permanent link">&para;</a></h2>
+<p>Extends Click options with environment variable binding and optional global/context propagation.</p>
+<ul>
+<li><code>is_global=True</code> — propagates this option to all subcommands (see <code>GlobalOptionsMixin</code>).</li>
+<li><code>context=True</code> — marks this option as a <em>context option</em>: its value feeds <code>context_factory</code>
+  and is accepted at any position in the command chain (see <em>Anywhere-passable options</em>).</li>
+</ul>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="pyclifer.option" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">pyclifer</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="o">*</span><span class="n">param_decls</span><span class="p">,</span> <span class="n">is_global</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_envvar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">store_in_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#pyclifer.option" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents first">
+
+        <p>Create a Click option with global propagation support.</p>
+<p>Ensures a consistent environment variable display and allows options
+to be marked as global to be available on all subcommands.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>*param_decls</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Parameter declarations for the option.</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>is_global</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, the option is propagated to all subcommands.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>context</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, the option feeds ctx.obj construction and is accepted
+at any position in the command chain.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>show_envvar</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Show environment variables in the help output.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>store_in_meta</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, stores the option value in ctx.meta automatically.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>**kwargs</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Additional arguments passed to click_extra.option().</p>
+              </div>
+            </td>
+            <td>
+                  <code>{}</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span>[[<span title="collections.abc.Callable">Callable</span>], <span title="collections.abc.Callable">Callable</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Option decorator function.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/pyclifer/core/decorators.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-620">620</a></span>
+<span class="normal"><a href="#__codelineno-0-621">621</a></span>
+<span class="normal"><a href="#__codelineno-0-622">622</a></span>
+<span class="normal"><a href="#__codelineno-0-623">623</a></span>
+<span class="normal"><a href="#__codelineno-0-624">624</a></span>
+<span class="normal"><a href="#__codelineno-0-625">625</a></span>
+<span class="normal"><a href="#__codelineno-0-626">626</a></span>
+<span class="normal"><a href="#__codelineno-0-627">627</a></span>
+<span class="normal"><a href="#__codelineno-0-628">628</a></span>
+<span class="normal"><a href="#__codelineno-0-629">629</a></span>
+<span class="normal"><a href="#__codelineno-0-630">630</a></span>
+<span class="normal"><a href="#__codelineno-0-631">631</a></span>
+<span class="normal"><a href="#__codelineno-0-632">632</a></span>
+<span class="normal"><a href="#__codelineno-0-633">633</a></span>
+<span class="normal"><a href="#__codelineno-0-634">634</a></span>
+<span class="normal"><a href="#__codelineno-0-635">635</a></span>
+<span class="normal"><a href="#__codelineno-0-636">636</a></span>
+<span class="normal"><a href="#__codelineno-0-637">637</a></span>
+<span class="normal"><a href="#__codelineno-0-638">638</a></span>
+<span class="normal"><a href="#__codelineno-0-639">639</a></span>
+<span class="normal"><a href="#__codelineno-0-640">640</a></span>
+<span class="normal"><a href="#__codelineno-0-641">641</a></span>
+<span class="normal"><a href="#__codelineno-0-642">642</a></span>
+<span class="normal"><a href="#__codelineno-0-643">643</a></span>
+<span class="normal"><a href="#__codelineno-0-644">644</a></span>
+<span class="normal"><a href="#__codelineno-0-645">645</a></span>
+<span class="normal"><a href="#__codelineno-0-646">646</a></span>
+<span class="normal"><a href="#__codelineno-0-647">647</a></span>
+<span class="normal"><a href="#__codelineno-0-648">648</a></span>
+<span class="normal"><a href="#__codelineno-0-649">649</a></span>
+<span class="normal"><a href="#__codelineno-0-650">650</a></span>
+<span class="normal"><a href="#__codelineno-0-651">651</a></span>
+<span class="normal"><a href="#__codelineno-0-652">652</a></span>
+<span class="normal"><a href="#__codelineno-0-653">653</a></span>
+<span class="normal"><a href="#__codelineno-0-654">654</a></span>
+<span class="normal"><a href="#__codelineno-0-655">655</a></span>
+<span class="normal"><a href="#__codelineno-0-656">656</a></span>
+<span class="normal"><a href="#__codelineno-0-657">657</a></span>
+<span class="normal"><a href="#__codelineno-0-658">658</a></span>
+<span class="normal"><a href="#__codelineno-0-659">659</a></span>
+<span class="normal"><a href="#__codelineno-0-660">660</a></span>
+<span class="normal"><a href="#__codelineno-0-661">661</a></span>
+<span class="normal"><a href="#__codelineno-0-662">662</a></span>
+<span class="normal"><a href="#__codelineno-0-663">663</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-620" name="__codelineno-0-620"></a><span class="k">def</span><span class="w"> </span><span class="nf">option</span><span class="p">(</span>
+<a id="__codelineno-0-621" name="__codelineno-0-621"></a>    <span class="o">*</span><span class="n">param_decls</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-622" name="__codelineno-0-622"></a>    <span class="n">is_global</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-623" name="__codelineno-0-623"></a>    <span class="n">context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-624" name="__codelineno-0-624"></a>    <span class="n">show_envvar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-625" name="__codelineno-0-625"></a>    <span class="n">store_in_meta</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-626" name="__codelineno-0-626"></a>    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<a id="__codelineno-0-627" name="__codelineno-0-627"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Callable</span><span class="p">],</span> <span class="n">Callable</span><span class="p">]:</span>
+<a id="__codelineno-0-628" name="__codelineno-0-628"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Click option with global propagation support.</span>
+<a id="__codelineno-0-629" name="__codelineno-0-629"></a>
+<a id="__codelineno-0-630" name="__codelineno-0-630"></a><span class="sd">    Ensures a consistent environment variable display and allows options</span>
+<a id="__codelineno-0-631" name="__codelineno-0-631"></a><span class="sd">    to be marked as global to be available on all subcommands.</span>
+<a id="__codelineno-0-632" name="__codelineno-0-632"></a>
+<a id="__codelineno-0-633" name="__codelineno-0-633"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-634" name="__codelineno-0-634"></a><span class="sd">        *param_decls: Parameter declarations for the option.</span>
+<a id="__codelineno-0-635" name="__codelineno-0-635"></a><span class="sd">        is_global: If True, the option is propagated to all subcommands.</span>
+<a id="__codelineno-0-636" name="__codelineno-0-636"></a><span class="sd">        context: If True, the option feeds ctx.obj construction and is accepted</span>
+<a id="__codelineno-0-637" name="__codelineno-0-637"></a><span class="sd">            at any position in the command chain.</span>
+<a id="__codelineno-0-638" name="__codelineno-0-638"></a><span class="sd">        show_envvar: Show environment variables in the help output.</span>
+<a id="__codelineno-0-639" name="__codelineno-0-639"></a><span class="sd">        store_in_meta: If True, stores the option value in ctx.meta automatically.</span>
+<a id="__codelineno-0-640" name="__codelineno-0-640"></a><span class="sd">        **kwargs: Additional arguments passed to click_extra.option().</span>
+<a id="__codelineno-0-641" name="__codelineno-0-641"></a>
+<a id="__codelineno-0-642" name="__codelineno-0-642"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-643" name="__codelineno-0-643"></a><span class="sd">        Option decorator function.</span>
+<a id="__codelineno-0-644" name="__codelineno-0-644"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-645" name="__codelineno-0-645"></a>    <span class="bp">cls</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cls&quot;</span><span class="p">,</span> <span class="n">PycliferOption</span><span class="p">)</span>
+<a id="__codelineno-0-646" name="__codelineno-0-646"></a>    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;cls&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span>
+<a id="__codelineno-0-647" name="__codelineno-0-647"></a>    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;is_global&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_global</span>
+<a id="__codelineno-0-648" name="__codelineno-0-648"></a>    <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;show_envvar&quot;</span><span class="p">,</span> <span class="n">show_envvar</span><span class="p">)</span>
+<a id="__codelineno-0-649" name="__codelineno-0-649"></a>
+<a id="__codelineno-0-650" name="__codelineno-0-650"></a>    <span class="c1"># Only forward context to classes that declare the attribute (PycliferOption subclasses).</span>
+<a id="__codelineno-0-651" name="__codelineno-0-651"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">PycliferOption</span><span class="p">):</span>
+<a id="__codelineno-0-652" name="__codelineno-0-652"></a>        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;context&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">context</span>
+<a id="__codelineno-0-653" name="__codelineno-0-653"></a>
+<a id="__codelineno-0-654" name="__codelineno-0-654"></a>    <span class="c1"># Delegate to the Mixin if the class supports it</span>
+<a id="__codelineno-0-655" name="__codelineno-0-655"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">StoreInMetaMixin</span><span class="p">):</span>
+<a id="__codelineno-0-656" name="__codelineno-0-656"></a>        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;store_in_meta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">store_in_meta</span>
+<a id="__codelineno-0-657" name="__codelineno-0-657"></a>    <span class="k">elif</span> <span class="n">store_in_meta</span><span class="p">:</span>
+<a id="__codelineno-0-658" name="__codelineno-0-658"></a>        <span class="c1"># Fallback for external classes (like PycliferVerbosityOption) that don&#39;t use</span>
+<a id="__codelineno-0-659" name="__codelineno-0-659"></a>        <span class="c1"># StoreInMetaMixin</span>
+<a id="__codelineno-0-660" name="__codelineno-0-660"></a>        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;callback&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_meta_storing_callback</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;callback&quot;</span><span class="p">))</span>
+<a id="__codelineno-0-661" name="__codelineno-0-661"></a>        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;expose_value&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<a id="__codelineno-0-662" name="__codelineno-0-662"></a>
+<a id="__codelineno-0-663" name="__codelineno-0-663"></a>    <span class="k">return</span> <span class="n">click_extra</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="o">*</span><span class="n">param_decls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div><hr />
+<h2 id="output_filter_option">output_filter_option<a class="headerlink" href="#output_filter_option" title="Permanent link">&para;</a></h2>
+<p>Adds <code>--output-format</code> to a command (JSON, YAML, Table, Rich, Raw).</p>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="pyclifer.output_filter_option" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">pyclifer</span><span class="o">.</span><span class="n">output_filter_option</span><span class="p">(</span><span class="o">*</span><span class="n">param_decls</span><span class="p">,</span> <span class="n">show_envvar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#pyclifer.output_filter_option" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents first">
+
+        <p>Add an output filter option to a command.</p>
+<p>When combined with --output-format raw, json, or yaml, this option lets
+users extract a value from the Response data using a dotted key path.</p>
+<p>The selected path is stored in ctx.meta['pyclifer.output_filter'] and is
+automatically picked up by returns_response.</p>
+<p>Numeric path segments are treated as list indices. Resolution order:
+data["data"] first, then top-level response fields.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code>@app.command()
+@output_filter_option()
+@returns_response
+@click.pass_context
+def articles(ctx):
+    return Response(
+        success=True,
+        message=&quot;2 articles&quot;,
+        data={&quot;results&quot;: [{&quot;id&quot;: 1, &quot;title&quot;: &quot;Hello&quot;}, {&quot;id&quot;: 2}]},
+    )
+
+# myapp articles -o raw -f results.0.title  -&gt; Hello
+# myapp articles -o json -f results.0       -&gt; {&quot;id&quot;: 1, &quot;title&quot;: &quot;Hello&quot;}
+# myapp articles -o raw -f message          -&gt; 2 articles
+</code></pre></div>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>*param_decls</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Parameter declarations (default: --output-filter, -f).</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>show_envvar</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Show environment variables in the help output.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>**kwargs</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Additional arguments passed to the option decorator.</p>
+              </div>
+            </td>
+            <td>
+                  <code>{}</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span>[[<span title="collections.abc.Callable">Callable</span>], <span title="collections.abc.Callable">Callable</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The decorated function.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/pyclifer/core/decorators.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-767">767</a></span>
+<span class="normal"><a href="#__codelineno-0-768">768</a></span>
+<span class="normal"><a href="#__codelineno-0-769">769</a></span>
+<span class="normal"><a href="#__codelineno-0-770">770</a></span>
+<span class="normal"><a href="#__codelineno-0-771">771</a></span>
+<span class="normal"><a href="#__codelineno-0-772">772</a></span>
+<span class="normal"><a href="#__codelineno-0-773">773</a></span>
+<span class="normal"><a href="#__codelineno-0-774">774</a></span>
+<span class="normal"><a href="#__codelineno-0-775">775</a></span>
+<span class="normal"><a href="#__codelineno-0-776">776</a></span>
+<span class="normal"><a href="#__codelineno-0-777">777</a></span>
+<span class="normal"><a href="#__codelineno-0-778">778</a></span>
+<span class="normal"><a href="#__codelineno-0-779">779</a></span>
+<span class="normal"><a href="#__codelineno-0-780">780</a></span>
+<span class="normal"><a href="#__codelineno-0-781">781</a></span>
+<span class="normal"><a href="#__codelineno-0-782">782</a></span>
+<span class="normal"><a href="#__codelineno-0-783">783</a></span>
+<span class="normal"><a href="#__codelineno-0-784">784</a></span>
+<span class="normal"><a href="#__codelineno-0-785">785</a></span>
+<span class="normal"><a href="#__codelineno-0-786">786</a></span>
+<span class="normal"><a href="#__codelineno-0-787">787</a></span>
+<span class="normal"><a href="#__codelineno-0-788">788</a></span>
+<span class="normal"><a href="#__codelineno-0-789">789</a></span>
+<span class="normal"><a href="#__codelineno-0-790">790</a></span>
+<span class="normal"><a href="#__codelineno-0-791">791</a></span>
+<span class="normal"><a href="#__codelineno-0-792">792</a></span>
+<span class="normal"><a href="#__codelineno-0-793">793</a></span>
+<span class="normal"><a href="#__codelineno-0-794">794</a></span>
+<span class="normal"><a href="#__codelineno-0-795">795</a></span>
+<span class="normal"><a href="#__codelineno-0-796">796</a></span>
+<span class="normal"><a href="#__codelineno-0-797">797</a></span>
+<span class="normal"><a href="#__codelineno-0-798">798</a></span>
+<span class="normal"><a href="#__codelineno-0-799">799</a></span>
+<span class="normal"><a href="#__codelineno-0-800">800</a></span>
+<span class="normal"><a href="#__codelineno-0-801">801</a></span>
+<span class="normal"><a href="#__codelineno-0-802">802</a></span>
+<span class="normal"><a href="#__codelineno-0-803">803</a></span>
+<span class="normal"><a href="#__codelineno-0-804">804</a></span>
+<span class="normal"><a href="#__codelineno-0-805">805</a></span>
+<span class="normal"><a href="#__codelineno-0-806">806</a></span>
+<span class="normal"><a href="#__codelineno-0-807">807</a></span>
+<span class="normal"><a href="#__codelineno-0-808">808</a></span>
+<span class="normal"><a href="#__codelineno-0-809">809</a></span>
+<span class="normal"><a href="#__codelineno-0-810">810</a></span>
+<span class="normal"><a href="#__codelineno-0-811">811</a></span>
+<span class="normal"><a href="#__codelineno-0-812">812</a></span>
+<span class="normal"><a href="#__codelineno-0-813">813</a></span>
+<span class="normal"><a href="#__codelineno-0-814">814</a></span>
+<span class="normal"><a href="#__codelineno-0-815">815</a></span>
+<span class="normal"><a href="#__codelineno-0-816">816</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-767" name="__codelineno-0-767"></a><span class="k">def</span><span class="w"> </span><span class="nf">output_filter_option</span><span class="p">(</span>
+<a id="__codelineno-0-768" name="__codelineno-0-768"></a>    <span class="o">*</span><span class="n">param_decls</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-769" name="__codelineno-0-769"></a>    <span class="n">show_envvar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-770" name="__codelineno-0-770"></a>    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<a id="__codelineno-0-771" name="__codelineno-0-771"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Callable</span><span class="p">],</span> <span class="n">Callable</span><span class="p">]:</span>
+<a id="__codelineno-0-772" name="__codelineno-0-772"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Add an output filter option to a command.</span>
+<a id="__codelineno-0-773" name="__codelineno-0-773"></a>
+<a id="__codelineno-0-774" name="__codelineno-0-774"></a><span class="sd">    When combined with --output-format raw, json, or yaml, this option lets</span>
+<a id="__codelineno-0-775" name="__codelineno-0-775"></a><span class="sd">    users extract a value from the Response data using a dotted key path.</span>
+<a id="__codelineno-0-776" name="__codelineno-0-776"></a>
+<a id="__codelineno-0-777" name="__codelineno-0-777"></a><span class="sd">    The selected path is stored in ctx.meta[&#39;pyclifer.output_filter&#39;] and is</span>
+<a id="__codelineno-0-778" name="__codelineno-0-778"></a><span class="sd">    automatically picked up by returns_response.</span>
+<a id="__codelineno-0-779" name="__codelineno-0-779"></a>
+<a id="__codelineno-0-780" name="__codelineno-0-780"></a><span class="sd">    Numeric path segments are treated as list indices. Resolution order:</span>
+<a id="__codelineno-0-781" name="__codelineno-0-781"></a><span class="sd">    data[&quot;data&quot;] first, then top-level response fields.</span>
+<a id="__codelineno-0-782" name="__codelineno-0-782"></a>
+<a id="__codelineno-0-783" name="__codelineno-0-783"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-784" name="__codelineno-0-784"></a>
+<a id="__codelineno-0-785" name="__codelineno-0-785"></a><span class="sd">        @app.command()</span>
+<a id="__codelineno-0-786" name="__codelineno-0-786"></a><span class="sd">        @output_filter_option()</span>
+<a id="__codelineno-0-787" name="__codelineno-0-787"></a><span class="sd">        @returns_response</span>
+<a id="__codelineno-0-788" name="__codelineno-0-788"></a><span class="sd">        @click.pass_context</span>
+<a id="__codelineno-0-789" name="__codelineno-0-789"></a><span class="sd">        def articles(ctx):</span>
+<a id="__codelineno-0-790" name="__codelineno-0-790"></a><span class="sd">            return Response(</span>
+<a id="__codelineno-0-791" name="__codelineno-0-791"></a><span class="sd">                success=True,</span>
+<a id="__codelineno-0-792" name="__codelineno-0-792"></a><span class="sd">                message=&quot;2 articles&quot;,</span>
+<a id="__codelineno-0-793" name="__codelineno-0-793"></a><span class="sd">                data={&quot;results&quot;: [{&quot;id&quot;: 1, &quot;title&quot;: &quot;Hello&quot;}, {&quot;id&quot;: 2}]},</span>
+<a id="__codelineno-0-794" name="__codelineno-0-794"></a><span class="sd">            )</span>
+<a id="__codelineno-0-795" name="__codelineno-0-795"></a>
+<a id="__codelineno-0-796" name="__codelineno-0-796"></a><span class="sd">        # myapp articles -o raw -f results.0.title  -&gt; Hello</span>
+<a id="__codelineno-0-797" name="__codelineno-0-797"></a><span class="sd">        # myapp articles -o json -f results.0       -&gt; {&quot;id&quot;: 1, &quot;title&quot;: &quot;Hello&quot;}</span>
+<a id="__codelineno-0-798" name="__codelineno-0-798"></a><span class="sd">        # myapp articles -o raw -f message          -&gt; 2 articles</span>
+<a id="__codelineno-0-799" name="__codelineno-0-799"></a>
+<a id="__codelineno-0-800" name="__codelineno-0-800"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-801" name="__codelineno-0-801"></a><span class="sd">        *param_decls: Parameter declarations (default: --output-filter, -f).</span>
+<a id="__codelineno-0-802" name="__codelineno-0-802"></a><span class="sd">        show_envvar: Show environment variables in the help output.</span>
+<a id="__codelineno-0-803" name="__codelineno-0-803"></a><span class="sd">        **kwargs: Additional arguments passed to the option decorator.</span>
+<a id="__codelineno-0-804" name="__codelineno-0-804"></a>
+<a id="__codelineno-0-805" name="__codelineno-0-805"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-806" name="__codelineno-0-806"></a><span class="sd">        The decorated function.</span>
+<a id="__codelineno-0-807" name="__codelineno-0-807"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-808" name="__codelineno-0-808"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">param_decls</span><span class="p">:</span>
+<a id="__codelineno-0-809" name="__codelineno-0-809"></a>        <span class="n">param_decls</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;--output-filter&quot;</span><span class="p">,</span> <span class="s2">&quot;-f&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-810" name="__codelineno-0-810"></a>
+<a id="__codelineno-0-811" name="__codelineno-0-811"></a>    <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;help&quot;</span><span class="p">,</span> <span class="s2">&quot;Dotted path to extract from the response (raw, json, yaml).&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-812" name="__codelineno-0-812"></a>    <span class="c1"># noinspection PyArgumentEqualDefault</span>
+<a id="__codelineno-0-813" name="__codelineno-0-813"></a>    <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="__codelineno-0-814" name="__codelineno-0-814"></a>    <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;store_in_meta&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-815" name="__codelineno-0-815"></a>
+<a id="__codelineno-0-816" name="__codelineno-0-816"></a>    <span class="k">return</span> <span class="n">option</span><span class="p">(</span><span class="o">*</span><span class="n">param_decls</span><span class="p">,</span> <span class="n">show_envvar</span><span class="o">=</span><span class="n">show_envvar</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div><hr />
+<h2 id="returns_response">returns_response<a class="headerlink" href="#returns_response" title="Permanent link">&para;</a></h2>
+<p>Decorator that intercepts a <code>Response</code> return value and dispatches it to the formatter.
+Applied automatically for all commands under <code>@app_group</code> (on by default). Use <code>handle_response=False</code> on the group or individual commands to opt out.</p>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="pyclifer.returns_response" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">pyclifer</span><span class="o">.</span><span class="n">returns_response</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></code>
+
+<a href="#pyclifer.returns_response" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents first">
+
+        <p>Decorator that intercepts a Response return value and prints it automatically.</p>
+<p>When the decorated command function returns a Response instance, this decorator
+reads the output format stored in ctx.meta['pyclifer.output_format'] (set by
+the --output-format option) and dispatches printing via BaseContext.
+Non-Response return values are left untouched.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code>@app.command()
+@returns_response
+@option(&quot;--name&quot;, default=&quot;world&quot;)
+@click.pass_context
+def hello(ctx, name):
+    return Response(success=True, message=f&quot;Hello {name}&quot;, data={&quot;name&quot;: name})
+</code></pre></div>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>f</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The command function to wrap.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The wrapped function.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/pyclifer/core/decorators.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-470">470</a></span>
+<span class="normal"><a href="#__codelineno-0-471">471</a></span>
+<span class="normal"><a href="#__codelineno-0-472">472</a></span>
+<span class="normal"><a href="#__codelineno-0-473">473</a></span>
+<span class="normal"><a href="#__codelineno-0-474">474</a></span>
+<span class="normal"><a href="#__codelineno-0-475">475</a></span>
+<span class="normal"><a href="#__codelineno-0-476">476</a></span>
+<span class="normal"><a href="#__codelineno-0-477">477</a></span>
+<span class="normal"><a href="#__codelineno-0-478">478</a></span>
+<span class="normal"><a href="#__codelineno-0-479">479</a></span>
+<span class="normal"><a href="#__codelineno-0-480">480</a></span>
+<span class="normal"><a href="#__codelineno-0-481">481</a></span>
+<span class="normal"><a href="#__codelineno-0-482">482</a></span>
+<span class="normal"><a href="#__codelineno-0-483">483</a></span>
+<span class="normal"><a href="#__codelineno-0-484">484</a></span>
+<span class="normal"><a href="#__codelineno-0-485">485</a></span>
+<span class="normal"><a href="#__codelineno-0-486">486</a></span>
+<span class="normal"><a href="#__codelineno-0-487">487</a></span>
+<span class="normal"><a href="#__codelineno-0-488">488</a></span>
+<span class="normal"><a href="#__codelineno-0-489">489</a></span>
+<span class="normal"><a href="#__codelineno-0-490">490</a></span>
+<span class="normal"><a href="#__codelineno-0-491">491</a></span>
+<span class="normal"><a href="#__codelineno-0-492">492</a></span>
+<span class="normal"><a href="#__codelineno-0-493">493</a></span>
+<span class="normal"><a href="#__codelineno-0-494">494</a></span>
+<span class="normal"><a href="#__codelineno-0-495">495</a></span>
+<span class="normal"><a href="#__codelineno-0-496">496</a></span>
+<span class="normal"><a href="#__codelineno-0-497">497</a></span>
+<span class="normal"><a href="#__codelineno-0-498">498</a></span>
+<span class="normal"><a href="#__codelineno-0-499">499</a></span>
+<span class="normal"><a href="#__codelineno-0-500">500</a></span>
+<span class="normal"><a href="#__codelineno-0-501">501</a></span>
+<span class="normal"><a href="#__codelineno-0-502">502</a></span>
+<span class="normal"><a href="#__codelineno-0-503">503</a></span>
+<span class="normal"><a href="#__codelineno-0-504">504</a></span>
+<span class="normal"><a href="#__codelineno-0-505">505</a></span>
+<span class="normal"><a href="#__codelineno-0-506">506</a></span>
+<span class="normal"><a href="#__codelineno-0-507">507</a></span>
+<span class="normal"><a href="#__codelineno-0-508">508</a></span>
+<span class="normal"><a href="#__codelineno-0-509">509</a></span>
+<span class="normal"><a href="#__codelineno-0-510">510</a></span>
+<span class="normal"><a href="#__codelineno-0-511">511</a></span>
+<span class="normal"><a href="#__codelineno-0-512">512</a></span>
+<span class="normal"><a href="#__codelineno-0-513">513</a></span>
+<span class="normal"><a href="#__codelineno-0-514">514</a></span>
+<span class="normal"><a href="#__codelineno-0-515">515</a></span>
+<span class="normal"><a href="#__codelineno-0-516">516</a></span>
+<span class="normal"><a href="#__codelineno-0-517">517</a></span>
+<span class="normal"><a href="#__codelineno-0-518">518</a></span>
+<span class="normal"><a href="#__codelineno-0-519">519</a></span>
+<span class="normal"><a href="#__codelineno-0-520">520</a></span>
+<span class="normal"><a href="#__codelineno-0-521">521</a></span>
+<span class="normal"><a href="#__codelineno-0-522">522</a></span>
+<span class="normal"><a href="#__codelineno-0-523">523</a></span>
+<span class="normal"><a href="#__codelineno-0-524">524</a></span>
+<span class="normal"><a href="#__codelineno-0-525">525</a></span>
+<span class="normal"><a href="#__codelineno-0-526">526</a></span>
+<span class="normal"><a href="#__codelineno-0-527">527</a></span>
+<span class="normal"><a href="#__codelineno-0-528">528</a></span>
+<span class="normal"><a href="#__codelineno-0-529">529</a></span>
+<span class="normal"><a href="#__codelineno-0-530">530</a></span>
+<span class="normal"><a href="#__codelineno-0-531">531</a></span>
+<span class="normal"><a href="#__codelineno-0-532">532</a></span>
+<span class="normal"><a href="#__codelineno-0-533">533</a></span>
+<span class="normal"><a href="#__codelineno-0-534">534</a></span>
+<span class="normal"><a href="#__codelineno-0-535">535</a></span>
+<span class="normal"><a href="#__codelineno-0-536">536</a></span>
+<span class="normal"><a href="#__codelineno-0-537">537</a></span>
+<span class="normal"><a href="#__codelineno-0-538">538</a></span>
+<span class="normal"><a href="#__codelineno-0-539">539</a></span>
+<span class="normal"><a href="#__codelineno-0-540">540</a></span>
+<span class="normal"><a href="#__codelineno-0-541">541</a></span>
+<span class="normal"><a href="#__codelineno-0-542">542</a></span>
+<span class="normal"><a href="#__codelineno-0-543">543</a></span>
+<span class="normal"><a href="#__codelineno-0-544">544</a></span>
+<span class="normal"><a href="#__codelineno-0-545">545</a></span>
+<span class="normal"><a href="#__codelineno-0-546">546</a></span>
+<span class="normal"><a href="#__codelineno-0-547">547</a></span>
+<span class="normal"><a href="#__codelineno-0-548">548</a></span>
+<span class="normal"><a href="#__codelineno-0-549">549</a></span>
+<span class="normal"><a href="#__codelineno-0-550">550</a></span>
+<span class="normal"><a href="#__codelineno-0-551">551</a></span>
+<span class="normal"><a href="#__codelineno-0-552">552</a></span>
+<span class="normal"><a href="#__codelineno-0-553">553</a></span>
+<span class="normal"><a href="#__codelineno-0-554">554</a></span>
+<span class="normal"><a href="#__codelineno-0-555">555</a></span>
+<span class="normal"><a href="#__codelineno-0-556">556</a></span>
+<span class="normal"><a href="#__codelineno-0-557">557</a></span>
+<span class="normal"><a href="#__codelineno-0-558">558</a></span>
+<span class="normal"><a href="#__codelineno-0-559">559</a></span>
+<span class="normal"><a href="#__codelineno-0-560">560</a></span>
+<span class="normal"><a href="#__codelineno-0-561">561</a></span>
+<span class="normal"><a href="#__codelineno-0-562">562</a></span>
+<span class="normal"><a href="#__codelineno-0-563">563</a></span>
+<span class="normal"><a href="#__codelineno-0-564">564</a></span>
+<span class="normal"><a href="#__codelineno-0-565">565</a></span>
+<span class="normal"><a href="#__codelineno-0-566">566</a></span>
+<span class="normal"><a href="#__codelineno-0-567">567</a></span>
+<span class="normal"><a href="#__codelineno-0-568">568</a></span>
+<span class="normal"><a href="#__codelineno-0-569">569</a></span>
+<span class="normal"><a href="#__codelineno-0-570">570</a></span>
+<span class="normal"><a href="#__codelineno-0-571">571</a></span>
+<span class="normal"><a href="#__codelineno-0-572">572</a></span>
+<span class="normal"><a href="#__codelineno-0-573">573</a></span>
+<span class="normal"><a href="#__codelineno-0-574">574</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-470" name="__codelineno-0-470"></a><span class="k">def</span><span class="w"> </span><span class="nf">returns_response</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+<a id="__codelineno-0-471" name="__codelineno-0-471"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that intercepts a Response return value and prints it automatically.</span>
+<a id="__codelineno-0-472" name="__codelineno-0-472"></a>
+<a id="__codelineno-0-473" name="__codelineno-0-473"></a><span class="sd">    When the decorated command function returns a Response instance, this decorator</span>
+<a id="__codelineno-0-474" name="__codelineno-0-474"></a><span class="sd">    reads the output format stored in ctx.meta[&#39;pyclifer.output_format&#39;] (set by</span>
+<a id="__codelineno-0-475" name="__codelineno-0-475"></a><span class="sd">    the --output-format option) and dispatches printing via BaseContext.</span>
+<a id="__codelineno-0-476" name="__codelineno-0-476"></a><span class="sd">    Non-Response return values are left untouched.</span>
+<a id="__codelineno-0-477" name="__codelineno-0-477"></a>
+<a id="__codelineno-0-478" name="__codelineno-0-478"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-479" name="__codelineno-0-479"></a>
+<a id="__codelineno-0-480" name="__codelineno-0-480"></a><span class="sd">        @app.command()</span>
+<a id="__codelineno-0-481" name="__codelineno-0-481"></a><span class="sd">        @returns_response</span>
+<a id="__codelineno-0-482" name="__codelineno-0-482"></a><span class="sd">        @option(&quot;--name&quot;, default=&quot;world&quot;)</span>
+<a id="__codelineno-0-483" name="__codelineno-0-483"></a><span class="sd">        @click.pass_context</span>
+<a id="__codelineno-0-484" name="__codelineno-0-484"></a><span class="sd">        def hello(ctx, name):</span>
+<a id="__codelineno-0-485" name="__codelineno-0-485"></a><span class="sd">            return Response(success=True, message=f&quot;Hello {name}&quot;, data={&quot;name&quot;: name})</span>
+<a id="__codelineno-0-486" name="__codelineno-0-486"></a>
+<a id="__codelineno-0-487" name="__codelineno-0-487"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-488" name="__codelineno-0-488"></a><span class="sd">        f: The command function to wrap.</span>
+<a id="__codelineno-0-489" name="__codelineno-0-489"></a>
+<a id="__codelineno-0-490" name="__codelineno-0-490"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-491" name="__codelineno-0-491"></a><span class="sd">        The wrapped function.</span>
+<a id="__codelineno-0-492" name="__codelineno-0-492"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-493" name="__codelineno-0-493"></a>
+<a id="__codelineno-0-494" name="__codelineno-0-494"></a>    <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<a id="__codelineno-0-495" name="__codelineno-0-495"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<a id="__codelineno-0-496" name="__codelineno-0-496"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrapper for returning a Response object based on command output&quot;&quot;&quot;</span>
+<a id="__codelineno-0-497" name="__codelineno-0-497"></a>        <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<a id="__codelineno-0-498" name="__codelineno-0-498"></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">perf_counter</span>
+<a id="__codelineno-0-499" name="__codelineno-0-499"></a>
+<a id="__codelineno-0-500" name="__codelineno-0-500"></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">.output.responses</span><span class="w"> </span><span class="kn">import</span> <span class="n">Response</span> <span class="k">as</span> <span class="n">_Response</span>
+<a id="__codelineno-0-501" name="__codelineno-0-501"></a>
+<a id="__codelineno-0-502" name="__codelineno-0-502"></a>        <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<a id="__codelineno-0-503" name="__codelineno-0-503"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-504" name="__codelineno-0-504"></a>            <span class="n">result</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-505" name="__codelineno-0-505"></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<a id="__codelineno-0-506" name="__codelineno-0-506"></a>            <span class="n">root</span> <span class="o">=</span> <span class="n">_get_root_context</span><span class="p">()</span>
+<a id="__codelineno-0-507" name="__codelineno-0-507"></a>            <span class="n">meta</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">meta</span> <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
+<a id="__codelineno-0-508" name="__codelineno-0-508"></a>            <span class="n">log_level</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pyclifer.unhandled_exception_log_level&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-509" name="__codelineno-0-509"></a>            <span class="n">_log</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+<a id="__codelineno-0-510" name="__codelineno-0-510"></a>                <span class="nb">getattr</span><span class="p">(</span><span class="n">logging</span><span class="p">,</span> <span class="n">log_level</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">),</span>
+<a id="__codelineno-0-511" name="__codelineno-0-511"></a>                <span class="s2">&quot;Unhandled exception in command &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-512" name="__codelineno-0-512"></a>                <span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+<a id="__codelineno-0-513" name="__codelineno-0-513"></a>                <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-514" name="__codelineno-0-514"></a>            <span class="p">)</span>
+<a id="__codelineno-0-515" name="__codelineno-0-515"></a>            <span class="n">result</span> <span class="o">=</span> <span class="n">_Response</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="n">error_code</span><span class="o">=</span><span class="n">ExitCode</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+<a id="__codelineno-0-516" name="__codelineno-0-516"></a>        <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+<a id="__codelineno-0-517" name="__codelineno-0-517"></a>            <span class="s2">&quot;returns_response: command &#39;</span><span class="si">%s</span><span class="s2">&#39; returned </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-518" name="__codelineno-0-518"></a>            <span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+<a id="__codelineno-0-519" name="__codelineno-0-519"></a>            <span class="nb">type</span><span class="p">(</span><span class="n">result</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+<a id="__codelineno-0-520" name="__codelineno-0-520"></a>        <span class="p">)</span>
+<a id="__codelineno-0-521" name="__codelineno-0-521"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">_get_response_class</span><span class="p">()):</span>
+<a id="__codelineno-0-522" name="__codelineno-0-522"></a>            <span class="kn">from</span><span class="w"> </span><span class="nn">pyclifer.core.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseContext</span>
+<a id="__codelineno-0-523" name="__codelineno-0-523"></a>
+<a id="__codelineno-0-524" name="__codelineno-0-524"></a>            <span class="n">ctx</span> <span class="o">=</span> <span class="n">click_extra</span><span class="o">.</span><span class="n">get_current_context</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-525" name="__codelineno-0-525"></a>            <span class="n">root</span> <span class="o">=</span> <span class="n">_get_root_context</span><span class="p">()</span>
+<a id="__codelineno-0-526" name="__codelineno-0-526"></a>
+<a id="__codelineno-0-527" name="__codelineno-0-527"></a>            <span class="c1"># Use the actual context object (ctx.obj) if it is a BaseContext</span>
+<a id="__codelineno-0-528" name="__codelineno-0-528"></a>            <span class="c1"># subclass so that custom overrides (e.g., print_result_based_on_format)</span>
+<a id="__codelineno-0-529" name="__codelineno-0-529"></a>            <span class="c1"># are respected.  Fall back to a fresh BaseContext when ctx.obj is</span>
+<a id="__codelineno-0-530" name="__codelineno-0-530"></a>            <span class="c1"># absent or of an unrelated type.</span>
+<a id="__codelineno-0-531" name="__codelineno-0-531"></a>            <span class="n">obj</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span> <span class="k">if</span> <span class="n">ctx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="__codelineno-0-532" name="__codelineno-0-532"></a>            <span class="n">output_ctx</span> <span class="o">=</span> <span class="n">obj</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">BaseContext</span><span class="p">)</span> <span class="k">else</span> <span class="n">BaseContext</span><span class="p">()</span>
+<a id="__codelineno-0-533" name="__codelineno-0-533"></a>            <span class="n">meta</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">meta</span> <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
+<a id="__codelineno-0-534" name="__codelineno-0-534"></a>            <span class="n">output_format</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pyclifer.output_format&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-535" name="__codelineno-0-535"></a>
+<a id="__codelineno-0-536" name="__codelineno-0-536"></a>            <span class="c1"># Inject execution time into structured output when timer is active.</span>
+<a id="__codelineno-0-537" name="__codelineno-0-537"></a>            <span class="n">start_time</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;click_extra.start_time&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-538" name="__codelineno-0-538"></a>            <span class="k">if</span> <span class="p">(</span>
+<a id="__codelineno-0-539" name="__codelineno-0-539"></a>                <span class="n">start_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<a id="__codelineno-0-540" name="__codelineno-0-540"></a>                <span class="ow">and</span> <span class="n">output_format</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="s2">&quot;yaml&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-541" name="__codelineno-0-541"></a>                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+<a id="__codelineno-0-542" name="__codelineno-0-542"></a>            <span class="p">):</span>
+<a id="__codelineno-0-543" name="__codelineno-0-543"></a>                <span class="c1"># noinspection PyTypeChecker</span>
+<a id="__codelineno-0-544" name="__codelineno-0-544"></a>                <span class="n">elapsed</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+<a id="__codelineno-0-545" name="__codelineno-0-545"></a>                <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;execution_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">elapsed</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<a id="__codelineno-0-546" name="__codelineno-0-546"></a>                <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;execution_time_str&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">elapsed</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">s&quot;</span>
+<a id="__codelineno-0-547" name="__codelineno-0-547"></a>            <span class="n">output_ctx</span><span class="o">.</span><span class="n">output_format</span> <span class="o">=</span> <span class="n">output_format</span>
+<a id="__codelineno-0-548" name="__codelineno-0-548"></a>            <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+<a id="__codelineno-0-549" name="__codelineno-0-549"></a>                <span class="s2">&quot;returns_response: ctx.obj type=</span><span class="si">%s</span><span class="s2">, using output_ctx type=</span><span class="si">%s</span><span class="s2">, &quot;</span>
+<a id="__codelineno-0-550" name="__codelineno-0-550"></a>                <span class="s2">&quot;output_format=</span><span class="si">%r</span><span class="s2">, meta keys=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-551" name="__codelineno-0-551"></a>                <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+<a id="__codelineno-0-552" name="__codelineno-0-552"></a>                <span class="nb">type</span><span class="p">(</span><span class="n">output_ctx</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+<a id="__codelineno-0-553" name="__codelineno-0-553"></a>                <span class="n">output_format</span><span class="p">,</span>
+<a id="__codelineno-0-554" name="__codelineno-0-554"></a>                <span class="nb">list</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+<a id="__codelineno-0-555" name="__codelineno-0-555"></a>            <span class="p">)</span>
+<a id="__codelineno-0-556" name="__codelineno-0-556"></a>            <span class="n">options</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="__codelineno-0-557" name="__codelineno-0-557"></a>            <span class="n">output_filter</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pyclifer.output_filter&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-558" name="__codelineno-0-558"></a>            <span class="k">if</span> <span class="n">output_filter</span><span class="p">:</span>
+<a id="__codelineno-0-559" name="__codelineno-0-559"></a>                <span class="n">options</span><span class="p">[</span><span class="s2">&quot;filter_value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_filter</span>
+<a id="__codelineno-0-560" name="__codelineno-0-560"></a>            <span class="n">output_ctx</span><span class="o">.</span><span class="n">print_result_based_on_format</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">)</span>
+<a id="__codelineno-0-561" name="__codelineno-0-561"></a>            <span class="k">if</span> <span class="p">(</span>
+<a id="__codelineno-0-562" name="__codelineno-0-562"></a>                <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">_Response</span><span class="p">)</span>
+<a id="__codelineno-0-563" name="__codelineno-0-563"></a>                <span class="ow">and</span> <span class="ow">not</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span>
+<a id="__codelineno-0-564" name="__codelineno-0-564"></a>                <span class="ow">and</span> <span class="n">result</span><span class="o">.</span><span class="n">error_code</span>
+<a id="__codelineno-0-565" name="__codelineno-0-565"></a>                <span class="ow">and</span> <span class="n">ctx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<a id="__codelineno-0-566" name="__codelineno-0-566"></a>            <span class="p">):</span>
+<a id="__codelineno-0-567" name="__codelineno-0-567"></a>                <span class="n">ctx</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">error_code</span><span class="p">)</span>
+<a id="__codelineno-0-568" name="__codelineno-0-568"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-569" name="__codelineno-0-569"></a>            <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+<a id="__codelineno-0-570" name="__codelineno-0-570"></a>                <span class="s2">&quot;returns_response: result is not a Response instance — skipping output dispatch&quot;</span>
+<a id="__codelineno-0-571" name="__codelineno-0-571"></a>            <span class="p">)</span>
+<a id="__codelineno-0-572" name="__codelineno-0-572"></a>        <span class="k">return</span> <span class="n">result</span>
+<a id="__codelineno-0-573" name="__codelineno-0-573"></a>
+<a id="__codelineno-0-574" name="__codelineno-0-574"></a>    <span class="k">return</span> <span class="n">wrapper</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div><hr />
+<h2 id="pagination_options">pagination_options<a class="headerlink" href="#pagination_options" title="Permanent link">&para;</a></h2>
+<p>Injects <code>--page</code> and <code>--limit</code> options into a command. Values are stored in
+<code>ctx.meta["pyclifer.page"]</code> and <code>ctx.meta["pyclifer.limit"]</code> via <code>store_in_meta</code>.</p>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="pyclifer.pagination_options" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">pyclifer</span><span class="o">.</span><span class="n">pagination_options</span><span class="p">(</span><span class="n">default_limit</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">max_limit</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span></code>
+
+<a href="#pyclifer.pagination_options" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents first">
+
+        <p>Inject --page and --limit options into a command.</p>
+<p>Options are stored in ctx.meta under the keys 'pyclifer.page' and
+'pyclifer.limit' via store_in_meta.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>default_limit</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Default number of results per page.</p>
+              </div>
+            </td>
+            <td>
+                  <code>20</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>max_limit</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum allowed value for --limit (enforced via IntRange).</p>
+              </div>
+            </td>
+            <td>
+                  <code>100</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span>[[<span title="pyclifer.core.decorators._F">_F</span>], <span title="pyclifer.core.decorators._F">_F</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A decorator that adds --page and --limit to the decorated function.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/pyclifer/core/decorators.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-819">819</a></span>
+<span class="normal"><a href="#__codelineno-0-820">820</a></span>
+<span class="normal"><a href="#__codelineno-0-821">821</a></span>
+<span class="normal"><a href="#__codelineno-0-822">822</a></span>
+<span class="normal"><a href="#__codelineno-0-823">823</a></span>
+<span class="normal"><a href="#__codelineno-0-824">824</a></span>
+<span class="normal"><a href="#__codelineno-0-825">825</a></span>
+<span class="normal"><a href="#__codelineno-0-826">826</a></span>
+<span class="normal"><a href="#__codelineno-0-827">827</a></span>
+<span class="normal"><a href="#__codelineno-0-828">828</a></span>
+<span class="normal"><a href="#__codelineno-0-829">829</a></span>
+<span class="normal"><a href="#__codelineno-0-830">830</a></span>
+<span class="normal"><a href="#__codelineno-0-831">831</a></span>
+<span class="normal"><a href="#__codelineno-0-832">832</a></span>
+<span class="normal"><a href="#__codelineno-0-833">833</a></span>
+<span class="normal"><a href="#__codelineno-0-834">834</a></span>
+<span class="normal"><a href="#__codelineno-0-835">835</a></span>
+<span class="normal"><a href="#__codelineno-0-836">836</a></span>
+<span class="normal"><a href="#__codelineno-0-837">837</a></span>
+<span class="normal"><a href="#__codelineno-0-838">838</a></span>
+<span class="normal"><a href="#__codelineno-0-839">839</a></span>
+<span class="normal"><a href="#__codelineno-0-840">840</a></span>
+<span class="normal"><a href="#__codelineno-0-841">841</a></span>
+<span class="normal"><a href="#__codelineno-0-842">842</a></span>
+<span class="normal"><a href="#__codelineno-0-843">843</a></span>
+<span class="normal"><a href="#__codelineno-0-844">844</a></span>
+<span class="normal"><a href="#__codelineno-0-845">845</a></span>
+<span class="normal"><a href="#__codelineno-0-846">846</a></span>
+<span class="normal"><a href="#__codelineno-0-847">847</a></span>
+<span class="normal"><a href="#__codelineno-0-848">848</a></span>
+<span class="normal"><a href="#__codelineno-0-849">849</a></span>
+<span class="normal"><a href="#__codelineno-0-850">850</a></span>
+<span class="normal"><a href="#__codelineno-0-851">851</a></span>
+<span class="normal"><a href="#__codelineno-0-852">852</a></span>
+<span class="normal"><a href="#__codelineno-0-853">853</a></span>
+<span class="normal"><a href="#__codelineno-0-854">854</a></span>
+<span class="normal"><a href="#__codelineno-0-855">855</a></span>
+<span class="normal"><a href="#__codelineno-0-856">856</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-819" name="__codelineno-0-819"></a><span class="k">def</span><span class="w"> </span><span class="nf">pagination_options</span><span class="p">(</span>
+<a id="__codelineno-0-820" name="__codelineno-0-820"></a>    <span class="n">default_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+<a id="__codelineno-0-821" name="__codelineno-0-821"></a>    <span class="n">max_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+<a id="__codelineno-0-822" name="__codelineno-0-822"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_F</span><span class="p">],</span> <span class="n">_F</span><span class="p">]:</span>
+<a id="__codelineno-0-823" name="__codelineno-0-823"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Inject --page and --limit options into a command.</span>
+<a id="__codelineno-0-824" name="__codelineno-0-824"></a>
+<a id="__codelineno-0-825" name="__codelineno-0-825"></a><span class="sd">    Options are stored in ctx.meta under the keys &#39;pyclifer.page&#39; and</span>
+<a id="__codelineno-0-826" name="__codelineno-0-826"></a><span class="sd">    &#39;pyclifer.limit&#39; via store_in_meta.</span>
+<a id="__codelineno-0-827" name="__codelineno-0-827"></a>
+<a id="__codelineno-0-828" name="__codelineno-0-828"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-829" name="__codelineno-0-829"></a><span class="sd">        default_limit: Default number of results per page.</span>
+<a id="__codelineno-0-830" name="__codelineno-0-830"></a><span class="sd">        max_limit: Maximum allowed value for --limit (enforced via IntRange).</span>
+<a id="__codelineno-0-831" name="__codelineno-0-831"></a>
+<a id="__codelineno-0-832" name="__codelineno-0-832"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-833" name="__codelineno-0-833"></a><span class="sd">        A decorator that adds --page and --limit to the decorated function.</span>
+<a id="__codelineno-0-834" name="__codelineno-0-834"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-835" name="__codelineno-0-835"></a>
+<a id="__codelineno-0-836" name="__codelineno-0-836"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">_F</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_F</span><span class="p">:</span>
+<a id="__codelineno-0-837" name="__codelineno-0-837"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Add --page and --limit options to the command.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-838" name="__codelineno-0-838"></a>        <span class="n">f</span> <span class="o">=</span> <span class="n">option</span><span class="p">(</span>
+<a id="__codelineno-0-839" name="__codelineno-0-839"></a>            <span class="s2">&quot;--limit&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-840" name="__codelineno-0-840"></a>            <span class="s2">&quot;-l&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-841" name="__codelineno-0-841"></a>            <span class="n">default</span><span class="o">=</span><span class="n">default_limit</span><span class="p">,</span>
+<a id="__codelineno-0-842" name="__codelineno-0-842"></a>            <span class="nb">type</span><span class="o">=</span><span class="n">click_extra</span><span class="o">.</span><span class="n">IntRange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_limit</span><span class="p">),</span>
+<a id="__codelineno-0-843" name="__codelineno-0-843"></a>            <span class="n">help</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Results per page (max </span><span class="si">{</span><span class="n">max_limit</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-844" name="__codelineno-0-844"></a>            <span class="n">store_in_meta</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-845" name="__codelineno-0-845"></a>        <span class="p">)(</span><span class="n">f</span><span class="p">)</span>
+<a id="__codelineno-0-846" name="__codelineno-0-846"></a>        <span class="n">f</span> <span class="o">=</span> <span class="n">option</span><span class="p">(</span>
+<a id="__codelineno-0-847" name="__codelineno-0-847"></a>            <span class="s2">&quot;--page&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-848" name="__codelineno-0-848"></a>            <span class="s2">&quot;-p&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-849" name="__codelineno-0-849"></a>            <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-850" name="__codelineno-0-850"></a>            <span class="nb">type</span><span class="o">=</span><span class="n">click_extra</span><span class="o">.</span><span class="n">IntRange</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+<a id="__codelineno-0-851" name="__codelineno-0-851"></a>            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Page number (1-indexed).&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-852" name="__codelineno-0-852"></a>            <span class="n">store_in_meta</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-853" name="__codelineno-0-853"></a>        <span class="p">)(</span><span class="n">f</span><span class="p">)</span>
+<a id="__codelineno-0-854" name="__codelineno-0-854"></a>        <span class="k">return</span> <span class="n">f</span>
+<a id="__codelineno-0-855" name="__codelineno-0-855"></a>
+<a id="__codelineno-0-856" name="__codelineno-0-856"></a>    <span class="k">return</span> <span class="n">decorator</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div><hr />
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Overview
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../context/" class="md-footer__link md-footer__link--next" aria-label="Next: Context">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Context
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/bahamut45/pyclifer" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
