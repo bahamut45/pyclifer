@@ -10,29 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://bahamut45.github.io/pyclifer/dev/">
+        <link rel="canonical" href="https://bahamut45.github.io/pyclifer/dev/how-to/context-options/">
       
       
+        <link rel="prev" href="../output-format/">
       
-        <link rel="next" href="getting-started/">
+      
+        <link rel="next" href="../../development/">
       
       
         
       
       
-      <link rel="icon" href="assets/favicon-96x96.png">
+      <link rel="icon" href="../../assets/favicon-96x96.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>pyclifer</title>
+        <title>Context construction and anywhere-passable options - pyclifer</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -51,9 +53,9 @@
       
     
     
-      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#documentation" class="md-skip">
+        <a href="#context-construction-and-anywhere-passable-options" class="md-skip">
           Skip to content
         </a>
       
@@ -96,9 +98,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="pyclifer" class="md-header__button md-logo" aria-label="pyclifer" data-md-component="logo">
+    <a href="../.." title="pyclifer" class="md-header__button md-logo" aria-label="pyclifer" data-md-component="logo">
       
-  <img src="assets/logo.png" alt="logo">
+  <img src="../../assets/logo.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -115,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Home
+              Context construction and anywhere-passable options
             
           </span>
         </div>
@@ -226,11 +228,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="." class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -249,7 +249,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="getting-started/" class="md-tabs__link">
+      <a href="../../getting-started/" class="md-tabs__link">
         
   
   
@@ -270,7 +270,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="configuration/" class="md-tabs__link">
+        <a href="../../configuration/" class="md-tabs__link">
           
   
   
@@ -288,7 +288,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="examples/" class="md-tabs__link">
+      <a href="../../examples/" class="md-tabs__link">
         
   
   
@@ -307,7 +307,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="demo/" class="md-tabs__link">
+      <a href="../../demo/" class="md-tabs__link">
         
   
   
@@ -324,11 +324,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="how-to/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -346,7 +348,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="development/" class="md-tabs__link">
+      <a href="../../development/" class="md-tabs__link">
         
   
   
@@ -367,7 +369,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="api/" class="md-tabs__link">
+        <a href="../../api/" class="md-tabs__link">
           
   
   
@@ -401,9 +403,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="pyclifer" class="md-nav__button md-logo" aria-label="pyclifer" data-md-component="logo">
+    <a href="../.." title="pyclifer" class="md-nav__button md-logo" aria-label="pyclifer" data-md-component="logo">
       
-  <img src="assets/logo.png" alt="logo">
+  <img src="../../assets/logo.png" alt="logo">
 
     </a>
     pyclifer
@@ -427,37 +429,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Home
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="." class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -473,159 +448,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Overview
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#quick-navigation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Quick Navigation
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Quick Navigation">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Getting Started
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configuration-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration &amp; Usage
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#quick-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Quick Example
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key Features
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Key Features">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#automatic-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Automatic Configuration
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#rich-cli-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Rich CLI Options
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#standardized-output" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Standardized Output
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#seamless-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Seamless Integration
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#project-information" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Project Information
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -637,7 +459,7 @@
   
   
     <li class="md-nav__item">
-      <a href="getting-started/" class="md-nav__link">
+      <a href="../../getting-started/" class="md-nav__link">
         
   
   
@@ -716,7 +538,7 @@
   
   
     <li class="md-nav__item">
-      <a href="configuration/" class="md-nav__link">
+      <a href="../../configuration/" class="md-nav__link">
         
   
   
@@ -744,7 +566,7 @@
   
   
     <li class="md-nav__item">
-      <a href="logging/" class="md-nav__link">
+      <a href="../../logging/" class="md-nav__link">
         
   
   
@@ -772,7 +594,7 @@
   
   
     <li class="md-nav__item">
-      <a href="output-formatting/" class="md-nav__link">
+      <a href="../../output-formatting/" class="md-nav__link">
         
   
   
@@ -800,7 +622,7 @@
   
   
     <li class="md-nav__item">
-      <a href="error-handling/" class="md-nav__link">
+      <a href="../../error-handling/" class="md-nav__link">
         
   
   
@@ -828,7 +650,7 @@
   
   
     <li class="md-nav__item">
-      <a href="scaffolding/" class="md-nav__link">
+      <a href="../../scaffolding/" class="md-nav__link">
         
   
   
@@ -863,7 +685,7 @@
   
   
     <li class="md-nav__item">
-      <a href="examples/" class="md-nav__link">
+      <a href="../../examples/" class="md-nav__link">
         
   
   
@@ -890,7 +712,7 @@
   
   
     <li class="md-nav__item">
-      <a href="demo/" class="md-nav__link">
+      <a href="../../demo/" class="md-nav__link">
         
   
   
@@ -914,26 +736,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
             
   
   
@@ -951,7 +778,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -969,7 +796,7 @@
   
   
     <li class="md-nav__item">
-      <a href="how-to/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -997,7 +824,7 @@
   
   
     <li class="md-nav__item">
-      <a href="how-to/response-patterns/" class="md-nav__link">
+      <a href="../response-patterns/" class="md-nav__link">
         
   
   
@@ -1025,7 +852,7 @@
   
   
     <li class="md-nav__item">
-      <a href="how-to/rich-progressive-output/" class="md-nav__link">
+      <a href="../rich-progressive-output/" class="md-nav__link">
         
   
   
@@ -1053,7 +880,7 @@
   
   
     <li class="md-nav__item">
-      <a href="how-to/multi-integration-commands/" class="md-nav__link">
+      <a href="../multi-integration-commands/" class="md-nav__link">
         
   
   
@@ -1081,7 +908,7 @@
   
   
     <li class="md-nav__item">
-      <a href="how-to/error-handling/" class="md-nav__link">
+      <a href="../error-handling/" class="md-nav__link">
         
   
   
@@ -1109,7 +936,7 @@
   
   
     <li class="md-nav__item">
-      <a href="how-to/output-format/" class="md-nav__link">
+      <a href="../output-format/" class="md-nav__link">
         
   
   
@@ -1134,10 +961,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="how-to/context-options/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Context construction and anywhere-passable options
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1153,6 +1007,115 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anywhere-passable-placement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anywhere-passable placement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Anywhere-passable placement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priority" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Priority
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#difference-between-contexttrue-and-is_globaltrue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Difference between context=True and is_global=True
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known limitations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known limitations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#nargs-1-options-must-stay-in-canonical-position" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        nargs=-1 options must stay in canonical position
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-terminator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        -- terminator
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1172,7 +1135,7 @@
   
   
     <li class="md-nav__item">
-      <a href="development/" class="md-nav__link">
+      <a href="../../development/" class="md-nav__link">
         
   
   
@@ -1251,7 +1214,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/" class="md-nav__link">
+      <a href="../../api/" class="md-nav__link">
         
   
   
@@ -1279,7 +1242,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/decorators/" class="md-nav__link">
+      <a href="../../api/decorators/" class="md-nav__link">
         
   
   
@@ -1307,7 +1270,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/context/" class="md-nav__link">
+      <a href="../../api/context/" class="md-nav__link">
         
   
   
@@ -1335,7 +1298,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/output/" class="md-nav__link">
+      <a href="../../api/output/" class="md-nav__link">
         
   
   
@@ -1363,7 +1326,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/logging/" class="md-nav__link">
+      <a href="../../api/logging/" class="md-nav__link">
         
   
   
@@ -1391,7 +1354,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/classes/" class="md-nav__link">
+      <a href="../../api/classes/" class="md-nav__link">
         
   
   
@@ -1419,7 +1382,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/mixins/" class="md-nav__link">
+      <a href="../../api/mixins/" class="md-nav__link">
         
   
   
@@ -1447,7 +1410,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/interfaces/" class="md-nav__link">
+      <a href="../../api/interfaces/" class="md-nav__link">
         
   
   
@@ -1475,7 +1438,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/models/" class="md-nav__link">
+      <a href="../../api/models/" class="md-nav__link">
         
   
   
@@ -1530,10 +1493,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#basic-usage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Overview
+        Basic usage
       
     </span>
   </a>
@@ -1541,33 +1504,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quick-navigation" class="md-nav__link">
+  <a href="#anywhere-passable-placement" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick Navigation
+        Anywhere-passable placement
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Quick Navigation">
+    <nav class="md-nav" aria-label="Anywhere-passable placement">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
+  <a href="#priority" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Getting Started
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configuration-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration &amp; Usage
+        Priority
       
     </span>
   </a>
@@ -1580,10 +1532,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quick-example" class="md-nav__link">
+  <a href="#difference-between-contexttrue-and-is_globaltrue" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick Example
+        Difference between context=True and is_global=True
       
     </span>
   </a>
@@ -1591,22 +1543,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
+  <a href="#known-limitations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Key Features
+        Known limitations
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Key Features">
+    <nav class="md-nav" aria-label="Known limitations">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#automatic-configuration" class="md-nav__link">
+  <a href="#nargs-1-options-must-stay-in-canonical-position" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Automatic Configuration
+        nargs=-1 options must stay in canonical position
       
     </span>
   </a>
@@ -1614,32 +1566,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#rich-cli-options" class="md-nav__link">
+  <a href="#-terminator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Rich CLI Options
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#standardized-output" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Standardized Output
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#seamless-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Seamless Integration
+        -- terminator
       
     </span>
   </a>
@@ -1648,17 +1578,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#project-information" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Project Information
-      
-    </span>
-  </a>
   
 </li>
       
@@ -1682,99 +1601,113 @@
   
 
 
-<p align="center">
-  <img src="assets/logo.png" alt="pyclifer logo" width="200">
-</p>
-
-<h1 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h1>
-<p>Welcome to the comprehensive documentation for pyclifer, a decorator-driven CLI framework that provides powerful
-decorators for building Python CLI applications with automatic configuration management, environment variable support,
-Rich-enhanced logging, and standardized output formatting.</p>
-<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>pyclifer is built on top of <code>click-extra</code> and <code>rich-click</code> and exposes four main decorators from <code>pyclifer.core</code>:</p>
-<ul>
-<li><code>@app_group</code> — Create the main CLI application group with all features enabled.</li>
-<li><code>@group</code> — Create command subgroups.</li>
-<li><code>@command</code> — Create CLI commands.</li>
-<li><code>@option</code> — Create CLI options with environment variable binding and global propagation support.</li>
-</ul>
-<h2 id="quick-navigation">Quick Navigation<a class="headerlink" href="#quick-navigation" title="Permanent link">&para;</a></h2>
-<h3 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h3>
-<ul>
-<li><a href="getting-started/"><strong>Getting Started</strong></a> — Installation, requirements, and your first CLI application</li>
-<li><a href="examples/"><strong>Examples</strong></a> — Complete examples and usage patterns</li>
-</ul>
-<h3 id="configuration-usage">Configuration &amp; Usage<a class="headerlink" href="#configuration-usage" title="Permanent link">&para;</a></h3>
-<ul>
-<li><a href="configuration/"><strong>Configuration Management</strong></a> — Configuration files, environment variables, and the
-  <code>CustomConfigOption</code> system</li>
-<li><a href="logging/"><strong>Rich Logging</strong></a> — Colored logging with Rich formatting, TRACE level, and secrets filtering</li>
-<li><a href="output-formatting/"><strong>Output Formatting</strong></a> — <code>BaseContext</code>, <code>Response</code>, <code>BaseRenderer</code>, and dynamic
-  formatting (JSON, YAML, Tables, Rich, Text, Raw)</li>
-<li><a href="error-handling/"><strong>Error Handling</strong></a> — <code>OperationResult</code>, <code>BaseInterface</code>, and the service/command
-  layer contract</li>
-<li><a href="development/"><strong>Development and Testing</strong></a> — Development setup, testing, and contribution guidelines</li>
-</ul>
-<h2 id="quick-example">Quick Example<a class="headerlink" href="#quick-example" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pyclifer</span><span class="w"> </span><span class="kn">import</span> <span class="n">app_group</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">option</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nd">@app_group</span><span class="p">()</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;My CLI application.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="k">pass</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="nd">@main</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="nd">@option</span><span class="p">(</span><span class="s2">&quot;--name&quot;</span><span class="p">,</span> <span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Your name&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="k">def</span><span class="w"> </span><span class="nf">hello</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Say hello.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hello </span><span class="si">{</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;World&#39;</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="n">main</span><span class="p">()</span>
+<h1 id="context-construction-and-anywhere-passable-options">Context construction and anywhere-passable options<a class="headerlink" href="#context-construction-and-anywhere-passable-options" title="Permanent link">&para;</a></h1>
+<p>By default, you wire a context object by assigning <code>ctx.obj</code> manually in the
+root group callback:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@app_group</span><span class="p">()</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">app</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span> <span class="o">=</span> <span class="n">MyContext</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;host&quot;</span><span class="p">))</span>
 </code></pre></div>
-<h2 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h2>
-<h3 id="automatic-configuration">Automatic Configuration<a class="headerlink" href="#automatic-configuration" title="Permanent link">&para;</a></h3>
+<p>pyclifer offers a declarative alternative through two features that work together:</p>
 <ul>
-<li><strong>Configuration files</strong>: TOML, YAML, JSON support</li>
-<li><strong>Multiple locations</strong>: System-wide (<code>/etc/&lt;app&gt;/</code>) and user-specific (<code>~/.config/&lt;app&gt;/</code>)</li>
-<li><strong>Environment variables</strong>: Automatic prefix-based mapping</li>
-<li><strong>Precedence</strong>: CLI args → env vars → config files → defaults</li>
+<li><code>context=True</code> on <code>@option</code> — marks the option as a <em>context option</em></li>
+<li><code>context_factory=</code> on <code>@app_group</code> — callable that receives context option values
+  and returns the <code>ctx.obj</code> instance</li>
 </ul>
-<h3 id="rich-cli-options">Rich CLI Options<a class="headerlink" href="#rich-cli-options" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Automatic help</strong>: Generated from docstrings with environment variable display</li>
-<li><strong>Rich logging</strong>: Colored output with Rich formatting and enhanced tracebacks</li>
-<li><strong>Advanced verbosity</strong>: Built-in <code>-v</code>, <code>-vv</code>, <code>-vvv</code> with custom TRACE level</li>
-<li><strong>Security filtering</strong>: Automatic masking of sensitive data in logs</li>
-<li><strong>File logging</strong>: Time-based rotating log files via <code>--log-file</code></li>
-<li><strong>Version option</strong>: Automatic <code>--version</code> support</li>
-<li><strong>Consistent behavior</strong>: Standardized option handling across all commands</li>
-</ul>
-<h3 id="standardized-output">Standardized Output<a class="headerlink" href="#standardized-output" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Dynamic format</strong>: JSON, YAML, Tables, Rich text, plain text, or raw values via <code>--output-format</code></li>
-<li><strong>Response model</strong>: Standardize results and errors with the <code>Response</code> dataclass</li>
-<li><strong>Renderer model</strong>: <code>BaseRenderer</code> controls every output format from a single subclass</li>
-<li><strong>Error handling</strong>: <code>OperationResult</code> + <code>BaseInterface</code> keep commands free of try/except boilerplate</li>
-<li><strong>Context helpers</strong>: Rich-powered prompts, panels, status spinners via <code>BaseContext</code></li>
-</ul>
-<h3 id="seamless-integration">Seamless Integration<a class="headerlink" href="#seamless-integration" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Click compatibility</strong>: Full compatibility with the Click ecosystem</li>
-<li><strong>Linux conventions</strong>: Follows standard Linux configuration paths</li>
-<li><strong>Testing support</strong>: Built-in support for CLI testing with pytest</li>
-</ul>
-<h2 id="project-information">Project Information<a class="headerlink" href="#project-information" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong>Author</strong>: Nicolas JOUBERT (njoubert45@gmail.com)</li>
-<li><strong>Repository</strong>: https://github.com/bahamut45/pyclifer</li>
-<li><strong>Issues</strong>: https://github.com/bahamut45/pyclifer/issues</li>
-<li><strong>License</strong>: MIT License</li>
-<li><strong>Python</strong>: Requires Python 3.10+</li>
-</ul>
+<h2 id="basic-usage">Basic usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pyclifer</span><span class="w"> </span><span class="kn">import</span> <span class="n">app_group</span><span class="p">,</span> <span class="n">option</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">myapp.core.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">MyContext</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nd">@app_group</span><span class="p">(</span><span class="n">context_factory</span><span class="o">=</span><span class="n">MyContext</span><span class="p">)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nd">@option</span><span class="p">(</span><span class="s2">&quot;--host&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nd">@option</span><span class="p">(</span><span class="s2">&quot;--token&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">app</span><span class="p">():</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;My CLI.&quot;&quot;&quot;</span>
+</code></pre></div>
+<p>When the CLI starts, pyclifer collects the values of all <code>context=True</code> options
+and calls <code>MyContext(host=..., token=...)</code>. The result is stored as <code>ctx.obj</code>
+before the root callback runs — no manual assignment needed.</p>
+<p>Your context class must accept those keyword arguments:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyContext</span><span class="p">(</span><span class="n">BaseContext</span><span class="p">):</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">MyClient</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span> <span class="n">token</span><span class="o">=</span><span class="n">token</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="anywhere-passable-placement">Anywhere-passable placement<a class="headerlink" href="#anywhere-passable-placement" title="Permanent link">&para;</a></h2>
+<p>Context options (and global options marked <code>is_global=True</code>) are <em>anywhere-passable</em>:
+they are accepted at any position in the command chain, including after a subcommand name.</p>
+<p>All of the following are equivalent:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># canonical position — before the subcommand</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>myapp<span class="w"> </span>--host<span class="w"> </span>api.example.com<span class="w"> </span>--token<span class="w"> </span>secret<span class="w"> </span>items<span class="w"> </span>list
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># after the subcommand</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>myapp<span class="w"> </span>items<span class="w"> </span>list<span class="w"> </span>--host<span class="w"> </span>api.example.com<span class="w"> </span>--token<span class="w"> </span>secret
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># mixed</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>myapp<span class="w"> </span>--host<span class="w"> </span>api.example.com<span class="w"> </span>items<span class="w"> </span>list<span class="w"> </span>--token<span class="w"> </span>secret
+</code></pre></div>
+<p>This is useful when users want to keep connection options close to the command
+that uses them without breaking the <code>context_factory</code> contract.</p>
+<h3 id="priority">Priority<a class="headerlink" href="#priority" title="Permanent link">&para;</a></h3>
+<p>Anywhere-passable placement does <strong>not</strong> change option priority. The standard
+Click cascade still applies:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>CLI arg &gt; environment variable &gt; config file (default_map) &gt; default=
+</code></pre></div>
+<p>If the same option appears both before and after the subcommand boundary,
+the value closest to the option definition (canonical position) wins.</p>
+<h2 id="difference-between-contexttrue-and-is_globaltrue">Difference between <code>context=True</code> and <code>is_global=True</code><a class="headerlink" href="#difference-between-contexttrue-and-is_globaltrue" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th><code>context=True</code></th>
+<th><code>is_global=True</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Accepted anywhere in chain</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Forwarded to subcommand params</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Passed to <code>context_factory</code></td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>Use <code>context=True</code> for options that feed <code>ctx.obj</code> construction (connection
+credentials, environment name, etc.). Use <code>is_global=True</code> for cross-cutting
+options that each subcommand also receives directly (e.g. <code>--dry-run</code>).</p>
+<p>An option can carry both flags if you need both behaviours.</p>
+<h2 id="known-limitations">Known limitations<a class="headerlink" href="#known-limitations" title="Permanent link">&para;</a></h2>
+<h3 id="nargs-1-options-must-stay-in-canonical-position"><code>nargs=-1</code> options must stay in canonical position<a class="headerlink" href="#nargs-1-options-must-stay-in-canonical-position" title="Permanent link">&para;</a></h3>
+<p>Click does not allow <code>nargs=-1</code> on options (only on arguments). If you define
+a multi-value option with a fixed <code>nargs</code> greater than 1, it must appear before
+the subcommand boundary:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># nargs=2 option — works anywhere</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>myapp<span class="w"> </span>items<span class="w"> </span>list<span class="w"> </span>--coords<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="m">20</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Correct: values travel as a unit</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>myapp<span class="w"> </span>items<span class="w"> </span>list<span class="w"> </span>--coords<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="m">20</span>
+</code></pre></div>
+<p>A variadic list of values (e.g. <code>--tags a b c</code>) requires a Click <code>Argument</code>
+with <code>nargs=-1</code>, which is not an option and therefore cannot be marked
+<code>context=True</code> or <code>is_global=True</code>. Use <code>--tag</code> with <code>multiple=True</code> instead:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nd">@option</span><span class="p">(</span><span class="s2">&quot;--tag&quot;</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="-terminator"><code>--</code> terminator<a class="headerlink" href="#-terminator" title="Permanent link">&para;</a></h3>
+<p>A bare <code>--</code> in the argument list stops option scanning. Any <code>context=True</code> or
+<code>is_global=True</code> tokens after <code>--</code> are treated as positional arguments by
+Click and are not pre-scanned. Place context options before <code>--</code> when using
+this terminator.</p>
 
 
 
@@ -1809,15 +1742,31 @@ Rich-enhanced logging, and standardized output formatting.</p>
       
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
+          
+          <a href="../output-format/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Choosing an Output Format">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Choosing an Output Format
+              </div>
+            </div>
+          </a>
+        
         
           
-          <a href="getting-started/" class="md-footer__link md-footer__link--next" aria-label="Next: Getting Started">
+          <a href="../../development/" class="md-footer__link md-footer__link--next" aria-label="Next: Development">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Getting Started
+                Development
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1870,10 +1819,10 @@ Rich-enhanced logging, and standardized output formatting.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "toc.follow"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "default": "latest", "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "default": "latest", "provider": "mike"}}</script>
     
     
-      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
