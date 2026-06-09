@@ -1661,6 +1661,10 @@ has no error handling code — it just calls <code>respond()</code> and returns.
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        <span class="p">)]</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">OperationResult</span><span class="o">.</span><span class="n">ok</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">task</span><span class="p">)]</span>
 </code></pre></div>
+<p><code>BaseRenderer.get_failure_message()</code> automatically propagates <code>results[0].message</code> when the
+batch contains exactly one failed result. Renderers for single-result commands (show, delete,
+add) do not need to override <code>get_failure_message</code> or set <code>failure_message</code> — the interface
+message reaches the output for free.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># tasks/commands/show.py</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nd">@command</span><span class="p">()</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nd">@argument</span><span class="p">(</span><span class="s2">&quot;task_id&quot;</span><span class="p">)</span>

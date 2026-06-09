@@ -1637,7 +1637,9 @@ gives back.</p>
 <a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">failure_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to add task.&quot;</span>
 </code></pre></div>
 <p><code>fields</code> drives JSON/YAML/raw serialization. <code>columns</code> drives the table. Both default to all
-dataclass fields when left empty — set them explicitly to control ordering and visibility.</p>
+dataclass fields when left empty — set them explicitly to control ordering and visibility.
+<code>failure_message</code> is optional for single-result commands: when omitted, the <code>OperationResult.message</code>
+set in the interface propagates automatically (see <a href="../error-handling/">Error Handling</a>).</p>
 <p><strong>Interface</strong> — returns <code>list[OperationResult]</code> (<a href="https://github.com/bahamut45/pyclifer/blob/main/src/pyclifer/apps/demo/apps/tasks/interfaces.py"><code>tasks/interfaces.py</code></a>):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># tasks/interfaces.py</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
