@@ -5,7 +5,12 @@ cases such as subclassing or type-checking.
 
 ## PycliferOption
 
-Extends `click.Option` with `is_global` and env-var binding support.
+Extends `click.Option` with `is_global`, `context`, and env-var binding support.
+
+- `is_global=True` — propagates this option to all subcommands automatically.
+- `context=True` — marks the option as a *context option*: its value is passed
+  to the `context_factory` callable on `@app_group`, and it is accepted at any
+  position in the command chain (even after a subcommand name).
 
 ::: pyclifer.PycliferOption
 
