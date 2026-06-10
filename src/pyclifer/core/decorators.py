@@ -1,8 +1,10 @@
 """Core decorators for pyclifer applications."""
 
 import functools
+import logging
 from collections.abc import Callable
 from dataclasses import fields
+from time import perf_counter
 from typing import Any, TypeVar, cast
 
 import click_extra
@@ -24,6 +26,7 @@ from .log.config import PycliferVerbosityOption, create_log_file_callback
 from .output.exit_codes import ExitCode, validate_exit_codes_class
 
 _F = TypeVar("_F", bound=Callable[..., Any])
+_log = logging.getLogger(__name__)
 
 
 def _split_group_kwargs(kwargs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -68,7 +71,7 @@ class GroupDecorator:
 
         return f
 
-    def _setup_logging(self):
+    def _setup_logging(self) -> None:
         """Configure the logging system based on the group config."""
         if self.config.use_rich_logging:
             from .log.config import configure_rich_logging
@@ -92,7 +95,7 @@ class GroupDecorator:
                 f = rich_config(help_config=config)(f)
         return f
 
-    def _configure_context(self):
+    def _configure_context(self) -> None:
         """Configure the default Click context settings."""
         context_settings = self.click_kwargs.get("context_settings", {})
         context_settings.update(
@@ -110,7 +113,7 @@ class GroupDecorator:
         if self.config.timer:
             f = click_extra.option("--time/--no-time", cls=PycliferTimerOption)(f)
 
-        if getattr(self.config, "add_output_format_option", True):
+        if self.config.add_output_format_option:
             f = output_format_option(
                 default_output_format=self.config.output_format_default, is_global=True
             )(f)
@@ -158,14 +161,14 @@ class GroupDecorator:
 
         Concerns composed here (each guarded by its config flag):
 
-        1. Dynamic auto_envvar_prefix (pre-call): derive prefix from CLI name when not set.
-        2. Early verbosity (pre-call + post-call): extract level before Click parses args,
+        1. Dynamic auto_envvar_prefix (pre-call): derive prefix from the CLI name when not set.
+        2. Early verbosity (pre-call and post-call): extract level before Click parses args,
            apply it after the context is built.
-        3. Framework meta injection (post-call): store log level and exit codes in ctx.meta
+        3. Framework meta-injection (post-call): store log level and exit codes in ctx.meta
            so returns_response can read them without a GroupConfig reference.
-        4. context=True / is_global=True prescan (pre-call): reorder tokens so root options
-           placed after a subcommand boundary are parsed directly by Click.
-        5. context_factory (post-call): build ctx.obj from context=True param values.
+        4. The context=True / is_global=True prescan (pre-call): reorder tokens, so Click
+           parses root options placed after a subcommand boundary directly.
+        5. The context_factory (post-call): build ctx.obj from context=True param values.
 
         Args:
             f: The Click group to patch.
@@ -175,7 +178,12 @@ class GroupDecorator:
         exit_codes_cls = self.config.exit_codes_class
 
         @functools.wraps(original_make_context)
-        def custom_make_context(info_name, args, parent=None, **extra):
+        def custom_make_context(
+            info_name: str,
+            args: list[str],
+            parent: click_extra.Context | None = None,
+            **extra: Any,
+        ) -> click_extra.Context:
             """Apply all make_context hooks in a single wrapper."""
             # --- pre-call ---
 
@@ -189,35 +197,18 @@ class GroupDecorator:
             if self.config.add_verbosity_option and parent is None and args:
                 level_name = self._extract_early_verbosity(args)
 
-            # Concern 4a — Pass 1: context=True, is_global=False — move after-boundary
-            # tokens before the boundary so Click parses them directly (CLI priority > env var).
+            # Concern 4 — prescan: reorder after-boundary tokens so Click parses them at root level.
             if parent is None and args:
-                context_only_params = [
+                # Pass 1: context=True, is_global=False — move (CLI arg priority over env var)
+                context_only = [
                     p
                     for p in f.params
                     if getattr(p, "context", False) and not getattr(p, "is_global", False)
                 ]
-                if context_only_params:
-                    boundary = GroupDecorator._find_subcommand_boundary(args, f)
-                    before, after = args[:boundary], args[boundary:]
-                    if after:
-                        _, consumed, after_remainder = GroupDecorator._extract_params(
-                            after, context_only_params
-                        )
-                        if consumed:
-                            args = consumed + before + after_remainder
-
-            # Concern 4b — Pass 2: is_global=True — copy after-boundary tokens before
-            # the boundary so root callback receives them via direct CLI parse.
-            if parent is None and args:
+                args = GroupDecorator._prescan_boundary_tokens(args, f, context_only, copy=False)
+                # Pass 2: is_global=True — copy (root callback must also see them after boundary)
                 global_params = [p for p in f.params if getattr(p, "is_global", False)]
-                if global_params:
-                    boundary = GroupDecorator._find_subcommand_boundary(args, f)
-                    before, after = args[:boundary], args[boundary:]
-                    if after:
-                        _, consumed_after, _ = GroupDecorator._extract_params(after, global_params)
-                        if consumed_after:
-                            args = consumed_after + before + after
+                args = GroupDecorator._prescan_boundary_tokens(args, f, global_params, copy=True)
 
             # --- call ---
             ctx = original_make_context(info_name, args, parent=parent, **extra)
@@ -254,7 +245,7 @@ class GroupDecorator:
     def _find_subcommand_boundary(args: list[str], f: click_extra.Group) -> int:
         """Return the index of the first subcommand token in args.
 
-        Skips option value tokens correctly so a subcommand name that happens
+        Skips option value tokens correctly, so a subcommand name that happens
         to be an option value is not misidentified as a boundary.
         Returns len(args) when no subcommand boundary is found.
 
@@ -263,7 +254,7 @@ class GroupDecorator:
             f: The Click group whose registered commands define valid boundaries.
 
         Returns:
-            Index of the first subcommand token, or len(args) if none found.
+            Index of the first subcommand token, or len(args) if none is found.
         """
         # Map every declared option form to its nargs (0 for flags, n otherwise).
         # nargs=-1 (variadic) is treated as 0 — these options must be placed before
@@ -301,7 +292,7 @@ class GroupDecorator:
 
     @staticmethod
     def _extract_params(
-        args: list[str], params: list[click_extra.Option]
+        args: list[str], params: list[click_extra.Parameter]
     ) -> tuple[dict[str, Any], list[str], list[str]]:
         """Extract option tokens matching params from args via linear scan.
 
@@ -382,6 +373,39 @@ class GroupDecorator:
                 i += 1
 
         return opts, consumed, remainder
+
+    @staticmethod
+    def _prescan_boundary_tokens(
+        args: list[str],
+        f: click_extra.Group,
+        params: list[click_extra.Parameter],
+        *,
+        copy: bool,
+    ) -> list[str]:
+        """Move or copy matched after-boundary tokens to before the boundary.
+
+        Args:
+            args: The raw argument list.
+            f: The Click group whose subcommands define the boundary.
+            params: The option params to extract from after the boundary.
+            copy: If True, keep the matched tokens in their original position too
+                (global options); if False, remove them from after the boundary
+                (context-only options).
+
+        Returns:
+            The reordered argument list, or the original list if no change was needed.
+        """
+        if not args or not params:
+            return args
+        boundary = GroupDecorator._find_subcommand_boundary(args, f)
+        before, after = args[:boundary], args[boundary:]
+        if not after:
+            return args
+        _, consumed, after_remainder = GroupDecorator._extract_params(after, params)
+        if not consumed:
+            return args
+        tail = after if copy else after_remainder
+        return consumed + before + tail
 
     def _configure_handle_response(self, f: click_extra.Group) -> None:
         """Validate exit codes and propagate handle_response to the group instance.
@@ -494,17 +518,15 @@ def returns_response(f: Callable) -> Callable:
     @functools.wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         """Wrapper for returning a Response object based on command output"""
-        import logging
-        from time import perf_counter
-
+        # Lazy import to avoid circular dependency at module load time
         from .output.responses import Response as _Response
 
-        _log = logging.getLogger(__name__)
+        root = _get_root_context()
+        meta = root.meta if root is not None else {}
+
         try:
             result = f(*args, **kwargs)
         except Exception as e:
-            root = _get_root_context()
-            meta = root.meta if root is not None else {}
             log_level = meta.get("pyclifer.unhandled_exception_log_level", "error")
             _log.log(
                 getattr(logging, log_level.upper(), logging.ERROR),
@@ -518,11 +540,10 @@ def returns_response(f: Callable) -> Callable:
             f.__name__,
             type(result).__name__,
         )
-        if isinstance(result, _get_response_class()):
+        if isinstance(result, _Response):
             from pyclifer.core.context import BaseContext
 
             ctx = click_extra.get_current_context(silent=True)
-            root = _get_root_context()
 
             # Use the actual context object (ctx.obj) if it is a BaseContext
             # subclass so that custom overrides (e.g., print_result_based_on_format)
@@ -530,7 +551,6 @@ def returns_response(f: Callable) -> Callable:
             # absent or of an unrelated type.
             obj = ctx.obj if ctx is not None else None
             output_ctx = obj if isinstance(obj, BaseContext) else BaseContext()
-            meta = root.meta if root is not None else {}
             output_format = meta.get("pyclifer.output_format", "table")
 
             # Inject execution time into structured output when timer is active.
@@ -553,17 +573,10 @@ def returns_response(f: Callable) -> Callable:
                 output_format,
                 list(meta.keys()),
             )
-            options: dict[str, Any] = {}
             output_filter = meta.get("pyclifer.output_filter")
-            if output_filter:
-                options["filter_value"] = output_filter
+            options = {"filter_value": output_filter} if output_filter else {}
             output_ctx.print_result_based_on_format(result, options=options)
-            if (
-                isinstance(result, _Response)
-                and not result.success
-                and result.error_code
-                and ctx is not None
-            ):
+            if not result.success and result.error_code and ctx is not None:
                 ctx.exit(result.error_code)
         else:
             _log.debug(
@@ -572,13 +585,6 @@ def returns_response(f: Callable) -> Callable:
         return result
 
     return wrapper
-
-
-def _get_response_class():
-    """Lazy import of Response to avoid circular dependencies at module load time."""
-    from pyclifer.core.output.responses import Response
-
-    return Response
 
 
 def command(
