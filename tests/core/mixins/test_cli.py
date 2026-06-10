@@ -210,3 +210,110 @@ class TestAddCommandContextPropagation:
 
         injected = next(p for p in sub.params if p.name == "host")
         assert injected.rich_help_panel == "Connection"
+
+
+# ---------------------------------------------------------------------------
+# Integration — help text contains the context options panel
+# ---------------------------------------------------------------------------
+
+
+class TestContextOptionsInHelpText:
+    """End-to-end: context options appear in subcommand --help output."""
+
+    def test_context_options_appear_in_subcommand_help(self):
+        """Subcommand --help output lists context=True options in the panel."""
+        from click.testing import CliRunner
+
+        group = _Group(
+            name="myapp",
+            params=[
+                _make_context_opt("--host", help="Array hostname."),
+                _make_context_opt("--pool", help="Storage pool name."),
+            ],
+        )
+        group._context_options_panel = CONTEXT_OPTIONS_PANEL
+
+        @click_extra.command("status")
+        def status_cmd():
+            """Show status."""
+
+        group.add_command(status_cmd)
+
+        runner = CliRunner()
+        result = runner.invoke(group, ["status", "--help"])
+
+        assert result.exit_code == 0
+        assert "--host" in result.output
+        assert "--pool" in result.output
+
+    def test_hidden_context_option_absent_from_subcommand_help(self):
+        """Options with show_in_subcommand_help=False do not appear in subcommand help."""
+        from click.testing import CliRunner
+
+        group = _Group(
+            name="myapp",
+            params=[
+                _make_context_opt("--host"),
+                _make_context_opt("--token", show_in_subcommand_help=False),
+            ],
+        )
+        group._context_options_panel = CONTEXT_OPTIONS_PANEL
+
+        @click_extra.command("ping")
+        def ping_cmd():
+            """Ping."""
+
+        group.add_command(ping_cmd)
+
+        runner = CliRunner()
+        result = runner.invoke(group, ["ping", "--help"])
+
+        assert result.exit_code == 0
+        assert "--host" in result.output
+        assert "--token" not in result.output
+
+    def test_panel_absent_when_all_options_hidden(self):
+        """Panel section is absent when all context options have show_in_subcommand_help=False."""
+        from click.testing import CliRunner
+
+        group = _Group(
+            name="myapp",
+            params=[_make_context_opt("--token", show_in_subcommand_help=False)],
+        )
+        group._context_options_panel = CONTEXT_OPTIONS_PANEL
+
+        @click_extra.command("ping")
+        def ping_cmd():
+            """Ping."""
+
+        group.add_command(ping_cmd)
+
+        runner = CliRunner()
+        result = runner.invoke(group, ["ping", "--help"])
+
+        assert result.exit_code == 0
+        # Plain click does not render rich_help_panel labels, so we only assert
+        # that the panel content (or lack thereof) is consistent with expectations.
+        # The key behavior: no --token appears since it's marked hidden.
+        assert "--token" not in result.output
+
+    def test_subcommand_does_not_error_without_required_context_option(self):
+        """Subcommand runs without error when required context option not re-provided."""
+        from click.testing import CliRunner
+
+        group = _Group(
+            name="myapp",
+            params=[_make_context_opt("--host", required=True)],
+        )
+        group._context_options_panel = CONTEXT_OPTIONS_PANEL
+
+        @click_extra.command("ping")
+        def ping_cmd():
+            """Ping."""
+
+        group.add_command(ping_cmd)
+
+        runner = CliRunner()
+        # --host provided at root level, not repeated before subcommand
+        result = runner.invoke(group, ["--host", "10.0.0.1", "ping"])
+        assert result.exit_code == 0

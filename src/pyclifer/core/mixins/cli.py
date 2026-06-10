@@ -99,6 +99,15 @@ class GlobalOptionsMixin:
                 if opt.name not in existing_names:
                     cmd.params.append(self._get_context_option_display_copy(opt, panel_name))
 
+            # Rebuild ungrouped_options and arguments caches for cloup.OptionGroupMixin.
+            # When params are added after command construction, these cached lists must be
+            # updated so that format_params includes the new options in help output.
+            if hasattr(cmd, "_group_params") and hasattr(cmd, "ungrouped_options"):
+                arguments, option_groups, ungrouped_options = cmd._group_params(cmd.params)
+                cmd.arguments = arguments
+                cmd.option_groups = option_groups
+                cmd.ungrouped_options = ungrouped_options
+
         if hasattr(cmd, "commands") and cmd.commands:
             for subcommand in cmd.commands.values():
                 self._propagate_context_options(subcommand, context_options, panel_name)
