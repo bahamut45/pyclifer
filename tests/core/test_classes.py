@@ -1,4 +1,4 @@
-"""Tests for PycliferOption.context and GroupConfig.context_factory."""
+"""Tests for PycliferOption and GroupConfig attributes."""
 
 from typing import Any
 
@@ -103,10 +103,9 @@ class TestGroupConfigContextOptionsPanel:
     """GroupConfig stores context_options_panel correctly."""
 
     def test_context_options_panel_has_default(self):
-        """context_options_panel has a non-empty default string."""
+        """context_options_panel defaults to the expected panel label."""
         cfg = GroupConfig()
-        assert isinstance(cfg.context_options_panel, str)
-        assert len(cfg.context_options_panel) > 0
+        assert cfg.context_options_panel == "Context Options (anywhere-passable)"
 
     def test_context_options_panel_custom_value(self):
         """context_options_panel accepts a custom string."""
