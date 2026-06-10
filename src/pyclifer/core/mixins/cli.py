@@ -77,9 +77,35 @@ class GlobalOptionsMixin:
             for subcommand in cmd.commands.values():
                 self._propagate_global_options(subcommand, global_options)
 
+    def _propagate_context_options(
+        self,
+        cmd: click_extra.Command,
+        context_options: list[click_extra.Parameter],
+        panel_name: str,
+    ) -> None:
+        """Recursively inject display-only copies of context options into a command tree.
+
+        Each copy is configured so it renders in the dedicated help panel but
+        never interferes with argument parsing or callback signatures.
+
+        Args:
+            cmd: Root of the command tree to receive the display copies.
+            context_options: Original context options from the root group.
+            panel_name: Label for the rich_help_panel on each display copy.
+        """
+        if hasattr(cmd, "params"):
+            existing_names = {p.name for p in cmd.params}
+            for opt in context_options:
+                if opt.name not in existing_names:
+                    cmd.params.append(self._get_context_option_display_copy(opt, panel_name))
+
+        if hasattr(cmd, "commands") and cmd.commands:
+            for subcommand in cmd.commands.values():
+                self._propagate_context_options(subcommand, context_options, panel_name)
+
     # noinspection PyUnresolvedReferences
     def add_command(self, cmd: click_extra.Command, name: str | None = None, **kwargs: Any) -> None:
-        """Register a subcommand and inject global options.
+        """Register a subcommand and inject global and context options.
 
         Args:
             cmd: The command to add.
@@ -94,5 +120,17 @@ class GlobalOptionsMixin:
         # 2. Inject them recursively into the subcommand and all its descendants
         if global_options:
             self._propagate_global_options(cmd, global_options)
+
+        # 3. Find context=True (non-global) options marked for subcommand help
+        context_options = [
+            param
+            for param in getattr(self, "params", [])
+            if getattr(param, "context", False)
+            and not getattr(param, "is_global", False)
+            and getattr(param, "show_in_subcommand_help", True)
+        ]
+        if context_options:
+            panel_name = getattr(self, "_context_options_panel", CONTEXT_OPTIONS_PANEL)
+            self._propagate_context_options(cmd, context_options, panel_name)
 
         super().add_command(cmd, name, **kwargs)  # type: ignore

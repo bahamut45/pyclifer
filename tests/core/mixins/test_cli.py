@@ -63,3 +63,150 @@ class TestGetContextOptionDisplayCopy:
         assert opt.required is True
         assert opt.expose_value is True
         assert opt.context is True
+
+
+# ---------------------------------------------------------------------------
+# _propagate_context_options
+# ---------------------------------------------------------------------------
+
+
+class TestPropagateContextOptions:
+    """_propagate_context_options injects display copies into subcommands."""
+
+    def test_display_copy_added_to_direct_subcommand(self):
+        """A context option is added to a subcommand that has no such param yet."""
+        group = _Group(name="root")
+        opt = _make_context_opt("--host")
+
+        sub = click_extra.Command("sub", callback=lambda: None, params=[])
+        group._propagate_context_options(sub, [opt], CONTEXT_OPTIONS_PANEL)
+
+        assert any(p.name == "host" for p in sub.params)
+
+    def test_display_copy_has_correct_attributes(self):
+        """The injected copy has expose_value=False, required=False, context=False."""
+        group = _Group(name="root")
+        opt = _make_context_opt("--host", required=True)
+
+        sub = click_extra.Command("sub", callback=lambda: None, params=[])
+        group._propagate_context_options(sub, [opt], CONTEXT_OPTIONS_PANEL)
+
+        injected = next(p for p in sub.params if p.name == "host")
+        assert injected.expose_value is False
+        assert injected.required is False
+        assert injected.context is False
+        assert injected.rich_help_panel == CONTEXT_OPTIONS_PANEL
+
+    def test_custom_panel_name_used(self):
+        """The panel_name argument is forwarded to the display copy."""
+        group = _Group(name="root")
+        opt = _make_context_opt("--host")
+
+        sub = click_extra.Command("sub", callback=lambda: None, params=[])
+        group._propagate_context_options(sub, [opt], "Custom Panel")
+
+        injected = next(p for p in sub.params if p.name == "host")
+        assert injected.rich_help_panel == "Custom Panel"
+
+    def test_existing_param_not_duplicated(self):
+        """If subcommand already defines the same param name, it is not duplicated."""
+        group = _Group(name="root")
+        opt = _make_context_opt("--host")
+
+        existing = click_extra.Option(["--host"])
+        sub = click_extra.Command("sub", callback=lambda: None, params=[existing])
+        group._propagate_context_options(sub, [opt], CONTEXT_OPTIONS_PANEL)
+
+        host_params = [p for p in sub.params if p.name == "host"]
+        assert len(host_params) == 1
+
+    def test_recursive_into_nested_subcommand(self):
+        """Context options propagate recursively into commands nested inside a group."""
+        group = _Group(name="root")
+        opt = _make_context_opt("--host")
+
+        leaf = click_extra.Command("leaf", callback=lambda: None, params=[])
+        middle = click_extra.Group("middle")
+        middle.add_command(leaf)
+
+        group._propagate_context_options(middle, [opt], CONTEXT_OPTIONS_PANEL)
+
+        assert any(p.name == "host" for p in leaf.params)
+
+    def test_command_without_params_attr_skipped_gracefully(self):
+        """Commands without a params attribute do not raise."""
+        group = _Group(name="root")
+        opt = _make_context_opt("--host")
+
+        class _Bare:
+            commands = None
+
+        group._propagate_context_options(_Bare(), [opt], CONTEXT_OPTIONS_PANEL)  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# add_command — context option propagation through the public API
+# ---------------------------------------------------------------------------
+
+
+class TestAddCommandContextPropagation:
+    """add_command propagates context=True, show_in_subcommand_help=True options."""
+
+    def test_context_option_added_on_add_command(self):
+        """add_command injects display copies of qualifying context options."""
+        group = _Group(name="root")
+        group.params = [_make_context_opt("--host")]
+        group._context_options_panel = CONTEXT_OPTIONS_PANEL
+
+        sub = click_extra.Command("sub", callback=lambda: None, params=[])
+        group.add_command(sub)
+
+        assert any(p.name == "host" for p in sub.params)
+
+    def test_show_in_subcommand_help_false_skipped(self):
+        """Options with show_in_subcommand_help=False are not propagated."""
+        group = _Group(name="root")
+        group.params = [_make_context_opt("--token", show_in_subcommand_help=False)]
+        group._context_options_panel = CONTEXT_OPTIONS_PANEL
+
+        sub = click_extra.Command("sub", callback=lambda: None, params=[])
+        group.add_command(sub)
+
+        assert not any(p.name == "token" for p in sub.params)
+
+    def test_context_and_is_global_true_not_double_injected(self):
+        """context=True + is_global=True: _propagate_global_options adds it first;
+        _propagate_context_options skips it because name already exists."""
+        group = _Group(name="root")
+        group.params = [PycliferOption(["--resource"], context=True, is_global=True)]
+        group._context_options_panel = CONTEXT_OPTIONS_PANEL
+
+        sub = click_extra.Command("sub", callback=lambda: None, params=[])
+        group.add_command(sub)
+
+        resource_params = [p for p in sub.params if p.name == "resource"]
+        assert len(resource_params) == 1
+
+    def test_no_context_options_leaves_subcommand_unchanged(self):
+        """When root has no qualifying context options, subcommand params are not modified."""
+        group = _Group(name="root")
+        group.params = [PycliferOption(["--verbose"])]
+        group._context_options_panel = CONTEXT_OPTIONS_PANEL
+
+        sub = click_extra.Command("sub", callback=lambda: None, params=[])
+        original_count = len(sub.params)
+        group.add_command(sub)
+
+        assert len(sub.params) == original_count
+
+    def test_panel_name_from_context_options_panel_attr(self):
+        """add_command uses _context_options_panel from the group instance."""
+        group = _Group(name="root")
+        group.params = [_make_context_opt("--host")]
+        group._context_options_panel = "Connection"
+
+        sub = click_extra.Command("sub", callback=lambda: None, params=[])
+        group.add_command(sub)
+
+        injected = next(p for p in sub.params if p.name == "host")
+        assert injected.rich_help_panel == "Connection"
