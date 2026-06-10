@@ -13,6 +13,9 @@ Key parameters:
 - `context_factory` — callable that receives all `context=True` option values as keyword
   arguments and returns the `ctx.obj` instance. Enables declarative context construction
   without a manual `ctx.obj =` assignment in the group callback.
+- `context_options_panel` — label for the help section that lists `context=True` options
+  in subcommand `--help` output. Defaults to `"Context Options (anywhere-passable)"`.
+  Set to any string to customise the heading.
 
 ::: pyclifer.app_group
 
@@ -41,6 +44,10 @@ Extends Click options with environment variable binding and optional global/cont
 - `is_global=True` — propagates this option to all subcommands (see `GlobalOptionsMixin`).
 - `context=True` — marks this option as a *context option*: its value feeds `context_factory`
   and is accepted at any position in the command chain (see *Anywhere-passable options*).
+  By default it also appears in subcommand `--help` under the *Context Options* panel.
+- `show_in_subcommand_help=True` — when `context=True`, controls whether the option is
+  shown in subcommand help. Set to `False` to hide it from subcommand help while keeping
+  the anywhere-passable behaviour intact.
 
 ::: pyclifer.option
 

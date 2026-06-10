@@ -5,8 +5,14 @@ for advanced subclassing.
 
 ## GlobalOptionsMixin
 
-Propagates options marked `is_global=True` from a parent group to all child commands
-and subgroups at invocation time.
+Propagates options from a parent group to all child commands and subgroups at registration time.
+
+- Options marked `is_global=True` are added as real subcommand parameters — visible in help
+  and forwarded to each callback.
+- Options marked `context=True` (non-global) with `show_in_subcommand_help=True` are injected
+  as display-only copies into subcommand help under a dedicated *Context Options* panel.
+  These copies have `expose_value=False` and `required=False` so they never interfere with
+  subcommand argument parsing or callbacks.
 
 ::: pyclifer.GlobalOptionsMixin
 

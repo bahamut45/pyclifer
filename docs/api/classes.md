@@ -11,6 +11,9 @@ Extends `click.Option` with `is_global`, `context`, and env-var binding support.
 - `context=True` — marks the option as a *context option*: its value is passed
   to the `context_factory` callable on `@app_group`, and it is accepted at any
   position in the command chain (even after a subcommand name).
+- `show_in_subcommand_help=True` — when `context=True`, controls whether the option
+  appears in subcommand `--help` under the *Context Options* panel. Set to `False`
+  to hide an option from subcommand help while keeping its anywhere-passable behaviour.
 
 ::: pyclifer.PycliferOption
 
