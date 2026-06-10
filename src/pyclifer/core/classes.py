@@ -22,7 +22,12 @@ class PycliferOption(StoreInMetaMixin, click_extra.Option):
     """Custom Click Option that can be marked as global for propagation."""
 
     def __init__(
-        self, *args: Any, is_global: bool = False, context: bool = False, **kwargs: Any
+        self,
+        *args: Any,
+        is_global: bool = False,
+        context: bool = False,
+        show_in_subcommand_help: bool = True,
+        **kwargs: Any,
     ) -> None:
         """Initialize the option.
 
@@ -31,10 +36,12 @@ class PycliferOption(StoreInMetaMixin, click_extra.Option):
             is_global: If True, this option will be propagated to subcommands.
             context: If True, this option feeds ctx.obj construction and is
                 accepted at any position in the command chain.
+            show_in_subcommand_help: If True, this option appears in subcommand help.
             **kwargs: Keyword arguments for click.Option.
         """
         self.is_global = is_global
         self.context = context
+        self.show_in_subcommand_help = show_in_subcommand_help
         super().__init__(*args, **kwargs)
 
 
@@ -277,3 +284,6 @@ class GroupConfig:
 
     # Context construction
     context_factory: Callable[..., Any] | None = None
+
+    # Context options help panel
+    context_options_panel: str = "Context Options (anywhere-passable)"

@@ -67,3 +67,48 @@ class TestGroupConfigContextFactory:
         factory = lambda **kw: kw  # noqa: E731
         cfg = GroupConfig(context_factory=factory)
         assert cfg.context_factory is factory
+
+
+# ---------------------------------------------------------------------------
+# PycliferOption — show_in_subcommand_help attribute
+# ---------------------------------------------------------------------------
+
+
+class TestPycliferOptionShowInSubcommandHelp:
+    """PycliferOption stores show_in_subcommand_help correctly."""
+
+    def test_show_in_subcommand_help_defaults_to_true(self):
+        """show_in_subcommand_help defaults to True when not passed."""
+        opt = PycliferOption(["--host"])
+        assert opt.show_in_subcommand_help is True
+
+    def test_show_in_subcommand_help_false_is_stored(self):
+        """show_in_subcommand_help=False is stored on the instance."""
+        opt = PycliferOption(["--host"], show_in_subcommand_help=False)
+        assert opt.show_in_subcommand_help is False
+
+    def test_show_in_subcommand_help_independent_from_context(self):
+        """show_in_subcommand_help and context are independent attributes."""
+        opt = PycliferOption(["--host"], context=True, show_in_subcommand_help=False)
+        assert opt.context is True
+        assert opt.show_in_subcommand_help is False
+
+
+# ---------------------------------------------------------------------------
+# GroupConfig — context_options_panel attribute
+# ---------------------------------------------------------------------------
+
+
+class TestGroupConfigContextOptionsPanel:
+    """GroupConfig stores context_options_panel correctly."""
+
+    def test_context_options_panel_has_default(self):
+        """context_options_panel has a non-empty default string."""
+        cfg = GroupConfig()
+        assert isinstance(cfg.context_options_panel, str)
+        assert len(cfg.context_options_panel) > 0
+
+    def test_context_options_panel_custom_value(self):
+        """context_options_panel accepts a custom string."""
+        cfg = GroupConfig(context_options_panel="Connection")
+        assert cfg.context_options_panel == "Connection"
