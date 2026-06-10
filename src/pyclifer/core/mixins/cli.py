@@ -1,10 +1,13 @@
 """CLI-related mixins for Click options and groups."""
 
+import copy
 from typing import Any
 
 import click_extra
 
 from pyclifer.core.callbacks import get_meta_storing_callback
+
+CONTEXT_OPTIONS_PANEL = "Context Options (anywhere-passable)"
 
 
 class StoreInMetaMixin:
@@ -28,6 +31,31 @@ class StoreInMetaMixin:
 
 class GlobalOptionsMixin:
     """Mixin that propagates global options to subcommands."""
+
+    @staticmethod
+    def _get_context_option_display_copy(
+        opt: click_extra.Parameter, panel_name: str
+    ) -> click_extra.Parameter:
+        """Create a display-only copy of a context option for subcommand help panels.
+
+        The copy is configured so it appears in a dedicated help panel but is
+        never parsed into callback kwargs and never blocks execution when absent.
+
+        Args:
+            opt: The original context option to copy.
+            panel_name: The rich_help_panel label to set on the copy.
+
+        Returns:
+            A shallow copy with expose_value=False, required=False,
+            context=False, and rich_help_panel set to panel_name.
+        """
+        display = copy.copy(opt)
+        display.expose_value = False
+        display.required = False
+        if hasattr(display, "context"):
+            display.context = False
+        display.rich_help_panel = panel_name
+        return display
 
     def _propagate_global_options(
         self, cmd: click_extra.Command, global_options: list[click_extra.Parameter]
