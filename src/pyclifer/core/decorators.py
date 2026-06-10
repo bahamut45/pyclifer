@@ -154,7 +154,9 @@ class GroupDecorator:
 
         if self.config.name:
             self.click_kwargs["name"] = self.config.name
-        return group_decorator(**self.click_kwargs)(f)
+        result = group_decorator(**self.click_kwargs)(f)
+        result._context_options_panel = self.config.context_options_panel
+        return result
 
     def _patch_make_context(self, f: click_extra.Group) -> None:
         """Patch make_context once with all framework hooks applied in order.
@@ -629,6 +631,7 @@ def option(
     context: bool = False,
     show_envvar: bool = True,
     store_in_meta: bool = False,
+    show_in_subcommand_help: bool = True,
     **kwargs: Any,
 ) -> Callable[[Callable], Callable]:
     """Create a Click option with global propagation support.
@@ -643,6 +646,8 @@ def option(
             at any position in the command chain.
         show_envvar: Show environment variables in the help output.
         store_in_meta: If True, stores the option value in ctx.meta automatically.
+        show_in_subcommand_help: If True, display-only copy of the option appears
+            in subcommand help when context=True.
         **kwargs: Additional arguments passed to click_extra.option().
 
     Returns:
@@ -656,6 +661,7 @@ def option(
     # Only forward context to classes that declare the attribute (PycliferOption subclasses).
     if isinstance(cls, type) and issubclass(cls, PycliferOption):
         kwargs["context"] = context
+        kwargs["show_in_subcommand_help"] = show_in_subcommand_help
 
     # Delegate to the Mixin if the class supports it
     if isinstance(cls, type) and issubclass(cls, StoreInMetaMixin):

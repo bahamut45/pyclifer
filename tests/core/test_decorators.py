@@ -1194,3 +1194,56 @@ class TestContextFactoryBehavior:
         runner = CliRunner()
         result = runner.invoke(app, ["--host", "x"])
         assert result.exit_code != 0
+
+
+class TestOptionShowInSubcommandHelp:
+    """@option forwards show_in_subcommand_help to PycliferOption."""
+
+    def test_show_in_subcommand_help_defaults_to_true(self):
+        """show_in_subcommand_help defaults to True on the resulting param."""
+        import click_extra
+
+        @click_extra.command()
+        @option("--host", context=True)
+        def cmd(host):
+            pass
+
+        param = next(p for p in cmd.params if p.name == "host")
+        assert getattr(param, "show_in_subcommand_help", None) is True
+
+    def test_show_in_subcommand_help_false_forwarded(self):
+        """show_in_subcommand_help=False is forwarded to the underlying PycliferOption."""
+        import click_extra
+
+        @click_extra.command()
+        @option("--host", context=True, show_in_subcommand_help=False)
+        def cmd(host):
+            pass
+
+        param = next(p for p in cmd.params if p.name == "host")
+        assert getattr(param, "show_in_subcommand_help", None) is False
+
+
+class TestGroupDecoratorContextOptionsPanel:
+    """GroupDecorator stores context_options_panel on the created group."""
+
+    def test_default_panel_name_stored_on_group(self):
+        """Group gets _context_options_panel equal to GroupConfig default."""
+        from pyclifer import app_group
+
+        @app_group()
+        def myapp():
+            pass
+
+        assert hasattr(myapp, "_context_options_panel")
+        assert len(myapp._context_options_panel) > 0
+
+    def test_custom_panel_name_stored_on_group(self):
+        """Custom context_options_panel value is stored on the group."""
+        from pyclifer import app_group
+
+        @app_group(context_options_panel="Connection")
+        def myapp():
+            pass
+
+        assert myapp._context_options_panel == "Connection"
