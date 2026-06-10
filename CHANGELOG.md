@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2026-06-10
+
+### Documentation
+
+- **api**: Document show_in_subcommand_help, context_options_panel, and mixin propagation
+
+### Features
+
+- **classes**: Add show_in_subcommand_help to PycliferOption and context_options_panel to GroupConfig
+- **mixins**: Add CONTEXT_OPTIONS_PANEL constant and _get_context_option_display_copy
+- **decorators**: Forward show_in_subcommand_help and store _context_options_panel on group
+- **mixins**: Add _propagate_context_options and update add_command
+
+### Miscellaneous
+
+- **tests**: Fix test_classes module docstring and tighten panel default assertion
+
+### Tests
+
+- **mixins**: Add end-to-end integration tests for context options in subcommand help
+- **mixins**: Cover plain option without context attr in display copy
+
 ## [0.6.0] - 2026-06-09
 
 ### Documentation
