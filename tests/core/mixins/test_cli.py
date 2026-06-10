@@ -64,6 +64,15 @@ class TestGetContextOptionDisplayCopy:
         assert opt.expose_value is True
         assert opt.context is True
 
+    def test_plain_option_without_context_attr_handled_gracefully(self):
+        """Plain click_extra.Option (no context attr) does not raise and gets panel set."""
+        opt = click_extra.Option(["--plain"])
+        result = GlobalOptionsMixin._get_context_option_display_copy(opt, CONTEXT_OPTIONS_PANEL)
+        assert result.expose_value is False
+        assert result.required is False
+        assert result.rich_help_panel == CONTEXT_OPTIONS_PANEL
+        assert not hasattr(result, "context")
+
 
 # ---------------------------------------------------------------------------
 # _propagate_context_options
