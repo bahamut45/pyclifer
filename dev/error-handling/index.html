@@ -1814,7 +1814,7 @@ in <code>renderers</code>, and builds the <code>Response</code> automatically:</
 </code></pre></div>
 <ul>
 <li><code>success=True</code> only if <strong>all</strong> results succeeded</li>
-<li><code>error_code</code> is taken from the first failed result (None if all passed)</li>
+<li><code>error_code</code> is taken from the first failed result (<code>0</code> if all passed)</li>
 <li><code>data["results"]</code> carries the full list for table rendering</li>
 </ul>
 <p><strong>Message selection</strong> — in order of precedence:
