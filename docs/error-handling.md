@@ -164,7 +164,7 @@ response = Response.from_results(
 ```
 
 - `success=True` only if **all** results succeeded
-- `error_code` is taken from the first failed result (None if all passed)
+- `error_code` is taken from the first failed result (`0` if all passed)
 - `data["results"]` carries the full list for table rendering
 
 **Message selection** — in order of precedence:
