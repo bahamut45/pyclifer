@@ -50,11 +50,18 @@ class TestResponseFromResults:
     """Test suite for Response.from_results."""
 
     def test_all_success_produces_success_response(self) -> None:
-        """from_results returns success=True when all results succeeded."""
+        """from_results returns success=True and error_code=0 when all results succeeded."""
         results = [OperationResult.ok("a.py"), OperationResult.ok("b.py")]
         response = Response.from_results(results)
         assert response.success is True
-        assert response.error_code is None
+        assert response.error_code == 0
+
+    def test_all_success_error_code_present_in_json(self) -> None:
+        """error_code=0 appears in to_json() output when all results succeeded."""
+        results = [OperationResult.ok("a.py")]
+        response = Response.from_results(results)
+        data = response.to_json()
+        assert data["error_code"] == 0
 
     def test_one_failure_produces_failed_response(self) -> None:
         """from_results returns success=False when any result failed."""
@@ -294,12 +301,20 @@ class TestMaterialiseStream:
         assert len(response.data["results"]) == 2
 
     def test_success_true_when_all_ok(self) -> None:
-        """_materialise_stream sets success=True when all results succeeded."""
+        """_materialise_stream sets success=True and error_code=0 when all results succeeded."""
         renderer = BaseRenderer()
         gen = iter([OperationResult.ok("a"), OperationResult.ok("b")])
         response = Response.from_stream(gen, renderer=renderer)
         OutputFormatMixin._materialise_stream(response)
         assert response.success is True
+        assert response.error_code == 0
+
+    def test_error_code_zero_on_success(self) -> None:
+        """_materialise_stream sets error_code=0 when all results succeeded."""
+        gen = iter([OperationResult.ok("a"), OperationResult.ok("b")])
+        response = Response.from_stream(gen, renderer=BaseRenderer())
+        OutputFormatMixin._materialise_stream(response)
+        assert response.error_code == 0
 
     def test_success_false_when_any_failed(self) -> None:
         """_materialise_stream sets success=False when any result failed."""

@@ -153,7 +153,7 @@ class Response:
             success=success,
             message=message,
             data={"results": results},
-            error_code=error_code if not success else None,
+            error_code=error_code if not success else 0,
             renderer=renderer,
         )
 

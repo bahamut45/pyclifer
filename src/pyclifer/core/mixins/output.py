@@ -103,7 +103,7 @@ class OutputFormatMixin:
         items = list(response.data.pop("stream"))
         failed = [r for r in items if not r.success]
         response.success = not bool(failed)
-        response.error_code = failed[0].error_code if failed else None
+        response.error_code = failed[0].error_code if failed else 0
         response.message = (
             response.renderer.get_success_message(items)
             if not failed
