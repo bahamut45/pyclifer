@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.1] - 2026-06-11
+
+### Bug Fixes
+
+- **responses**: Set error_code=0 on successful responses
+
+### Documentation
+
+- **error-handling**: Correct error_code description for successful responses
+
+### Miscellaneous
+
+- **plans**: Archive context-options-subcommand-help plan
+
 ## [0.7.0] - 2026-06-10
 
 ### Documentation
