@@ -38,11 +38,11 @@ class TestGetContextOptionDisplayCopy:
         result = GlobalOptionsMixin._get_context_option_display_copy(opt, CONTEXT_OPTIONS_PANEL)
         assert result.required is False
 
-    def test_rich_help_panel_set_to_given_name(self):
-        """Display copy has rich_help_panel equal to the given panel_name."""
+    def test_panel_set_to_given_name(self):
+        """Display copy has panel equal to the given panel_name."""
         opt = _make_context_opt()
         result = GlobalOptionsMixin._get_context_option_display_copy(opt, "My Panel")
-        assert result.rich_help_panel == "My Panel"
+        assert result.panel == "My Panel"
 
     def test_context_attr_is_false(self):
         """Display copy has context=False so prescan ignores it on subcommands."""
@@ -70,7 +70,7 @@ class TestGetContextOptionDisplayCopy:
         result = GlobalOptionsMixin._get_context_option_display_copy(opt, CONTEXT_OPTIONS_PANEL)
         assert result.expose_value is False
         assert result.required is False
-        assert result.rich_help_panel == CONTEXT_OPTIONS_PANEL
+        assert result.panel == CONTEXT_OPTIONS_PANEL
         assert not hasattr(result, "context")
 
 
@@ -104,7 +104,7 @@ class TestPropagateContextOptions:
         assert injected.expose_value is False
         assert injected.required is False
         assert injected.context is False
-        assert injected.rich_help_panel == CONTEXT_OPTIONS_PANEL
+        assert injected.panel == CONTEXT_OPTIONS_PANEL
 
     def test_custom_panel_name_used(self):
         """The panel_name argument is forwarded to the display copy."""
@@ -115,7 +115,7 @@ class TestPropagateContextOptions:
         group._propagate_context_options(sub, [opt], "Custom Panel")
 
         injected = next(p for p in sub.params if p.name == "host")
-        assert injected.rich_help_panel == "Custom Panel"
+        assert injected.panel == "Custom Panel"
 
     def test_existing_param_not_duplicated(self):
         """If subcommand already defines the same param name, it is not duplicated."""
@@ -218,7 +218,7 @@ class TestAddCommandContextPropagation:
         group.add_command(sub)
 
         injected = next(p for p in sub.params if p.name == "host")
-        assert injected.rich_help_panel == "Connection"
+        assert injected.panel == "Connection"
 
 
 # ---------------------------------------------------------------------------

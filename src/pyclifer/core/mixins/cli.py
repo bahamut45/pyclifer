@@ -43,18 +43,18 @@ class GlobalOptionsMixin:
 
         Args:
             opt: The original context option to copy.
-            panel_name: The rich_help_panel label to set on the copy.
+            panel_name: The panel label to set on the copy.
 
         Returns:
             A shallow copy with expose_value=False, required=False,
-            context=False, and rich_help_panel set to panel_name.
+            context=False, and panel set to panel_name.
         """
         display = copy.copy(opt)
         display.expose_value = False
         display.required = False
         if hasattr(display, "context"):
             display.context = False
-        display.rich_help_panel = panel_name
+        display.panel = panel_name
         return display
 
     def _propagate_global_options(
