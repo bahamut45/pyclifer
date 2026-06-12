@@ -1247,3 +1247,103 @@ class TestGroupDecoratorContextOptionsPanel:
             pass
 
         assert myapp._context_options_panel == "Connection"
+
+
+# ---------------------------------------------------------------------------
+# Help short-circuit — required options must not block subcommand --help
+# ---------------------------------------------------------------------------
+
+
+class TestHelpShortCircuit:
+    """required=True options on app_group must not block subcommand --help."""
+
+    def _make_app(self):
+        """Build a test app with required context options and two subcommands."""
+        captured: dict = {}
+
+        @_minimal_app_group(invoke_without_command=True)
+        @option("--host", required=True, context=True)
+        @click.pass_context
+        def app(ctx, host):
+            """App."""
+            captured["host"] = host
+
+        @app.command()
+        @click.pass_context
+        def serve(ctx):
+            """Serve."""
+
+        @app.group()
+        @click.pass_context
+        def infra(ctx):
+            """Infra."""
+
+        @infra.command()
+        @click.pass_context
+        def status(ctx):
+            """Status."""
+
+        return app, captured
+
+    def test_subcommand_help_does_not_raise_missing_option(self):
+        """--help on a direct subcommand exits 0 even when required option absent."""
+        app, _ = self._make_app()
+        runner = CliRunner()
+        result = runner.invoke(app, ["serve", "--help"])
+        assert result.exit_code == 0, result.output
+        assert "Missing option" not in result.output
+
+    def test_subcommand_help_short_flag_works(self):
+        """-h on a direct subcommand exits 0 even when required option absent."""
+        app, _ = self._make_app()
+        runner = CliRunner()
+        result = runner.invoke(app, ["serve", "-h"])
+        assert result.exit_code == 0, result.output
+        assert "Missing option" not in result.output
+
+    def test_nested_subcommand_help_does_not_raise(self):
+        """--help on a nested subcommand exits 0 even when required option absent."""
+        app, _ = self._make_app()
+        runner = CliRunner()
+        result = runner.invoke(app, ["infra", "status", "--help"])
+        assert result.exit_code == 0, result.output
+        assert "Missing option" not in result.output
+
+    def test_normal_invocation_still_validates_required(self):
+        """Without --help, a missing required option still raises MissingParameter."""
+        app, _ = self._make_app()
+        runner = CliRunner()
+        result = runner.invoke(app, ["serve"])
+        assert result.exit_code != 0
+        assert "Missing option '--host'" in result.output
+
+    def test_context_factory_not_called_during_help(self):
+        """context_factory is not called when resilient_parsing is active (help mode)."""
+        call_count: list = []
+
+        def factory(**kw):
+            """Factory."""
+            call_count.append(1)
+            return object()
+
+        @_minimal_app_group(context_factory=factory, invoke_without_command=True)
+        @option("--host", required=True, context=True)
+        @click.pass_context
+        def app(ctx, host):
+            """App."""
+
+        @app.command()
+        @click.pass_context
+        def serve(ctx):
+            """Serve."""
+
+        runner = CliRunner()
+        runner.invoke(app, ["serve", "--help"])
+        assert call_count == []
+
+    def test_help_flag_before_boundary_still_shows_root_help(self):
+        """--help placed before any subcommand shows root help (no regression)."""
+        app, _ = self._make_app()
+        runner = CliRunner()
+        result = runner.invoke(app, ["--help"])
+        assert result.exit_code == 0, result.output

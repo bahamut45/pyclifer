@@ -189,6 +189,16 @@ class GroupDecorator:
             """Apply all make_context hooks in a single wrapper."""
             # --- pre-call ---
 
+            # Concern 0 — help short-circuit: if --help/-h appears after the
+            # subcommand boundary, inject resilient_parsing=True so Click skips
+            # required-option validation on the root group (issue #5).
+            if parent is None and args:
+                boundary = GroupDecorator._find_subcommand_boundary(args, f)
+                if boundary < len(args):
+                    after_boundary = args[boundary:]
+                    if "--help" in after_boundary or "-h" in after_boundary:
+                        extra["resilient_parsing"] = True
+
             # Concern 1 — dynamic auto_envvar_prefix
             if self.config.auto_envvar_prefix is None and parent is None and info_name:
                 derived_prefix = info_name.upper().replace("-", "_").replace(" ", "_")
@@ -232,8 +242,14 @@ class GroupDecorator:
                 ctx.meta.setdefault("pyclifer.unhandled_exception_log_level", level)
                 ctx.meta.setdefault("pyclifer.exit_codes_class", exit_codes_cls)
 
-            # Concern 5 — context_factory: build ctx.obj from context=True param values
-            if parent is None and self.config.context_factory is not None:
+            # Concern 5 — context_factory: build ctx.obj from context=True param values.
+            # Skip during resilient_parsing (help mode) — required params are None
+            # and the factory would fail on missing values.
+            if (
+                parent is None
+                and self.config.context_factory is not None
+                and not ctx.resilient_parsing
+            ):
                 context_values = {
                     p.name: ctx.params.get(p.name) for p in f.params if getattr(p, "context", False)
                 }
