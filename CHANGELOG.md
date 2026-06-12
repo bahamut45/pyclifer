@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.2] - 2026-06-12
+
+### Bug Fixes
+
+- **cli**: Use panel attr instead of rich_help_panel on display copies
+- **decorators**: Skip required-option validation when subcommand requests --help
+
+### Miscellaneous
+
+- **plans**: Archive required-options-block-help plan
+
 ## [0.7.1] - 2026-06-11
 
 ### Bug Fixes
