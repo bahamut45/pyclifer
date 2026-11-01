@@ -638,8 +638,14 @@ Trouvé à l'item 6. Mesuré avec `--verbosity TRACE` : la ligne `trace-line` af
 que les lignes DEBUG et INFO du même appelant affichaient son fichier et sa ligne. `trace` appelait `self._log` sans
 `stacklevel`, donc l'enregistrement décrivait la méthode `trace` elle-même (nom de fonction `trace` aussi).
 
-**Décision de l'utilisateur.** Corriger. `trace` passe `stacklevel + 1` à `_log`, et un `stacklevel` donné par
-l'appelant reste relatif à l'appelant. Trois tests avec un vrai logger (`TestTraceSourceLocation`) : fichier et
+**Décision de l'utilisateur.** Corriger. `trace` ajoute un cadre au `stacklevel` passé à `_log`, et un `stacklevel`
+donné par l'appelant reste relatif à l'appelant.
+
+**Correction après mesure sous tox.** Le premier correctif (toujours `+ 1`) passait sur 3.13 mais échouait sur 3.10 :
+`logging` compte le `stacklevel` depuis le premier cadre hors du module `logging` à partir de 3.11, donc `trace`
+doit ajouter son cadre ; sur 3.10 il compte depuis l'appelant de la méthode qui appelle `_log`, ce qui était déjà
+le bon cadre (l'ancien code était correct sur 3.10 et faux sur 3.11 à 3.13, mesuré). Le décalage vaut
+`1 si Python >= 3.11 sinon 0` (`_TRACE_STACKLEVEL_OFFSET`). Tox 3.10 à 3.13 passe. Trois tests avec un vrai logger (`TestTraceSourceLocation`) : fichier et
 fonction de l'appelant, identiques à ceux d'un enregistrement DEBUG, `stacklevel=2` relatif à l'appelant.
 
 ## ✅ Item 23 : Défaut — `option(cls=...)` refusait les classes d'option de click-extra
