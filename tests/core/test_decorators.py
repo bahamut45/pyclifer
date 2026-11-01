@@ -3,7 +3,9 @@
 from unittest.mock import MagicMock, patch
 
 import click
+import click_extra
 import pytest
+from click_extra import TimerOption
 
 from pyclifer.core.classes import GroupConfig, PycliferOption
 from pyclifer.core.decorators import (
@@ -1590,3 +1592,55 @@ class TestNameGlobalEnvvars:
         GroupDecorator._name_global_envvars(self._context(None, option))
 
         assert option.envvar is None
+
+
+class TestOptionWithExternalClass:
+    """option(cls=...) hands each class only the arguments it declares."""
+
+    def test_click_extra_timer_option_can_be_used_through_option(self):
+        """A click_extra option class that knows nothing of is_global builds and works."""
+
+        @app_group(handle_response=False)
+        @option("--stopwatch/--no-stopwatch", cls=TimerOption, default=False)
+        def app(**kwargs):
+            """App"""
+
+        @app.command()
+        def work():
+            """Work"""
+            click.echo("done")
+
+        result = invoke(app, ["--stopwatch", "work"])
+        assert result.exit_code == 0, result.exception
+        assert "Execution time" in result.output
+
+    def test_plain_click_option_class_is_accepted(self):
+        """A bare click_extra.Option subclass is built without is_global."""
+
+        class Loud(click_extra.Option):
+            """An option class with no pyclifer argument."""
+
+        @app_group(handle_response=False)
+        @option("--shout", cls=Loud, default="a")
+        def app(shout):
+            """App"""
+
+        param = next(p for p in app.params if p.name == "shout")
+        assert type(param) is Loud
+        assert not hasattr(param, "is_global")
+
+    def test_is_global_with_a_class_that_cannot_take_it_is_refused(self):
+        """Asking for propagation from a class that cannot carry it is an explicit error."""
+        with pytest.raises(TypeError, match="TimerOption does not accept is_global"):
+            option("--stopwatch/--no-stopwatch", cls=TimerOption, is_global=True)
+
+    def test_pyclifer_classes_still_receive_is_global(self):
+        """PycliferOption keeps receiving is_global and context."""
+
+        @app_group(handle_response=False)
+        @option("--region", is_global=True, default="r")
+        def app(region):
+            """App"""
+
+        param = next(p for p in app.params if p.name == "region")
+        assert param.is_global is True

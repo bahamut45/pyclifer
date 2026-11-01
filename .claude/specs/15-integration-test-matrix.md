@@ -621,7 +621,18 @@ que les lignes DEBUG et INFO du même appelant affichaient son fichier et sa lig
 l'appelant reste relatif à l'appelant. Trois tests avec un vrai logger (`TestTraceSourceLocation`) : fichier et
 fonction de l'appelant, identiques à ceux d'un enregistrement DEBUG, `stacklevel=2` relatif à l'appelant.
 
-## Item 23+ : Autres défauts trouvés
+## ✅ Item 23 : Défaut — `option(cls=...)` refusait les classes d'option de click-extra
+
+Trouvé à l'item 6. Mesuré : `option("--time/--no-time", cls=TimerOption)` (classe exportée par `pyclifer`) lève
+`TypeError: Parameter.__init__() got an unexpected keyword argument 'is_global'`, parce que `option()` transmettait
+`is_global` à toute classe. Seules `PycliferOption`, `CustomConfigOption` et `PycliferVerbosityOption` le déclarent.
+
+**Décision de l'utilisateur.** Corriger. `option()` ne transmet `is_global` qu'aux classes dont le constructeur le
+déclare (`_declares_argument`). Demander `is_global=True` à une classe qui ne peut pas le porter lève une `TypeError`
+explicite à l'appel de `option()`, au lieu d'une perte silencieuse de la propagation. Quatre tests
+(`TestOptionWithExternalClass`) ; `docs/api/decorators.md` décrit `cls=`.
+
+## Item 24+ : Autres défauts trouvés
 
 Un item par défaut mesuré aux items 5 et 6.
 

@@ -83,6 +83,10 @@ Extends Click options with environment variable binding and optional global/cont
 - `store_in_meta=False` — when `True`, stores the option value in `ctx.meta` automatically
   (key: `"pyclifer.<option-name>"`). The option is not exposed as a function parameter.
   Used internally by `pagination_options` for `--page` and `--limit`.
+- `cls=...` — the option class. It defaults to `PycliferOption`. Any `click_extra.Option` subclass
+  works, such as `TimerOption`; it receives only the arguments its constructor declares. Asking
+  such a class for `is_global=True` raises `TypeError`, because only `PycliferOption` subclasses,
+  `CustomConfigOption` and `PycliferVerbosityOption` can be propagated.
 
 ::: pyclifer.option
 

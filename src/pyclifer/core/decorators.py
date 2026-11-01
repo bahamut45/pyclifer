@@ -1,6 +1,7 @@
 """Core decorators for pyclifer applications."""
 
 import functools
+import inspect
 import logging
 from collections.abc import Callable
 from dataclasses import fields
@@ -738,6 +739,11 @@ def command(
     return decorator
 
 
+def _declares_argument(cls: type, name: str) -> bool:
+    """Tell whether the constructor of cls declares a parameter with this name."""
+    return name in inspect.signature(cls.__init__).parameters
+
+
 def option(
     *param_decls: str,
     is_global: bool = False,
@@ -768,8 +774,18 @@ def option(
     """
     cls = kwargs.get("cls", PycliferOption)
     kwargs["cls"] = cls
-    kwargs["is_global"] = is_global
     kwargs.setdefault("show_envvar", show_envvar)
+
+    # Only classes that declare is_global can carry it. Others (click_extra options such as
+    # TimerOption) would fail on the unexpected argument, so they are given nothing, and asking
+    # them for propagation is an explicit error rather than a silent loss.
+    if not isinstance(cls, type) or _declares_argument(cls, "is_global"):
+        kwargs["is_global"] = is_global
+    elif is_global:
+        raise TypeError(
+            f"option() cannot make an option global with cls={cls.__name__}: "
+            f"{cls.__name__} does not accept is_global. Use a PycliferOption subclass."
+        )
 
     # Only forward context to classes that declare the attribute (PycliferOption subclasses).
     if isinstance(cls, type) and issubclass(cls, PycliferOption):
