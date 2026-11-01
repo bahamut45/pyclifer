@@ -224,3 +224,63 @@ class TestUsageErrorsKeepClickBehavior:
         result = invoke(_make_usage_app(), ["--token", "t", "greet", "--help"])
         assert result.exit_code == 0
         assert "Say hello" in result.output
+
+
+class TestAddCommandForwardsKeywordArguments:
+    """add_command passes extra keyword arguments to Click, such as a cloup section.
+
+    Sections exist on cloup groups only, hence use_rich_help=False: the rich-click group
+    that app_group builds by default has no section support.
+    """
+
+    def test_section_keyword_files_the_command_in_that_section(self):
+        from cloup import Section
+
+        section = Section("Extras")
+
+        @app_group(use_rich_help=False)
+        def app():
+            """App"""
+
+        @click.command()
+        def greet():
+            """Greet"""
+
+        app.add_command(greet, section=section)
+
+        assert app.commands["greet"] is greet
+        assert greet in section.commands.values()
+
+    def test_command_decorator_works_on_a_group_without_rich_help(self):
+        """cloup's Group.command() calls add_command with a section internally."""
+
+        @app_group(use_rich_help=False)
+        def app():
+            """App"""
+
+        @app.command()
+        def hello():
+            """Hello"""
+
+        assert "hello" in app.commands
+
+    def test_response_handling_still_applies_to_a_command_added_with_a_section(self):
+        import cloup
+
+        class _SectionGroup(HandleResponseMixin, cloup.Group):
+            pass
+
+        group = _SectionGroup(name="app")
+        group.handle_response_by_default = True
+
+        @click.command()
+        def greet():
+            """Greet"""
+            return Response(success=True, message="hi")
+
+        group.add_command(greet, section=cloup.Section("Extras"))
+        result = invoke(group, ["greet"])
+
+        assert result.exit_code == 0
+        # A command left unwrapped would print nothing for the Response it returns.
+        assert result.output.strip() != ""

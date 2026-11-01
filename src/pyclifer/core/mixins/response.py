@@ -189,8 +189,11 @@ class HandleResponseMixin:
 
         return wrapped
 
-    def add_command(self, cmd: Any, name: str | None = None) -> None:
+    def add_command(self, cmd: Any, name: str | None = None, **kwargs: Any) -> None:
         """Override Click.Group.add_command to propagate response handling.
+
+        Extra keyword arguments, such as a cloup section, are passed on to the
+        next class in the chain.
 
         When handle_response_by_default is True:
         - Sub-groups: handle_response_by_default is propagated recursively so
@@ -236,4 +239,4 @@ class HandleResponseMixin:
                 cmd.name,
             )
         # noinspection PyUnresolvedReferences
-        super().add_command(cmd, name=name)
+        super().add_command(cmd, name=name, **kwargs)

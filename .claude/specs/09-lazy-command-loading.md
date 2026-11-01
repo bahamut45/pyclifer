@@ -56,7 +56,9 @@ l'événement `commands.collect` (commandes connues seulement à l'exécution, p
 1. **`LazyGroup` ne marche pas tel quel dans la pile pyclifer.** Il appelle
    `add_command(cmd, section=..., fallback_to_default_section=...)` ; `HandleResponseMixin.add_command(cmd, name=None)`
    n'accepte pas de `**kwargs` → `TypeError: unexpected keyword argument 'section'`. Le même défaut touche
-   tout `add_command(cmd, section=...)` eager sur un groupe pyclifer.
+   tout `add_command(cmd, section=...)` eager sur un groupe pyclifer. **Mesuré à l'item 1 : le défaut est
+   plus large.** Sur `@app_group(use_rich_help=False)`, `@app.command()` plante déjà sur `main`, car
+   `cloup.Group.command()` appelle `add_command(..., section=...)` en interne.
 2. **Un fichier de config chargé défait le chargement paresseux.** `ConfigOption.load_conf` parcourt
    tout l'arbre (`list_commands` + `get_command`) pour construire `params_template` : toutes les commandes
    paresseuses sont importées. Avec un filtre qui lève dans `get_command`, la config échoue (exit 2) avant même
@@ -75,6 +77,17 @@ l'événement `commands.collect` (commandes connues seulement à l'exécution, p
 | `descend` conscient du lazy, lancer `a` | `a` | `FROM_CONFIG` |
 | `descend` conscient du lazy, lancer `b` | `b` | `B_CONFIG` |
 | `descend` conscient du lazy, lancer `c` | aucun | exit 2, `'c' is disabled` |
+
+5. **Les groupes Rich n'ont pas de sections.** `app_group` construit par défaut `PycliferRichGroup`, dont la
+   base `rich_click.RichGroup` n'est pas un groupe cloup : `add_command(cmd, section=...)` y échoue
+   (`RichGroup.add_command() got an unexpected keyword argument 'section'`). Seul le chemin
+   `use_rich_help=False` (groupe cloup) accepte `section`. Mettre `LazyGroup` avant `RichGroup` dans les bases
+   (item 5) apporte le support des sections au chemin Rich ; à vérifier par un test à l'item 5.
+6. **Le chemin `use_rich_help=False` est cassé une seconde fois (hors périmètre de cette spec).** Une
+   fois le défaut de l'item 1 levé, l'invocation échoue avec `RuntimeError: More than one ConfigOption
+   parameters found on command: [<ConfigOption config>, <CustomConfigOption config>]` : `click_extra.group`
+   ajoute son option de config et pyclifer ajoute `CustomConfigOption`. Le défaut préexiste (il était
+   masqué par le `TypeError`) et touche tout groupe non Rich ; il fera l'objet d'un traitement séparé.
 
 Non testé à ce jour : `strict=True` sur la config, groupes paresseux imbriqués, `--params`, complétion.
 Ils sont des cas de test explicites des items 2 et 3.
@@ -165,12 +178,20 @@ ou `on={"commands.collect": [registry.collect]}` (ce dernier tolère les enregis
 
 ---
 
-## Item 1 : `HandleResponseMixin.add_command` transmet `**kwargs`
+## ✅ Item 1 : `HandleResponseMixin.add_command` transmet `**kwargs`
 
-Branche : `fix/add-command-kwargs`. Test d'abord (`tests/core/mixins/test_response.py`) : sur un groupe
-pyclifer, `group.add_command(cmd, section=Section("S"))` ne lève pas, enregistre la commande, et la range
-dans la section ; avec `handle_response_by_default=True`, le callback est toujours enveloppé une seule fois.
-Attendu avant le correctif : `TypeError ... unexpected keyword argument 'section'`.
+Branche : `fix/add-command-kwargs`. Tests d'abord (`tests/core/mixins/test_response.py`, classe
+`TestAddCommandForwardsKeywordArguments`), tous trois en échec avec
+`TypeError: HandleResponseMixin.add_command() got an unexpected keyword argument 'section'` avant le
+correctif :
+
+- `app_group(use_rich_help=False)` : `add_command(cmd, section=Section("S"))` enregistre la commande et la
+  range dans la section ;
+- `@app.command()` fonctionne sur un groupe non Rich (régression visible par l'utilisateur) ;
+- sur un groupe cloup avec `HandleResponseMixin`, une commande ajoutée avec une `section` reste enveloppée
+  par `returns_response` (la `Response` retournée est affichée).
+
+Les tests utilisent des groupes cloup : les groupes Rich n'acceptent pas `section` (constat 5).
 Correctif : `def add_command(self, cmd, name=None, **kwargs)` et `super().add_command(cmd, name=name, **kwargs)`.
 
 ## Item 2 : Parcours de config conscient du lazy
