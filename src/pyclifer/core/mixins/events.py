@@ -5,7 +5,7 @@ from typing import Any
 
 import click_extra
 
-from pyclifer.core.events import EVENTS, Event
+from ..events import EVENTS, Event
 
 EventHandler = Callable[[click_extra.Context], Any]
 """A function called with the Click context when its event is emitted."""

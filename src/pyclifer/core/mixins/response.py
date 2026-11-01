@@ -6,7 +6,7 @@ from typing import Any
 
 import click_extra
 
-from pyclifer.core.events import PENDING_ERROR_META
+from ..events import PENDING_ERROR_META
 
 _log = logging.getLogger(__name__)
 
