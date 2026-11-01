@@ -530,6 +530,11 @@ For truly unexpected exceptions (programming errors, broken invariants), the fra
   `--output-format` (JSON, table, rich, raw…)
 - Logs the traceback to **stderr** at the configured log level
 
+An exception raised while the response is being rendered, for example by a bug in a custom renderer's
+`serialize()` or `table()`, gets the same treatment: the failure is logged and answered in the requested
+format with exit code `1`, so `--output-format json` never leaves stdout empty. With `rich` output a
+live display already on screen stays, and the error panel follows it.
+
 Click's own errors and exits are not unexpected exceptions. `click.UsageError`, `click.BadParameter`,
 `click.ClickException`, `click.Abort` and `ctx.exit()` raised in a command keep Click's handling: the
 usual message, Click's exit code (`2` for usage errors, `1` for the others, the code you gave to

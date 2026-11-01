@@ -594,6 +594,36 @@ def group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group]:
     return GroupDecorator(config, click_kwargs)
 
 
+def _unhandled_failure(name: str, error: Exception, meta: dict, where: str) -> Any:
+    """Log an unexpected exception and build the failure Response that answers it.
+
+    Args:
+        name: Name of the command function.
+        error: The exception that escaped.
+        meta: The root context meta, holding the output format and the log level to use.
+        where: Phrase placed before the command name in the log message.
+
+    Returns:
+        A Response with success False, the exception message and the generic error code.
+    """
+    # Lazy import to avoid circular dependency at module load time
+    from .output.responses import Response as _Response
+
+    log_level = meta.get("pyclifer.unhandled_exception_log_level", "error")
+    output_format = meta.get("pyclifer.output_format", "table")
+    structured = output_format in ("json", "yaml")
+    use_exc_info = not structured or _log.isEnabledFor(logging.DEBUG)
+    msg = f"Unhandled exception {where} '%s'" + ("" if use_exc_info else ": %s")
+    _log.log(
+        getattr(logging, log_level.upper(), logging.ERROR),
+        msg,
+        name,
+        *(() if use_exc_info else (str(error),)),
+        exc_info=use_exc_info,
+    )
+    return _Response(success=False, message=str(error), error_code=ExitCode.ERROR)
+
+
 def returns_response(f: Callable) -> Callable:
     """Decorator that intercepts a Response return value and prints it automatically.
 
@@ -634,23 +664,7 @@ def returns_response(f: Callable) -> Callable:
             # let Click print it and pick the exit code.
             raise
         except Exception as e:
-            log_level = meta.get("pyclifer.unhandled_exception_log_level", "error")
-            output_format = meta.get("pyclifer.output_format", "table")
-            structured = output_format in ("json", "yaml")
-            use_exc_info = not structured or _log.isEnabledFor(logging.DEBUG)
-            msg = (
-                "Unhandled exception in command '%s'"
-                if use_exc_info
-                else "Unhandled exception in command '%s': %s"
-            )
-            _log.log(
-                getattr(logging, log_level.upper(), logging.ERROR),
-                msg,
-                f.__name__,
-                *(() if use_exc_info else (str(e),)),
-                exc_info=use_exc_info,
-            )
-            result = _Response(success=False, message=str(e), error_code=ExitCode.ERROR)
+            result = _unhandled_failure(f.__name__, e, meta, "in command")
         _log.debug(
             "returns_response: command '%s' returned %s",
             f.__name__,
@@ -691,7 +705,15 @@ def returns_response(f: Callable) -> Callable:
             )
             output_filter = meta.get("pyclifer.output_filter")
             options = {"filter_value": output_filter} if output_filter else {}
-            output_ctx.print_result_based_on_format(result, options=options)
+            try:
+                output_ctx.print_result_based_on_format(result, options=options)
+            except (click_extra.ClickException, click_extra.Abort, ClickExit):
+                raise
+            except Exception as e:
+                # A bug in a renderer is answered like one in the command: in the requested format,
+                # with the failure logged, instead of an empty stdout and a raw traceback.
+                result = _unhandled_failure(f.__name__, e, meta, "while rendering command")
+                output_ctx.print_result_based_on_format(result)
             if not result.success and result.error_code and ctx is not None:
                 ctx.exit(result.error_code)
         else:

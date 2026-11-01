@@ -671,7 +671,27 @@ raw et rich acceptaient la liste quand aucun renderer ne lisait `data["results"]
 `_first_result`) et lève `ValueError` : « Response.data must be a dict with a 'results' key ... got list. Wrap the
 list: data={'results': [...]} ». Six tests (`tests/core/output/test_renderer.py`), une phrase dans la doc.
 
-## Item 25+ : Autres défauts trouvés
+## ✅ Item 25 : Défaut — une exception au rendu laissait stdout vide
+
+Découvert en discutant l'item 24. La doc promet qu'une exception inattendue est répondue dans le format demandé. Mesuré
+avec `handle_response=True` : `raise RuntimeError` dans la commande donne un JSON `success: false` sur stdout (YAML
+idem) ; la même erreur levée par un renderer (`serialize` ou `table`, ou la `ValueError` de l'item 24) donne un stdout
+vide, le code 1 et, dans un vrai terminal, la traceback brute de Python. Le `try/except` de `returns_response` n'entourait
+que l'appel de la commande, pas `print_result_based_on_format`.
+
+**Décision de l'utilisateur.** Faire respecter le contrat. Le rendu passe par le même traitement : l'exception est
+journalisée (« Unhandled exception while rendering command ... », traceback seulement hors JSON/YAML ou en DEBUG), puis
+une `Response(success=False)` sans renderer est imprimée dans le format demandé, code de sortie 1. La journalisation est
+partagée avec le cas de la commande (`_unhandled_failure`). Les erreurs Click levées au rendu gardent le traitement de
+l'item 19.
+
+**Mesuré pour le rendu en flux.** En `json`, `yaml` et `table` le flux est matérialisé avant toute écriture, donc pas de
+sortie partielle. En `rich`, l'affichage `Live` déjà dessiné reste à l'écran et le panneau d'erreur suit.
+
+Huit tests (`TestRenderFailure`) : JSON, YAML, table, log sans traceback en JSON, libellé « rendering », liste
+de données en JSON, erreur Click au rendu, renderer sain inchangé.
+
+## Item 26+ : Autres défauts trouvés
 
 Un item par défaut mesuré aux items 5 et 6.
 

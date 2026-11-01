@@ -7,6 +7,7 @@ import click
 from pyclifer.core import app_group, command, group, option, output_filter_option, returns_response
 from pyclifer.core.output import Response
 from pyclifer.core.output.exit_codes import ExitCode
+from pyclifer.core.output.renderer import BaseRenderer
 from pyclifer.testing import invoke
 
 # ---------------------------------------------------------------------------
@@ -728,3 +729,109 @@ class TestClickControlFlow:
         assert result.exit_code == 2
         assert result.json["success"] is False
         assert result.json["data"]["error_type"] == "usage_error"
+
+
+class _BrokenRenderer(BaseRenderer):
+    """Renderer whose output methods fail, like a user renderer with a bug."""
+
+    fields = ["item"]
+    columns = ["item"]
+
+    def serialize(self, response):
+        raise RuntimeError("serialize broke")
+
+    def table(self, response):
+        raise RuntimeError("table broke")
+
+
+class TestRenderFailure:
+    """An exception raised while rendering is answered like one raised by the command."""
+
+    @staticmethod
+    def _run(output_format, data=None, **config):
+        app = _make_app(handle_response_at_group=True, output_format_default=output_format)
+
+        @app.command()
+        def show():
+            """Return a response rendered by a broken renderer"""
+            return Response(
+                success=True,
+                message="m",
+                data={} if data is None else data,
+                renderer=_BrokenRenderer(),
+            )
+
+        return invoke(app, ["show"])
+
+    def test_json_gets_a_failure_response_on_stdout(self):
+        result = self._run("json")
+        assert result.exit_code == ExitCode.ERROR
+        assert result.json["success"] is False
+        assert "serialize broke" in result.json["message"]
+        assert result.json["error_code"] == ExitCode.ERROR
+
+    def test_yaml_gets_a_failure_response_on_stdout(self):
+        result = self._run("yaml")
+        assert result.exit_code == ExitCode.ERROR
+        assert result.yaml["success"] is False
+        assert "serialize broke" in result.yaml["message"]
+
+    def test_json_stderr_has_the_log_line_without_a_traceback(self):
+        result = self._run("json")
+        assert "Unhandled exception" in result.stderr
+        assert "Traceback" not in result.stderr
+
+    def test_table_logs_the_traceback_and_exits_with_error(self):
+        result = self._run("table")
+        assert result.exit_code == ExitCode.ERROR
+        assert "table broke" in result.stderr
+        assert "Unhandled exception" in result.stderr
+
+    def test_log_line_says_the_failure_happened_while_rendering(self):
+        result = self._run("json")
+        assert "rendering" in result.stderr
+
+    def test_list_data_is_a_json_failure_response_naming_the_fix(self):
+        app = _make_app(handle_response_at_group=True, output_format_default="json")
+
+        class Items(BaseRenderer):
+            fields = ["item"]
+
+        @app.command()
+        def show():
+            """Return list data to a renderer that reads results"""
+            return Response(success=True, message="m", data=[1], renderer=Items())
+
+        result = invoke(app, ["show"])
+        assert result.exit_code == ExitCode.ERROR
+        assert "'results'" in result.json["message"]
+
+    def test_a_working_renderer_is_unaffected(self):
+        app = _make_app(handle_response_at_group=True, output_format_default="json")
+
+        @app.command()
+        def show():
+            """Return a normal response"""
+            return Response(success=True, message="ok", data={"results": []})
+
+        result = invoke(app, ["show"])
+        assert result.exit_code == 0
+        assert result.json["success"] is True
+
+    def test_click_errors_raised_while_rendering_keep_click_handling(self):
+        class Refusing(BaseRenderer):
+            fields = ["item"]
+
+            def serialize(self, response):
+                raise click.UsageError("render refused")
+
+        app = _make_app(handle_response_at_group=True, output_format_default="json")
+
+        @app.command()
+        def show():
+            """Return a response whose renderer raises a Click error"""
+            return Response(success=True, message="m", data={}, renderer=Refusing())
+
+        result = invoke(app, ["show"])
+        assert result.exit_code == 2
+        assert "Unhandled exception" not in result.stderr
