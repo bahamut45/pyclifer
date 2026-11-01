@@ -68,6 +68,8 @@ class GroupDecorator:
         self._patch_make_context(f)
         # noinspection PyTypeChecker
         self._configure_handle_response(f)
+        # noinspection PyTypeChecker
+        self._configure_events(f)
 
         return f
 
@@ -441,6 +443,19 @@ class GroupDecorator:
 
         if self.config.handle_response:
             f.handle_response_by_default = True
+
+    def _configure_events(self, f: click_extra.Group) -> None:
+        """Attach the handlers declared with on= to the group instance.
+
+        Args:
+            f: The Click group instance to configure.
+
+        Raises:
+            ValueError: When on= names an unknown event.
+        """
+        for event, handlers in (self.config.on or {}).items():
+            for handler in handlers:
+                f.on(event, handler)
 
     @staticmethod
     def _extract_early_verbosity(args: list[str]) -> str | None:

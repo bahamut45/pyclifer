@@ -144,7 +144,7 @@ class EventsMixin:
         super().__init__(*args, **kwargs)
 ```
 
-## Item 3 : Câblage `GroupConfig.on`, groupes composites, `_configure_events`
+## ✅ Item 3 : Câblage `GroupConfig.on`, groupes composites, `_configure_events`
 
 Tests d'abord (`tests/core/test_decorators.py`) : `@app_group(on={"config.loaded": [h]})` inscrit `h` ;
 un nom inconnu dans `on=` lève `ValueError` à la décoration ; sans `on`, aucun handler.

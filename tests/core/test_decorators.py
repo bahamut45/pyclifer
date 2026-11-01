@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 import click
+import pytest
 
 from pyclifer.core.classes import GroupConfig, PycliferOption
 from pyclifer.core.decorators import (
@@ -1314,3 +1315,55 @@ class TestHelpShortCircuit:
         app, _ = self._make_app()
         result = invoke(app, ["--help"])
         assert result.exit_code == 0, result.output
+
+
+# ---------------------------------------------------------------------------
+# GroupDecorator — _configure_events
+# ---------------------------------------------------------------------------
+
+
+class TestGroupDecoratorEvents:
+    """The on= argument attaches lifecycle event handlers to the group."""
+
+    @pytest.mark.parametrize("use_rich_help", [True, False])
+    def test_on_attaches_the_handlers_to_the_group(self, use_rich_help):
+        def handler(ctx):
+            return "handled"
+
+        @app_group(use_rich_help=use_rich_help, on={"config.loaded": [handler]})
+        def app():
+            """App"""
+
+        assert app.emit("config.loaded", click.Context(app)) == ["handled"]
+
+    def test_on_accepts_several_handlers_in_order(self):
+        @app_group(
+            on={"config.loaded": [lambda ctx: "first", lambda ctx: "second"]},
+        )
+        def app():
+            """App"""
+
+        assert app.emit("config.loaded", click.Context(app)) == ["first", "second"]
+
+    def test_group_decorator_also_accepts_on(self):
+        from pyclifer.core.decorators import group
+
+        @group(on={"config.loaded": [lambda ctx: "sub"]})
+        def sub():
+            """Sub"""
+
+        assert sub.emit("config.loaded", click.Context(sub)) == ["sub"]
+
+    def test_without_on_no_handler_is_attached(self):
+        @app_group()
+        def app():
+            """App"""
+
+        assert app.emit("config.loaded", click.Context(app)) == []
+
+    def test_unknown_event_name_raises_at_decoration(self):
+        with pytest.raises(ValueError, match="Unknown event 'typo'"):
+
+            @app_group(on={"typo": [lambda ctx: None]})
+            def app():
+                """App"""

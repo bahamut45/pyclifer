@@ -16,7 +16,8 @@ from click_extra.config import ConfigOption
 from extra_platforms import is_linux
 from rich_click import RichGroup, RichHelpConfiguration
 
-from .mixins import GlobalOptionsMixin, HandleResponseMixin, StoreInMetaMixin
+from .mixins import EventsMixin, GlobalOptionsMixin, HandleResponseMixin, StoreInMetaMixin
+from .mixins.events import EventHandler
 from .output.exit_codes import ExitCode
 
 
@@ -79,7 +80,7 @@ class PycliferTimerOption(TimerOption):
         click_extra.echo(f"Execution time: {elapsed:.3f} seconds.")
 
 
-class PycliferExtraGroup(HandleResponseMixin, GlobalOptionsMixin, click_extra.Group):
+class PycliferExtraGroup(EventsMixin, HandleResponseMixin, GlobalOptionsMixin, click_extra.Group):
     """Custom group extending click-extra's Group that propagates global options.
 
     click_extra.Group was named ExtraGroup before click-extra 8.0.0; the pyclifer name
@@ -87,7 +88,7 @@ class PycliferExtraGroup(HandleResponseMixin, GlobalOptionsMixin, click_extra.Gr
     """
 
 
-class PycliferRichGroup(HandleResponseMixin, GlobalOptionsMixin, RichGroup):
+class PycliferRichGroup(EventsMixin, HandleResponseMixin, GlobalOptionsMixin, RichGroup):
     """Custom group based on rich-click that propagates global options."""
 
 
@@ -355,3 +356,6 @@ class GroupConfig:
 
     # Context options help panel
     context_options_panel: str = "Context Options (anywhere-passable)"
+
+    # Lifecycle events: event name -> handlers attached to the group
+    on: dict[str, list[EventHandler]] | None = None
