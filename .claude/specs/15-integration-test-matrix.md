@@ -216,9 +216,40 @@ qu'une fois. Ce n'est pas un défaut.
 
 Les défauts 3 et 4 ont été corrigés à l'item 10 (cause mesurée : voir cet item).
 
-## Item 5 : Propagation et parité
+## ✅ Item 5 : Propagation et parité
 
-Les invariants de la décision 5, sur les chemins Rich et non Rich.
+`tests/integration/test_propagation.py` (122 cas : 120 passent, 2 `xfail` stricts). Un arbre à trois niveaux (racine,
+groupes `ops` et `deep`, une feuille par niveau) avec une option globale `--region` et une option de contexte `--env`,
+construit des trois façons dont un utilisateur enregistre ses commandes (décorateur du groupe ; groupes remplis puis
+rattachés de bas en haut ; groupes rattachés puis remplis de haut en bas), sur les deux chemins d'aide.
+
+**Mesuré, puis figé par des tests.** L'option globale donnée à la feuille arrive à son callback aux trois niveaux, dans
+les trois ordres, en Rich et en plain, et figure dans l'aide de la feuille. Les options de `cli`, de chaque groupe et de
+chaque feuille sont identiques sur les deux chemins ; `group()` et `command()` n'ont aucune option propre.
+`context_factory` reçoit la valeur de `--env` donnée avant la sous-commande, sur la feuille, par `CLI_ENV` ou par défaut,
+est appelé une fois, et ne l'est pas pour afficher l'aide. `on=` et `cli.on()` exécutent leurs gestionnaires dans
+l'ordre, un `Event` personnalisé est émis, un nom inconnu est refusé. Un groupe assemblé à la main avec les trois mixins
+publics propage, répond et émet ; `PycliferGroup` est la variante plain du groupe d'application (un groupe d'application
+Rich n'en est pas une instance). Contrôle par mutation : cinq lignes de production neutralisées, toutes détectées.
+
+**Écart 3 — valeur donnée avant la sous-commande : documenté, comportement figé.** `cli --region X leaf` donne `X` à
+la racine et laisse la valeur par défaut à la feuille, qui analyse sa propre copie du paramètre ; une option globale
+`required=True` donnée avant la sous-commande sort avec le code 2. C'est cohérent avec `docs/api/mixins.md` (« real
+subcommand parameters »). Arbitrage de l'utilisateur : documenter (avertissement ajouté à `docs/api/mixins.md`), pas de
+changement de comportement.
+
+**Défauts trouvés, arbitrés avec l'utilisateur, un item chacun.**
+- Item 14 : une option globale propagée n'apparaît pas dans l'aide d'une commande créée par `cli.command()` quand
+  l'application est plain (`use_rich_help=False`) et qu'elle n'a pas d'option de contexte. Mon arbre le masquait : l'option
+  de contexte reconstruit le cache d'options de cloup par effet de bord.
+- Item 15 : l'option de contexte et son panneau manquent dans l'aide des commandes de profondeur 2 et plus quand leur
+  groupe a été rattaché avant d'être rempli (2 ordres sur 3, Rich et plain). Arbitrage : corriger.
+- Item 16 : `use_rich_help=False` ne rend plain que le groupe racine et les commandes de `cli.command()` ; `group()` et
+  `command()` produisent des classes Rich, d'où des boîtes Rich dans une application plain. Arbitrage : corriger.
+- Item 17 : un groupe intermédiaire dont le callback n'accepte pas l'option globale plante (`TypeError`, y compris pour
+  `ops leaf --help`). Arbitrage : ne lui passer que ce que son callback accepte.
+- Item 18 : la variable d'environnement d'une option globale n'est pas lue de la même façon sur les deux chemins
+  (voir l'item). Arbitrage en attente.
 
 ## Item 6 : API publique
 
@@ -420,7 +451,31 @@ personnalisé montrerait la valeur (ni Rich ni le module `traceback` n'utilisent
 Vingt-trois tests ajoutés à `tests/core/log/test_rich_logging.py` (21 unitaires, 2 de bout en bout, Rich et simple),
 couverture de branches de `filters.py` à 100 %. Documenté dans `docs/logging.md`.
 
-## Item 14+ : Autres défauts trouvés
+## Item 14 : Défaut — option globale absente de l'aide en mode plain
+
+À faire.
+
+## Item 15 : Défaut — option de contexte absente de l'aide des commandes profondes
+
+À faire.
+
+## Item 16 : Défaut — `use_rich_help=False` non appliqué aux sous-groupes et sous-commandes
+
+À faire.
+
+## Item 17 : Défaut — groupe intermédiaire qui ne peut pas recevoir l'option globale
+
+À faire.
+
+## Item 18 : Défaut — variable d'environnement d'une option globale, Rich et plain
+
+Mesuré avec une application nommée `cli` et `--region` globale : sur le chemin Rich la feuille lit `CLI_LEAF_REGION` et
+ignore `CLI_REGION` (`option.envvar` vaut `None`, préfixe du contexte `CLI_LEAF`) ; sur le chemin plain elle lit
+`CLI_REGION` et ignore `CLI_LEAF_REGION` (`option.envvar` vaut `('CLI_REGION',)`, préfixe du contexte `LEAF`). La doc
+(`docs/configuration.md`) ne décrit que les options de la racine. Deux tests `xfail` stricts consignent l'écart ; le
+choix de la variable canonique reste à arbitrer.
+
+## Item 19+ : Autres défauts trouvés
 
 Un item par défaut mesuré aux items 5 et 6.
 

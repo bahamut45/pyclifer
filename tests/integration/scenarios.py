@@ -7,6 +7,7 @@ the entries it exercises and moves them to COVERED, until PENDING is empty.
 
 _MATRIX = "tests/integration/test_group_config_matrix.py"
 _OPTIONS = "tests/integration/test_automatic_options.py"
+_PROPAGATION = "tests/integration/test_propagation.py"
 
 # Feature name -> "path/to/test_file.py::TestClass" that exercises it.
 COVERED: dict[str, str] = {
@@ -40,6 +41,15 @@ COVERED: dict[str, str] = {
     "GroupConfig.timer": f"{_OPTIONS}::TestTimerOption",
     "GroupConfig.auto_envvar_prefix": f"{_OPTIONS}::TestEnvironmentVariables",
     "GroupConfig.show_envvar": f"{_OPTIONS}::TestEnvironmentVariables",
+    # Propagation and parity on three levels, both help paths (item 5).
+    "GroupConfig.context_factory": f"{_PROPAGATION}::TestContextFactory",
+    "GroupConfig.context_options_panel": f"{_PROPAGATION}::TestContextOptionsPanel",
+    "GroupConfig.on": f"{_PROPAGATION}::TestEvents",
+    "public.Event": f"{_PROPAGATION}::TestEvents",
+    "public.EventsMixin": f"{_PROPAGATION}::TestPublicGroupClasses",
+    "public.GlobalOptionsMixin": f"{_PROPAGATION}::TestPublicGroupClasses",
+    "public.HandleResponseMixin": f"{_PROPAGATION}::TestPublicGroupClasses",
+    "public.PycliferGroup": f"{_PROPAGATION}::TestPublicGroupClasses",
     "option_factory.option": f"{_OPTIONS}::TestOptionFactories",
     "option_factory.config_option": f"{_OPTIONS}::TestOptionFactories",
     "option_factory.verbosity_option": f"{_OPTIONS}::TestOptionFactories",
@@ -54,16 +64,6 @@ EXCLUDED: dict[str, str] = {}
 
 # Item of the spec that will write the scenario -> feature names.
 PENDING: dict[str, list[str]] = {
-    "item 5 (propagation and parity)": [
-        "GroupConfig.context_factory",
-        "GroupConfig.context_options_panel",
-        "GroupConfig.on",
-        "public.Event",
-        "public.EventsMixin",
-        "public.GlobalOptionsMixin",
-        "public.HandleResponseMixin",
-        "public.PycliferGroup",
-    ],
     "item 6 (public API)": [
         "public.Abort",
         "public.BOOL",

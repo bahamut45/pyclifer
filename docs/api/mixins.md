@@ -28,6 +28,11 @@ Propagates options from a parent group to all child commands and subgroups at re
 
 - Options marked `is_global=True` are added as real subcommand parameters — visible in help
   and forwarded to each callback.
+- **A global option is parsed where it is written.** `myapp --region eu leaf` gives `eu` to the
+  group that declares the option, not to `leaf`, which parses its own copy and keeps its default.
+  Write `myapp leaf --region eu` for the subcommand to receive it. This holds for a
+  `required=True` option too: `myapp --token T leaf` fails with a missing option on `leaf`, while
+  `myapp leaf --token T` works.
 - Options marked `context=True` (non-global) with `show_in_subcommand_help=True` are injected
   as display-only copies into subcommand help under a dedicated *Context Options* panel.
   These copies have `expose_value=False` and `required=False` so they never interfere with
