@@ -1,9 +1,11 @@
 """Unit tests for the OutputFormatMixin."""
 
+import datetime
 import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml
 from rich.panel import Panel
 
 # noinspection PyProtectedMember
@@ -331,6 +333,44 @@ class TestPrintYaml:
         yaml_content = mock_syntax.call_args[0][0]
         assert "name: Alice" in yaml_content
         ctx.console.print.assert_called_once()
+
+    @staticmethod
+    def _dumped(data) -> str:
+        """Return the YAML text _print_yaml hands to the console for data."""
+        with patch("pyclifer.core.mixins.output.Syntax") as mock_syntax:
+            DummyOutputContext()._print_yaml(data)
+        return mock_syntax.call_args[0][0]
+
+    def test_operation_result_is_dumped_without_python_tags(self) -> None:
+        content = self._dumped({"results": [OperationResult.ok("a", message="m")]})
+        assert "!!python" not in content
+        assert yaml.safe_load(content)["results"][0]["item"] == "a"
+
+    def test_plain_object_is_dumped_through_its_attributes(self) -> None:
+        class Plain:
+            def __init__(self) -> None:
+                self.name = "x"
+
+        content = self._dumped({"thing": Plain()})
+        assert yaml.safe_load(content) == {"thing": {"name": "x"}}
+
+    def test_object_without_attributes_is_dumped_as_text(self) -> None:
+        class Slotted:
+            __slots__ = ()
+
+        content = self._dumped({"value": Slotted()})
+        assert yaml.safe_load(content)["value"].startswith("<")
+
+    def test_native_types_keep_their_yaml_form(self) -> None:
+        content = self._dumped(
+            {"when": datetime.date(2026, 1, 2), "tuple": (1, 2), "none": None, "text": "é"}
+        )
+        assert yaml.safe_load(content) == {
+            "when": datetime.date(2026, 1, 2),
+            "tuple": [1, 2],
+            "none": None,
+            "text": "é",
+        }
 
 
 # ---------------------------------------------------------------------------

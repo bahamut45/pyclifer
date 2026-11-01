@@ -32,6 +32,21 @@ class _FallbackEncoder(json.JSONEncoder):
         return str(obj)
 
 
+class _FallbackDumper(yaml.SafeDumper):
+    """YAML dumper that writes unknown objects the way _FallbackEncoder writes them to JSON.
+
+    The default dumper tags unknown objects with !!python/object, which no safe parser reads.
+    """
+
+
+def _represent_fallback(dumper: yaml.SafeDumper, obj: Any) -> yaml.Node:
+    """Represent an object the dumper has no representer for, through _FallbackEncoder."""
+    return dumper.represent_data(_FallbackEncoder().default(obj))
+
+
+_FallbackDumper.add_multi_representer(object, _represent_fallback)
+
+
 class _ExceptionRenderer(BaseRenderer):
     """Internal renderer for unhandled exceptions.
 
@@ -278,7 +293,9 @@ class OutputFormatMixin:
         Args:
             data: Value to serialize and display as YAML.
         """
-        yaml_content = yaml.dump(data, allow_unicode=True, indent=2, sort_keys=False)
+        yaml_content = yaml.dump(
+            data, Dumper=_FallbackDumper, allow_unicode=True, indent=2, sort_keys=False
+        )
         self.console.print(  # type: ignore[attr-defined]
             Syntax(yaml_content, "yaml", theme="ansi_dark"), soft_wrap=True
         )

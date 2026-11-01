@@ -587,7 +587,19 @@ et sans `handle_response`.
 Sept tests ajoutés (`tests/core/test_returns_response.py::TestClickControlFlow`) : les quatre erreurs, `ctx.exit(3)`,
 `ctx.exit(0)`, la parité avec et sans `handle_response`, plus le cas JSON.
 
-## Item 20+ : Autres défauts trouvés
+## ✅ Item 20 : Défaut — la sortie YAML contenait des tags Python
+
+Trouvé à l'item 6. Mesuré avec `Response.from_results([OperationResult.ok("a")], ...)` sans renderer et
+`--output-format yaml` : `data.results` sortait en `!!python/object:pyclifer.core.output.responses.OperationResult`,
+que `yaml.safe_load` refuse (`ConstructorError`). JSON et raw étaient corrects (`_FallbackEncoder`), et avec un
+`BaseRenderer` qui déclare ses champs le YAML l'était aussi. Un tuple sortait en `!!python/tuple`.
+
+**Décision de l'utilisateur.** Corriger. `_print_yaml` écrit avec `_FallbackDumper`, un `yaml.SafeDumper` dont le
+représenteur de repli réutilise `_FallbackEncoder.default` (`to_dict()`, puis `__dict__`, puis `str()`). Les types
+natifs gardent leur forme YAML (dates, `None`, accents), les tuples deviennent des listes. Quatre tests dans
+`tests/core/mixins/test_output.py::TestPrintYaml`, une phrase dans `docs/output-formatting.md`.
+
+## Item 21+ : Autres défauts trouvés
 
 Un item par défaut mesuré aux items 5 et 6.
 

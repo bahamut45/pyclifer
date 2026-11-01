@@ -278,6 +278,10 @@ myapp status --output-format yaml -f status   # 'running'\n      (valid YAML)
 myapp status --output-format json -f data     # {"status": "running", ...}  (valid JSON object)
 ```
 
+YAML output is always readable by a safe parser (`yaml.safe_load`). An object that YAML cannot write
+natively, such as an `OperationResult` in `data`, is written through its `to_dict()` or its attributes,
+exactly as the JSON format does, never as a `!!python/object` tag.
+
 ## Using BaseRenderer
 
 `BaseRenderer` is the single source of truth for all output formats. Subclass it and set
