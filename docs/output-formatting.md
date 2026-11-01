@@ -526,6 +526,12 @@ For truly unexpected exceptions (programming errors, broken invariants), the fra
   `--output-format` (JSON, table, rich, raw…)
 - Logs the traceback to **stderr** at the configured log level
 
+Click's own errors and exits are not unexpected exceptions. `click.UsageError`, `click.BadParameter`,
+`click.ClickException`, `click.Abort` and `ctx.exit()` raised in a command keep Click's handling: the
+usual message, Click's exit code (`2` for usage errors, `1` for the others, the code you gave to
+`ctx.exit()`), and no traceback. See [Usage Errors in Structured Formats](#usage-errors-in-structured-formats)
+for the JSON and YAML answer.
+
 The log level is configured on `@app_group`:
 
 ```python

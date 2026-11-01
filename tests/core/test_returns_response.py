@@ -643,3 +643,88 @@ class TestTracebackSuppression:
             assert call is not None
             _, kwargs = call
             assert kwargs.get("exc_info") is True
+
+
+def _raise(error):
+    """Raise error, so a lambda can raise."""
+    raise error
+
+
+class TestClickControlFlow:
+    """Click errors and exits raised in a command keep Click's own handling."""
+
+    @staticmethod
+    def _run(raiser, *, handle_response):
+        """Invoke a command that calls raiser(ctx), on an app with the given handle_response."""
+        app = _make_app(handle_response_at_group=handle_response)
+
+        @app.command()
+        @click.pass_context
+        def act(ctx):
+            """Raise what the test asks for"""
+            raiser(ctx)
+
+        return invoke(app, ["act"])
+
+    def test_bad_parameter_exits_with_usage_code(self):
+        """BadParameter exits with code 2 and is not logged as unhandled."""
+        result = self._run(lambda ctx: _raise(click.BadParameter("nope")), handle_response=True)
+        assert result.exit_code == 2
+        assert "Unhandled exception" not in result.stderr
+        assert "nope" in result.stderr
+
+    def test_usage_error_exits_with_usage_code(self):
+        """UsageError exits with code 2 and is not logged as unhandled."""
+        result = self._run(lambda ctx: _raise(click.UsageError("bad use")), handle_response=True)
+        assert result.exit_code == 2
+        assert "Unhandled exception" not in result.stderr
+
+    def test_click_exception_exits_with_its_own_code(self):
+        """ClickException exits with code 1, prints its message, and is not logged as unhandled."""
+        result = self._run(lambda ctx: _raise(click.ClickException("boom")), handle_response=True)
+        assert result.exit_code == 1
+        assert "boom" in result.stderr
+        assert "Unhandled exception" not in result.stderr
+
+    def test_abort_prints_aborted(self):
+        """Abort prints Aborted. on stderr and is not logged as unhandled."""
+        result = self._run(lambda ctx: _raise(click.Abort()), handle_response=True)
+        assert result.exit_code == 1
+        assert "Aborted." in result.stderr
+        assert "Unhandled exception" not in result.stderr
+
+    def test_ctx_exit_keeps_the_requested_code(self):
+        """ctx.exit(3) exits with 3 instead of being turned into a failure."""
+        result = self._run(lambda ctx: ctx.exit(3), handle_response=True)
+        assert result.exit_code == 3
+        assert "Unhandled exception" not in result.stderr
+
+    def test_ctx_exit_zero_succeeds(self):
+        """ctx.exit(0) exits with 0."""
+        result = self._run(lambda ctx: ctx.exit(0), handle_response=True)
+        assert result.exit_code == 0
+        assert "Unhandled exception" not in result.stderr
+
+    def test_handling_is_identical_without_handle_response(self):
+        """The same errors give the same exit codes when handle_response is off."""
+        with_handling = self._run(
+            lambda ctx: _raise(click.BadParameter("nope")), handle_response=True
+        )
+        without_handling = self._run(
+            lambda ctx: _raise(click.BadParameter("nope")), handle_response=False
+        )
+        assert with_handling.exit_code == without_handling.exit_code
+
+    def test_bad_parameter_in_json_is_a_usage_error_response(self):
+        """In a structured format, an error from the command body gets the usage_error schema."""
+        app = _make_app(handle_response_at_group=True, output_format_default="json")
+
+        @app.command()
+        def act():
+            """Raise a usage problem"""
+            raise click.BadParameter("nope")
+
+        result = invoke(app, ["act"])
+        assert result.exit_code == 2
+        assert result.json["success"] is False
+        assert result.json["data"]["error_type"] == "usage_error"

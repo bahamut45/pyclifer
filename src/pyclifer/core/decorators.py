@@ -8,6 +8,7 @@ from time import perf_counter
 from typing import Any, TypeVar, cast
 
 import click_extra
+from click.exceptions import Exit as ClickExit  # click_extra does not re-export Exit
 from rich_click import rich_config
 from rich_click.decorators import command as rich_command_decorator
 from rich_click.decorators import group as rich_group_decorator
@@ -627,6 +628,10 @@ def returns_response(f: Callable) -> Callable:
 
         try:
             result = f(*args, **kwargs)
+        except (click_extra.ClickException, click_extra.Abort, ClickExit):
+            # Click's own control flow (usage errors, abort, ctx.exit) is not a command failure:
+            # let Click print it and pick the exit code.
+            raise
         except Exception as e:
             log_level = meta.get("pyclifer.unhandled_exception_log_level", "error")
             output_format = meta.get("pyclifer.output_format", "table")

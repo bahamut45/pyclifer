@@ -571,7 +571,23 @@ imbriquée, ligne de commande prioritaire, variable explicite, variable du chemi
 des aides, sur les deux chemins ; onze tests unitaires de plus (`PycliferOption`, helper). Quatre mutations détectées.
 `classes.py` et `decorators.py` à 100 % de branches.
 
-## Item 19+ : Autres défauts trouvés
+## ✅ Item 19 : Défaut — les erreurs et sorties de Click capturées par `returns_response`
+
+Trouvé à l'item 6, en levant `BadParameter`, `UsageError`, `ClickException` et `Abort` dans une commande avec
+`handle_response=True` (le défaut). `returns_response` attrapait toute `Exception`, donc aussi ces erreurs, et
+`ctx.exit(n)` (`Exit` est un `RuntimeError`). Mesuré : code de sortie 1 au lieu de 2, log « Unhandled exception in
+command » avec traceback, « No dataset available. » sur stdout en `table`, et `ctx.exit(0)` ou `ctx.exit(3)` devenaient
+un échec de code 1. Avec `handle_response=False`, Click traitait tout normalement (2, message, `Aborted.`).
+
+**Décision de l'utilisateur.** Corriger dans la branche. `returns_response` relève `ClickException`, `Abort` et `Exit`
+sans les traiter : Click affiche l'erreur et choisit le code. Le chemin existant des erreurs d'usage en format structuré
+prend alors le relais (JSON `usage_error`, code 2, mesuré après le correctif), ce qui rend le comportement identique avec
+et sans `handle_response`.
+
+Sept tests ajoutés (`tests/core/test_returns_response.py::TestClickControlFlow`) : les quatre erreurs, `ctx.exit(3)`,
+`ctx.exit(0)`, la parité avec et sans `handle_response`, plus le cas JSON.
+
+## Item 20+ : Autres défauts trouvés
 
 Un item par défaut mesuré aux items 5 et 6.
 
