@@ -203,7 +203,7 @@ Le double appel est déjà mesuré (voir « Constat préalable ») : le test de 
 marqueur. Pour le construire : `XDG_CONFIG_HOME` pointé vers un dossier temporaire, fichier
 `<dossier>/<nom-de-l-app>/config.toml` contenant `[<app>]` et `_default_subcommands = ["<commande>"]`.
 
-## Item 5 : Vérification complète
+## ✅ Item 5 : Vérification complète
 
 ```bash
 ruff check src/ tests/ && ruff format src/ tests/
