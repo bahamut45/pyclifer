@@ -190,6 +190,42 @@ class TestGlobalValueBeforeTheSubcommand:
         assert (after.exit_code, "token=T" in after.output) == (0, True)
 
 
+@pytest.mark.parametrize("use_rich_help", HELP_PATHS, ids=["rich", "plain"])
+class TestGlobalOptionHelpWithoutContextOption:
+    """The help of a leaf lists the global option even when no context option is declared.
+
+    The tree above also has a context option, whose propagation rebuilds the help cache of the
+    commands and used to hide that the global option alone did not.
+    """
+
+    @pytest.mark.parametrize("declaration", ["decorator", "add_command"])
+    @pytest.mark.parametrize("nested", [False, True], ids=["first-level", "nested"])
+    def test_the_option_is_listed(self, use_rich_help, declaration, nested):
+        @app_group(use_rich_help=use_rich_help)
+        @option("--region", is_global=True, default=DEFAULT_REGION)
+        def cli(region):
+            """Root."""
+
+        def body(region):
+            """Leaf."""
+
+        owner = cli
+        path = []
+        if nested:
+            owner = group(name="ops")(lambda **_: None)
+            cli.add_command(owner)
+            path = ["ops"]
+        if declaration == "decorator":
+            owner.command(name="leaf")(body)
+        else:
+            owner.add_command(command(name="leaf")(body))
+
+        result = invoke(cli, [*path, "leaf", "--help"])
+
+        assert result.exit_code == 0, result.output
+        assert "--region" in result.output
+
+
 class TestGlobalOptionEnvironmentVariable:
     """The environment variable of a global option, read by the commands it is propagated to.
 

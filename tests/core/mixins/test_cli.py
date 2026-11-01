@@ -1,5 +1,6 @@
 """Tests for GlobalOptionsMixin — context option display propagation."""
 
+import click  # a plain Click command is needed below, click_extra.Command is a cloup one
 import click_extra
 
 from pyclifer.core.classes import PycliferOption
@@ -315,3 +316,85 @@ class TestContextOptionsInHelpText:
         # --host provided at root level, not repeated before subcommand
         result = invoke(group, ["--host", "10.0.0.1", "ping"])
         assert result.exit_code == 0
+
+
+# ---------------------------------------------------------------------------
+# Integration — help text contains the global options
+# ---------------------------------------------------------------------------
+
+
+def _make_global_opt(name: str = "--region") -> PycliferOption:
+    return PycliferOption([name], is_global=True, default="r0")
+
+
+class TestGlobalOptionsInHelpText:
+    """End-to-end: a global option appears in the --help of the subcommands it is given to.
+
+    click-extra commands keep a cache of their options for the help; an option appended to
+    params afterwards is parsed but never listed unless the cache is rebuilt.
+    """
+
+    def test_option_is_listed_for_a_command_added_with_add_command(self):
+        group = _Group(name="myapp", params=[_make_global_opt()])
+
+        @click_extra.command("status")
+        def status_cmd(region):
+            """Show status."""
+
+        group.add_command(status_cmd)
+
+        result = invoke(group, ["status", "--help"])
+
+        assert result.exit_code == 0
+        assert "--region" in result.output
+
+    def test_option_is_listed_for_a_command_created_with_the_group_decorator(self):
+        group = _Group(name="myapp", params=[_make_global_opt()])
+
+        @group.command("status")
+        def status_cmd(region):
+            """Show status."""
+
+        result = invoke(group, ["status", "--help"])
+
+        assert result.exit_code == 0
+        assert "--region" in result.output
+
+    def test_option_is_listed_for_a_command_in_a_nested_group(self):
+        group = _Group(name="myapp", params=[_make_global_opt()])
+        inner = _Group(name="inner", callback=lambda **_: None)
+
+        @inner.command("status")
+        def status_cmd(region):
+            """Show status."""
+
+        group.add_command(inner)
+
+        result = invoke(group, ["inner", "status", "--help"])
+
+        assert result.exit_code == 0
+        assert "--region" in result.output
+
+    def test_option_is_still_parsed_by_the_subcommand(self):
+        group = _Group(name="myapp", params=[_make_global_opt()])
+        seen = {}
+
+        @click_extra.command("status")
+        def status_cmd(region):
+            """Show status."""
+            seen["region"] = region
+
+        group.add_command(status_cmd)
+
+        invoke(group, ["status", "--region", "eu"])
+
+        assert seen["region"] == "eu"
+
+    def test_a_command_with_no_help_cache_is_left_alone(self):
+        """A plain click command has no option-group cache to rebuild."""
+        group = _Group(name="myapp", params=[_make_global_opt()])
+        plain = click.Command("plain", callback=lambda region: None)
+
+        group.add_command(plain)
+
+        assert [p.name for p in plain.params] == ["region"]

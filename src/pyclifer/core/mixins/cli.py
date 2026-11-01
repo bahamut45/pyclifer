@@ -57,6 +57,24 @@ class GlobalOptionsMixin:
         display.panel = panel_name
         return display
 
+    @staticmethod
+    def _rebuild_help_cache(cmd: click_extra.Command) -> None:
+        """Make the help of a command list the options added to it after its construction.
+
+        click-extra commands (cloup.OptionGroupMixin) keep the arguments, option groups and
+        ungrouped options in lists built once. An option appended to params later is parsed
+        but never listed in the help unless those lists are rebuilt. A command without them,
+        such as a plain Click command, is left alone.
+
+        Args:
+            cmd: The command whose parameters changed.
+        """
+        if hasattr(cmd, "_group_params") and hasattr(cmd, "ungrouped_options"):
+            arguments, option_groups, ungrouped_options = cmd._group_params(cmd.params)
+            cmd.arguments = arguments
+            cmd.option_groups = option_groups
+            cmd.ungrouped_options = ungrouped_options
+
     def _propagate_global_options(
         self, cmd: click_extra.Command, global_options: list[click_extra.Parameter]
     ) -> None:
@@ -68,9 +86,13 @@ class GlobalOptionsMixin:
         """
         if hasattr(cmd, "params"):
             existing_param_names = {param.name for param in cmd.params}
+            added = False
             for opt in global_options:
                 if opt.name not in existing_param_names:
                     cmd.params.append(opt)
+                    added = True
+            if added:
+                self._rebuild_help_cache(cmd)
 
         # If the command is a group, recursively apply to its currently registered subcommands
         if hasattr(cmd, "commands"):
@@ -99,14 +121,7 @@ class GlobalOptionsMixin:
                 if opt.name not in existing_names:
                     cmd.params.append(self._get_context_option_display_copy(opt, panel_name))
 
-            # Rebuild ungrouped_options and arguments caches for cloup.OptionGroupMixin.
-            # When params are added after command construction, these cached lists must be
-            # updated so that format_params includes the new options in help output.
-            if hasattr(cmd, "_group_params") and hasattr(cmd, "ungrouped_options"):
-                arguments, option_groups, ungrouped_options = cmd._group_params(cmd.params)
-                cmd.arguments = arguments
-                cmd.option_groups = option_groups
-                cmd.ungrouped_options = ungrouped_options
+            self._rebuild_help_cache(cmd)
 
         if hasattr(cmd, "commands") and cmd.commands:
             for subcommand in cmd.commands.values():

@@ -451,9 +451,24 @@ personnalisé montrerait la valeur (ni Rich ni le module `traceback` n'utilisent
 Vingt-trois tests ajoutés à `tests/core/log/test_rich_logging.py` (21 unitaires, 2 de bout en bout, Rich et simple),
 couverture de branches de `filters.py` à 100 %. Documenté dans `docs/logging.md`.
 
-## Item 14 : Défaut — option globale absente de l'aide en mode plain
+## ✅ Item 14 : Défaut — option globale absente de l'aide en mode plain
 
-À faire.
+Trouvé à l'item 5. Dans une application `use_rich_help=False`, `cli.command()` crée une commande click-extra
+(cloup) qui garde, pour son aide, des listes d'arguments, de groupes d'options et d'options sans groupe construites
+une fois. L'option globale propagée est ajoutée à `params` : elle est analysée (la valeur arrive au callback) mais
+**jamais listée dans l'aide**. Mesuré sur huit cas (Rich et plain × `cli.command()` ou `add_command(command())` ×
+premier niveau ou imbriqué, sans option de contexte) : seul le cas plain + `cli.command()` échouait. La même
+défaillance existait avec `PycliferGroup` et avec un groupe assemblé des mixins publics (`GlobalOptionsMixin` seul).
+`docs/api/mixins.md` promet pourtant « visible in help ».
+
+**Pourquoi l'arbre de l'item 5 ne le voyait pas.** La propagation des options de **contexte** reconstruisait ces
+listes pour la commande entière, ce qui faisait apparaître l'option globale par effet de bord. Il a fallu un test sans
+option de contexte.
+
+**Correctif.** `GlobalOptionsMixin._rebuild_help_cache` (extrait du code qui existait déjà pour les options de
+contexte) est appelé aussi après l'ajout d'une option globale, seulement quand une option a été ajoutée. Une commande
+Click pure, sans ces listes, n'est pas touchée. Cinq tests unitaires (`tests/core/mixins/test_cli.py`) et huit cas
+d'intégration ; neutraliser l'appel fait échouer exactement le cas mesuré. `mixins/cli.py` à 100 % de branches.
 
 ## Item 15 : Défaut — option de contexte absente de l'aide des commandes profondes
 
