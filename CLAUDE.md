@@ -37,6 +37,19 @@ Before modifying any file, state in one or two sentences:
 Do this even for small edits. Skip it only when the change was explicitly dictated by the
 user (e.g., "replace line 12 with …") and there is nothing non-obvious to explain.
 
+### Verify behaviour, never assume it
+
+Before stating how a dependency (click, click-extra, rich-click, cloup) or existing code behaves,
+and before deciding that something needs fixing or not, reproduce the use case and base the
+decision on what it prints. Use a throwaway script in the scratchpad, outside the repository.
+
+- Test the exact scenario the code will meet, plus its neighbours (bare call, `--help`, explicit
+  subcommand, with and without a config file), not only the case that motivated the change.
+- Specs, docs and messages state only what was measured. Mark anything untested as untested, and
+  test it before implementing the item that depends on it.
+- When a measurement contradicts a spec or an earlier statement, say so and correct the spec in
+  the same commit.
+
 ## Spec lifecycle
 
 Specs live in `.claude/specs/`. When a spec is fully implemented, move it to
