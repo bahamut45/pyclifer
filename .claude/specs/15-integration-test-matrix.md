@@ -251,10 +251,31 @@ changement de comportement.
 - Item 18 : la variable d'environnement d'une option globale n'est pas lue de la même façon sur les deux chemins
   (voir l'item). Arbitrage en attente.
 
-## Item 6 : API publique
+## ✅ Item 6 : API publique
 
 Chaque symbole de `pyclifer.__all__` est importable et utilisable dans une application minimale (les types
 Click réexportés, le journaliseur, les classes de réponse et de rendu).
+
+**Réalisé** (`tests/integration/test_public_api.py`, 134 cas). Aucun symbole n'est mis dans `EXCLUDED` : les 64
+entrées `public.*` sont dans `COVERED`, et `PENDING` est vide. Les types Click réexportés sont testés comme un
+utilisateur les rencontre, en option d'une vraie commande : les douze acceptent une valeur valide et convertie, et dix
+refusent une valeur invalide avec le code 2 (`Choice`, `IntRange`, `File` sur un fichier absent, etc.). Neuf classes de
+scénarios : décorateurs et aides `pass_*`, types Click, entrées/sorties terminal, erreurs Click (avec et sans
+`handle_response`), fabriques d'options, journalisation (niveaux, TRACE, masquage), réponses et renderers dans les cinq
+formats, tableaux (rendu Rich), contexte et classes d'options. Un test paramétré importe chaque nom de `__all__`.
+
+**Mesuré d'abord, avec des attentes corrigées.** Trois attentes écrites avant mesure étaient fausses : le message d'une
+`ClickException` est dans un panneau Rich et non `Error: ...` ; un renderer qui déclare `failure_message` remplace
+« 1/2 operation(s) failed. » ; une feuille reçoit l'option globale en paramètre, donc ses commandes doivent
+l'accepter. `PaginatedResponse` attend `data` sous forme de dict (comme la doc), pas une liste : une liste fait
+planter le format table, ce qui est un mauvais usage et non un défaut.
+
+**Défauts trouvés, tous arbitrés par l'utilisateur et corrigés dans leur commit** : item 19 (erreurs et sorties de
+Click capturées par `returns_response`), item 20 (YAML avec tags Python), item 21 (`trace()` absent avant
+`@app_group`), item 22 (source des lignes TRACE), item 23 (`option(cls=TimerOption)`).
+
+**Mutations détectées** : `returns_response` qui capture de nouveau les erreurs Click (5 cas), `is_global` transmis à
+toute classe (1 cas), YAML sans `_FallbackDumper` (1 cas).
 
 ## ✅ Item 7 : Défaut — `output_format_default` ignoré sans `--output-format`
 

@@ -6,8 +6,6 @@ option factory, public symbol or event that is not declared in scenarios.py fail
 
 from pathlib import Path
 
-import pytest
-
 from tests.integration.inventory import discover_inventory
 from tests.integration.scenarios import COVERED, EXCLUDED, PENDING
 
@@ -81,9 +79,5 @@ class TestExhaustiveness:
 
         assert not broken, f"Covered entries pointing nowhere: {broken}"
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Pending scenarios are written by items 3 to 6 of the integration-test-matrix spec.",
-    )
     def test_no_pending_scenario_is_left(self):
         assert _pending_names() == []
