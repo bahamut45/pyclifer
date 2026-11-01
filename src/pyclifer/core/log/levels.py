@@ -57,3 +57,8 @@ def add_trace_method(logger_class: type) -> type:
 
     logger_class.trace = trace
     return logger_class
+
+
+# Install trace() on the global Logger class when pyclifer is imported, so get_logger() keeps its
+# SupportsTraceLogger promise before any application is declared.
+add_trace_method(logging.Logger)

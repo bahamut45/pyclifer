@@ -12,7 +12,7 @@ from click_extra.logging import basicConfig
 from .filters import SecretsMasker
 from .formatters import RichExtraFormatter
 from .handlers import RichExtraStreamHandler
-from .levels import PYCLIFER_LOG_LEVELS, SupportsTraceLogger, add_trace_method
+from .levels import PYCLIFER_LOG_LEVELS, SupportsTraceLogger
 
 
 class PycliferVerbosityOption(BaseVerbosityOption):
@@ -183,8 +183,6 @@ def configure_rich_logging(
 
     else:
         _configure_plain_logging(enable_secrets_filter, sensitive_fields, mask_free_text)
-
-    add_trace_method(logging.Logger)
 
 
 def _is_console_handler(handler: logging.Handler) -> bool:

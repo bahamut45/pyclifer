@@ -59,10 +59,14 @@ from pyclifer import (
 )
 import logging
 
-# Add .trace() method to any logger
+# Every logger has .trace() as soon as pyclifer is imported, no application needed
 logger = logging.getLogger("myapp")
-add_trace_method(logger)
 logger.trace("low-level trace message")  # level 5
+
+# add_trace_method takes a logger CLASS, for a custom logger class
+class MyLogger(logging.Logger): ...
+
+add_trace_method(MyLogger)
 
 # Build a handler manually
 handler = RichExtraStreamHandler()

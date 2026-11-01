@@ -599,7 +599,19 @@ représenteur de repli réutilise `_FallbackEncoder.default` (`to_dict()`, puis 
 natifs gardent leur forme YAML (dates, `None`, accents), les tuples deviennent des listes. Quatre tests dans
 `tests/core/mixins/test_output.py::TestPrintYaml`, une phrase dans `docs/output-formatting.md`.
 
-## Item 21+ : Autres défauts trouvés
+## ✅ Item 21 : Défaut — `trace()` absent avant la première `@app_group`
+
+Trouvé à l'item 6. Mesuré en processus neuf : `get_logger("x").trace("m")` lève `AttributeError: 'Logger' object has
+no attribute 'trace'` tant qu'aucune `@app_group` n'a été déclarée, alors que `get_logger` est typé
+`SupportsTraceLogger`. `trace` n'était installé que par `configure_rich_logging`. L'exemple de `docs/logging.md`
+appelait aussi `add_trace_method(logger)` avec une instance, ce qui lève `TypeError` à l'appel de `logger.trace(...)`
+(mesuré sur l'ancien code) : la fonction attend une classe.
+
+**Décision de l'utilisateur.** Corriger. `levels.py` installe `trace` sur `logging.Logger` à l'import, et l'appel
+devenu redondant dans `configure_rich_logging` est retiré. Trois tests en processus neuf
+(`tests/core/log/test_levels.py`) ; l'exemple de la doc est corrigé.
+
+## Item 22+ : Autres défauts trouvés
 
 Un item par défaut mesuré aux items 5 et 6.
 
