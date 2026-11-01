@@ -164,10 +164,15 @@ class HandleResponseMixin:
         self, *args: Any, handle_response: bool | None = None, **kwargs: Any
     ) -> Callable[..., Any]:
         """Override Click.Group.command to automatically handle Response objects."""
+        explicit = handle_response is not None
         if handle_response is None:
             handle_response = self.handle_response_by_default
         # noinspection PyUnresolvedReferences
         decorator = super().command(*args, **kwargs)
+        if not handle_response and not explicit:
+            # No choice was made: leave the command undecided, so that a parent group
+            # that handles responses can still wrap it when this group is attached.
+            return decorator
         if not handle_response:
             # Mark the raw function as decided *before* calling decorator(f)
             # so that our add_command() override sees the flag when Click

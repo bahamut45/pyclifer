@@ -212,13 +212,21 @@ Correctif (tests d'abord : les 8 `xfail` de la matrice ont été retirés pour d
 - documentation : `docs/output-formatting.md` (« The default format is the contract of the application »)
   et la docstring d'`app_group`.
 
-**Défaut trouvé en chemin, non corrigé (item 5).** Une commande définie avec `@sub.command()` sur un
-sous-groupe créé par `group()`, **avant** que ce sous-groupe soit rattaché à l'application, n'imprime rien
-quand elle retourne une `Response`, même si l'application a `handle_response=True` (sortie vide, code 0).
-Mesuré identique avant et après ce correctif. Cause lue dans le code : `HandleResponseMixin.command()` marque
-la commande « décidée » (désactivée) parce que le sous-groupe n'a pas encore reçu le réglage, puis
-`_apply_handle_response_to_group` saute les commandes « décidées ». Cela contredit « `handle_response=True`
-enveloppe aussi les sous-groupes imbriqués » du `CLAUDE.md`. Ordre inverse (rattacher puis définir) : correct.
+**Défaut trouvé en chemin, corrigé dans la foulée.** Une commande définie avec `@sub.command()` sur un
+sous-groupe créé par `group()`, **avant** que ce sous-groupe soit rattaché à l'application, n'imprimait rien
+quand elle retournait une `Response`, même si l'application avait `handle_response=True` (sortie vide, code 0).
+Mesuré identique avant le correctif du format. Cause lue dans le code : `HandleResponseMixin.command()` marquait
+la commande « décidée » (désactivée) parce que le sous-groupe n'avait pas encore reçu le réglage, puis
+`_apply_handle_response_to_group` sautait les commandes « décidées ». Cela contredisait « `handle_response=True`
+enveloppe aussi les sous-groupes imbriqués » du `CLAUDE.md`. Correctif : seule une demande **explicite**
+(`handle_response=True` ou `False`) pose la marque ; sans choix, la commande reste indécise et la propagation
+peut l'envelopper. Trois tests : enveloppée une fois le sous-groupe rattaché, refus explicite respecté, rien
+d'enveloppé quand l'application ne gère pas les réponses.
+
+Limite connue : `GroupConfig.handle_response` vaut `False` par défaut et ne distingue pas un `False` explicite
+d'un défaut. `@group(handle_response=False)` ne protège donc pas ses commandes ; l'argument de
+`@sub.command(handle_response=False)` le fait. L'item 5 couvre les deux ordres de déclaration sur les chemins
+Rich et non Rich.
 
 ## Item 7+ : Autres défauts trouvés
 

@@ -284,3 +284,68 @@ class TestAddCommandForwardsKeywordArguments:
         assert result.exit_code == 0
         # A command left unwrapped would print nothing for the Response it returns.
         assert result.output.strip() != ""
+
+
+class TestCommandDefinedBeforeItsGroupIsAttached:
+    """A command only opts out of response handling when it asks to, never by default."""
+
+    @staticmethod
+    def _app(**config):
+        @app_group(output_format_default="json", **config)
+        def app():
+            """App"""
+
+        return app
+
+    def test_a_command_with_no_explicit_choice_is_wrapped_once_its_group_is_attached(self):
+        from pyclifer.core.decorators import group
+
+        @group()
+        def sub():
+            """Sub"""
+
+        @sub.command()
+        def leaf():
+            """Leaf"""
+            return Response(success=True, message="leaf")
+
+        app = self._app()
+        app.add_command(sub)
+
+        result = invoke(app, ["sub", "leaf"])
+
+        assert result.json["message"] == "leaf"
+
+    def test_an_explicit_opt_out_is_still_respected(self):
+        from pyclifer.core.decorators import group
+
+        @group()
+        def sub():
+            """Sub"""
+
+        @sub.command(handle_response=False)
+        def leaf():
+            """Leaf"""
+            return Response(success=True, message="leaf")
+
+        app = self._app()
+        app.add_command(sub)
+
+        assert invoke(app, ["sub", "leaf"]).output.strip() == ""
+
+    def test_nothing_is_wrapped_when_the_application_does_not_handle_responses(self):
+        from pyclifer.core.decorators import group
+
+        @group()
+        def sub():
+            """Sub"""
+
+        @sub.command()
+        def leaf():
+            """Leaf"""
+            return Response(success=True, message="leaf")
+
+        app = self._app(handle_response=False)
+        app.add_command(sub)
+
+        assert invoke(app, ["sub", "leaf"]).output.strip() == ""
