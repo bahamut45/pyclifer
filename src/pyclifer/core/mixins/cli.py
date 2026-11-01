@@ -1,6 +1,8 @@
 """CLI-related mixins for Click options and groups."""
 
 import copy
+import functools
+import inspect
 from typing import Any
 
 import click_extra
@@ -77,6 +79,44 @@ class GlobalOptionsMixin:
             cmd.option_groups = option_groups
             cmd.ungrouped_options = ungrouped_options
 
+    @staticmethod
+    def _let_group_ignore_propagated(cmd: click_extra.Command, names: list[str]) -> None:
+        """Keep a group from being called with a propagated option its callback cannot take.
+
+        The option is parsed by the group like any parameter and Click then calls the callback
+        with every parsed value, so a group written as `def ops():` failed with a TypeError as
+        soon as the application had a global option. The callback of a group is wrapped, once,
+        by a function that drops the propagated options the callback does not accept. An option
+        the group declares itself is never dropped, so a real mismatch is still reported.
+
+        Args:
+            cmd: The command that was just given the options. Only a group is concerned.
+            names: Names of the options that were propagated to it.
+        """
+        if not hasattr(cmd, "commands") or cmd.callback is None:
+            return
+        propagated = getattr(cmd, "_propagated_option_names", None)
+        if propagated is not None:  # already wrapped: the wrapper reads this set when called
+            propagated.update(names)
+            return
+        original = cmd.callback
+        try:
+            accepted = inspect.signature(original).parameters
+        except (TypeError, ValueError):  # a signature that cannot be read: leave it as it is
+            return
+        if any(param.kind is inspect.Parameter.VAR_KEYWORD for param in accepted.values()):
+            return
+        cmd._propagated_option_names = set(names)
+
+        @functools.wraps(original)
+        def callback(*args: Any, **kwargs: Any) -> Any:
+            """Call the original callback without the propagated options it does not take."""
+            for name in cmd._propagated_option_names - accepted.keys():
+                kwargs.pop(name, None)
+            return original(*args, **kwargs)
+
+        cmd.callback = callback
+
     def _propagate_global_options(
         self, cmd: click_extra.Command, global_options: list[click_extra.Parameter]
     ) -> None:
@@ -88,13 +128,14 @@ class GlobalOptionsMixin:
         """
         if hasattr(cmd, "params"):
             existing_param_names = {param.name for param in cmd.params}
-            added = False
+            added = []
             for opt in global_options:
                 if opt.name not in existing_param_names:
                     cmd.params.append(opt)
-                    added = True
+                    added.append(opt.name)
             if added:
                 self._rebuild_help_cache(cmd)
+                self._let_group_ignore_propagated(cmd, added)
 
         # If the command is a group, recursively apply to its currently registered subcommands
         if hasattr(cmd, "commands"):

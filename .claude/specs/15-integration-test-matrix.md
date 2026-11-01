@@ -493,9 +493,28 @@ Neutraliser la retransmission, ou la remplacer par le panneau par défaut, fait 
 
 À faire.
 
-## Item 17 : Défaut — groupe intermédiaire qui ne peut pas recevoir l'option globale
+## ✅ Item 17 : Défaut — groupe intermédiaire qui ne peut pas recevoir l'option globale
 
-À faire.
+Trouvé à l'item 5. Une option globale est ajoutée à `params` de chaque groupe qu'elle traverse, et Click appelle le
+callback avec toutes les valeurs analysées : `@group() def ops(): ...` sous une racine qui a une option globale sortait
+avec le code 1 (`TypeError: ops() got an unexpected keyword argument 'region'`), pour `ops leaf` **et** pour
+`ops leaf --help` (le callback du groupe s'exécute avant l'aide de la feuille). `ops --help` seul fonctionnait.
+Mesuré sur Rich et plain, les trois ordres. `docs/api/mixins.md` disait « forwarded to each callback », ce qui faisait
+de la signature stricte le contrat ; arbitrage de l'utilisateur : ne passer à un groupe que ce que son callback accepte.
+
+**Pourquoi un marquage par groupe.** L'instance de l'option est la même sur la racine et sur tous les groupes ; on ne
+peut donc pas la distinguer, sur l'option, d'une option déclarée par le groupe lui-même. `_propagated_option_names`
+note, par groupe, les noms qui lui ont été propagés.
+
+**Correctif.** `_let_group_ignore_propagated` enveloppe une fois le callback d'un groupe qui reçoit des options ; le
+filtre retire les noms propagés que la signature n'accepte pas. Laissés tels quels : un callback qui prend `**kwargs`,
+une signature illisible, une option que le groupe déclare lui-même (une vraie erreur de signature reste signalée), et
+**les commandes feuilles**, qui doivent toujours accepter l'option (périmètre arbitré, figé par un test). Un groupe
+qui reçoit ses options en deux temps (un parent rattaché plus tard) voit l'ensemble mis à jour.
+
+Douze tests unitaires et douze cas d'intégration (deux tests, trois ordres, deux chemins). Le contrôle par mutation a d'abord laissé
+survivre deux lignes (mise à jour de l'ensemble, limite aux groupes) : deux tests ajoutés, puis les cinq mutations sont
+détectées. `mixins/cli.py` à 100 % de branches.
 
 ## Item 18 : Défaut — variable d'environnement d'une option globale, Rich et plain
 

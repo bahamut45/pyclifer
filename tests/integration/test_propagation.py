@@ -298,6 +298,63 @@ class TestHelpPathParity:
                 assert param.expose_value is False
 
 
+@pytest.mark.parametrize("use_rich_help", HELP_PATHS, ids=["rich", "plain"])
+@pytest.mark.parametrize("order", ORDERS)
+class TestGroupsThatTakeNoArgument:
+    """A group written the natural way, with no parameter, works under a global option."""
+
+    @staticmethod
+    def _plain_tree(use_rich_help, order):
+        seen = {}
+
+        @app_group(use_rich_help=use_rich_help)
+        @option("--region", is_global=True, default=DEFAULT_REGION)
+        def cli(region):
+            """Root."""
+
+        @group(name="ops")
+        def ops():
+            """Ops."""
+
+        @group(name="deep")
+        def deep():
+            """Deep."""
+
+        def leaf(region):
+            """Leaf."""
+            seen["region"] = region
+
+        if order == "decorator":
+            cli.add_command(ops)
+            ops.add_command(deep)
+            deep.command(name="leaf")(leaf)
+        elif order == "bottom_up":
+            deep.add_command(command(name="leaf")(leaf))
+            ops.add_command(deep)
+            cli.add_command(ops)
+        else:
+            cli.add_command(ops)
+            ops.add_command(deep)
+            deep.add_command(command(name="leaf")(leaf))
+        return cli, seen
+
+    def test_the_leaf_runs_and_receives_the_option(self, use_rich_help, order):
+        cli, seen = self._plain_tree(use_rich_help, order)
+
+        result = invoke(cli, ["ops", "deep", "leaf", "--region", "X"])
+
+        assert result.exit_code == 0, result.output
+        assert seen["region"] == "X"
+
+    def test_the_help_of_the_leaf_is_shown(self, use_rich_help, order):
+        cli, _ = self._plain_tree(use_rich_help, order)
+
+        result = invoke(cli, ["ops", "deep", "leaf", "--help"])
+
+        assert result.exit_code == 0, result.output
+        assert "--region" in result.output
+
+
 class TestOwnOptionsOfTheDecorators:
     """group() and command() declare no option of their own."""
 
