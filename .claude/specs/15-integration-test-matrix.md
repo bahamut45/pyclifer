@@ -94,7 +94,9 @@ après coup ; `context=True` alimente `context_factory`.
 | Fichier                                    | Changement                                                        |
 |--------------------------------------------|-------------------------------------------------------------------|
 | `tests/integration/` (nouveau dossier)     | Tests d'intégration transverses (ne reflètent pas un module de `src/`) |
-| `tests/integration/conftest.py`            | Harnais : fabrique d'application, contrat « fonctionne »          |
+| `tests/integration/harness.py`             | Harnais : `build_app`, `BuiltApp`, `assert_healthy` (contrat « fonctionne ») |
+| `tests/integration/conftest.py`            | Isolation de l'environnement (HOME et XDG_CONFIG_HOME temporaires) |
+| `tests/integration/test_harness.py`        | Tests du harnais lui-même                                         |
 | `tests/integration/inventory.py`           | Découverte de l'inventaire par introspection                      |
 | `tests/integration/scenarios.py`           | `COVERED`, `EXCLUDED`, `PENDING`                                  |
 | `tests/integration/test_inventory.py`      | Garde-fou d'exhaustivité (décision 1)                             |
@@ -121,11 +123,26 @@ La catégorie temporaire `PENDING` a été ajoutée (décision 1). État initial
 (10 à l'item 3, 20 à l'item 4, 8 à l'item 5, 64 à l'item 6). Contrôle par mutation : un champ ajouté sans
 scénario et une fonctionnalité supprimée sont tous deux détectés, avec leur nom.
 
-## Item 2 : Harnais de scénario
+## ✅ Item 2 : Harnais de scénario
 
-Fabrique `build_app(**config)` qui crée l'application avec une commande de test, et vérificateur
-`assert_healthy(app)` qui applique le contrat de la décision 2. Tests du harnais lui-même (un cas sain, un
-cas avec doublon d'options volontaire, qui doit être détecté).
+`tests/integration/harness.py` : `build_app(**config)` construit une `app_group` nommée `cli` avec une
+commande `hello` qui retourne une `Response`, en enregistrant les avertissements émis pendant la construction ;
+`assert_healthy(built)` applique le contrat de la décision 2. Un fixture `autouse` isole HOME et
+XDG_CONFIG_HOME, pour qu'un fichier de config de l'utilisateur ne soit jamais chargé.
+
+Contrat mesuré avant d'être écrit, sur six configurations (défaut, json, yaml, `handle_response=False`,
+`use_rich_help=False`, sans option automatique) : `--help` donne 0, `hello` donne 0, une commande inconnue
+donne 2, et les noms d'options suivent les drapeaux `add_*_option`. Avec `handle_response=False`, `hello`
+n'imprime rien : le contrat ne vérifie alors que le code de sortie.
+
+**L'appel nu n'est pas dans le contrat.** Mesuré : il rend l'aide avec le code 2 sur ces six configurations,
+mais la spec demandait de le mesurer avant de l'affirmer ; la matrice de l'item 3 le consigne.
+
+Tests du harnais (`test_harness.py`, 19 cas) : 12 applications saines (six formats de sortie, sans aide Rich,
+sans option automatique, sans traitement des réponses, avec `timer`) et 7 défauts simulés, tous détectés avec
+un message qui nomme le problème : option dupliquée, option absente pour un drapeau actif, option présente
+pour un drapeau inactif, avertissement à la construction, commande en échec, sortie JSON invalide, commande
+inconnue qui ne sort pas avec le code 2.
 
 ## Item 3 : Matrice `GroupConfig` — mesure
 
