@@ -43,8 +43,10 @@ séparément, se doublonnent une fois assemblées). Seul un test qui assemble pu
 ### Décision 1 — L'inventaire est découvert, jamais listé à la main
 
 Un test d'exhaustivité parcourt `dataclasses.fields(GroupConfig)`, les fabriques d'options et `pyclifer.__all__`.
-Chaque élément doit avoir **un scénario déclaré** ou figurer dans une liste d'exclusion **justifiée par un
-commentaire**. Ajouter un champ, une option ou un symbole public sans scénario fait échouer la suite : les
+Chaque élément doit être déclaré dans `tests/integration/scenarios.py`, dans **une seule** de trois catégories :
+`COVERED` (nom du test qui l'exerce, vérifié), `EXCLUDED` (**raison obligatoire**) ou `PENDING` (temporaire :
+l'item de la spec qui écrira le scénario). Chaque item retire ses entrées de `PENDING` ; un dernier test, marqué
+`xfail(strict=True)` tant qu'il en reste, échoue quand la liste est vide et force à retirer le marqueur. Ajouter un champ, une option ou un symbole public sans scénario fait échouer la suite : les
 fonctionnalités futures (specs 05, 06, 09, ...) entrent donc automatiquement dans le périmètre.
 
 ### Décision 2 — Un contrat unique pour dire qu'une application « fonctionne »
@@ -93,6 +95,8 @@ après coup ; `context=True` alimente `context_factory`.
 |--------------------------------------------|-------------------------------------------------------------------|
 | `tests/integration/` (nouveau dossier)     | Tests d'intégration transverses (ne reflètent pas un module de `src/`) |
 | `tests/integration/conftest.py`            | Harnais : fabrique d'application, contrat « fonctionne »          |
+| `tests/integration/inventory.py`           | Découverte de l'inventaire par introspection                      |
+| `tests/integration/scenarios.py`           | `COVERED`, `EXCLUDED`, `PENDING`                                  |
 | `tests/integration/test_inventory.py`      | Garde-fou d'exhaustivité (décision 1)                             |
 | `tests/integration/test_group_config_matrix.py` | Matrice `GroupConfig` (décisions 2 et 3)                     |
 | `tests/integration/test_automatic_options.py`   | Effet réel de chaque option automatique                       |
@@ -103,11 +107,19 @@ après coup ; `context=True` alimente `context_factory`.
 
 ---
 
-## Item 1 : Inventaire et garde-fou d'exhaustivité
+## ✅ Item 1 : Inventaire et garde-fou d'exhaustivité
 
-Branche : `feat/integration-test-inventory`. Test d'abord : la suite échoue tant qu'un champ de `GroupConfig`,
-une fabrique d'options ou un symbole de `pyclifer.__all__` n'a ni scénario ni exclusion justifiée. Le premier
-état de la liste d'exclusion est volontairement vide : chaque entrée ajoutée doit porter sa raison.
+Branche : `feat/integration-test-inventory`. Tests d'abord (`tests/integration/test_inventory.py`) : la
+découverte trouve les champs de `GroupConfig`, les fabriques d'options, les symboles publics (sans les noms
+`__dunder__`, qui sont des métadonnées) et les événements ; le garde-fou échoue pour une fonctionnalité non
+déclarée, une entrée obsolète, un doublon, une exclusion sans raison, une référence `COVERED` qui ne pointe
+vers aucun test.
+
+Écart avec le premier jet de la spec : la liste d'exclusion ne pouvait pas démarrer vide avec une suite verte.
+La catégorie temporaire `PENDING` a été ajoutée (décision 1). État initial mesuré : **103 fonctionnalités**
+= 1 `COVERED` (`event.config.loaded`, déjà testé par `TestCustomConfigOptionConfigLoadedEvent`) + 102 `PENDING`
+(10 à l'item 3, 20 à l'item 4, 8 à l'item 5, 64 à l'item 6). Contrôle par mutation : un champ ajouté sans
+scénario et une fonctionnalité supprimée sont tous deux détectés, avec leur nom.
 
 ## Item 2 : Harnais de scénario
 
