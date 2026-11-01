@@ -41,9 +41,16 @@ Propagates options from a parent group to all child commands and subgroups at re
 
 Auto-wraps commands added via `command()` or `add_command()` with `returns_response`
 by default (opt out with `handle_response=False`).
-A command only opts out when you ask: `@sub.command(handle_response=False)`. A command defined
-without that argument on a sub-group is wrapped as soon as the sub-group is attached to an
-application that handles responses, whichever of the two is declared first.
+`handle_response` has three values, on a command as well as on a group:
+
+| Value | Meaning |
+|-------|---------|
+| `None` (default) | Inherit. A command takes its group's setting; a group takes its parent's once attached. |
+| `True` | Enable. |
+| `False` | Opt out. A group set to `False` protects its whole sub-tree from a parent that handles responses. |
+
+Whichever of the sub-group and the application is declared first, a command with no explicit choice
+is wrapped as soon as its group is attached to an application that handles responses.
 
 ::: pyclifer.HandleResponseMixin
 

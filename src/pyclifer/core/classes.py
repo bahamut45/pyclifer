@@ -366,7 +366,8 @@ class GroupConfig:
 
     # Output format settings
     output_format_default: str = "table"
-    handle_response: bool = False
+    # None inherits from the parent group, True enables, False protects the whole sub-tree.
+    handle_response: bool | None = None
     timer: bool = False
 
     # Help formatting

@@ -223,10 +223,14 @@ enveloppe aussi les sous-groupes imbriqués » du `CLAUDE.md`. Correctif : seule
 peut l'envelopper. Trois tests : enveloppée une fois le sous-groupe rattaché, refus explicite respecté, rien
 d'enveloppé quand l'application ne gère pas les réponses.
 
-Limite connue : `GroupConfig.handle_response` vaut `False` par défaut et ne distingue pas un `False` explicite
-d'un défaut. `@group(handle_response=False)` ne protège donc pas ses commandes ; l'argument de
-`@sub.command(handle_response=False)` le fait. L'item 5 couvre les deux ordres de déclaration sur les chemins
-Rich et non Rich.
+**`handle_response` devient tri-état sur le groupe** (décision de l'utilisateur, même sémantique que sur la
+commande) : `None` hérite (défaut de `group()`), `True` active, `False` protège tout le sous-arbre. Avant, le
+défaut `False` ne se distinguait pas d'un refus explicite. `app_group` garde `True` comme défaut, et `None`
+y signifie ce défaut. Neuf tests (trois valeurs, deux ordres de rattachement, groupe imbriqué, `None` sur
+l'application). Le mixin retient le refus explicite (`handle_response_opted_out`) et la propagation saute ce
+sous-arbre ; la vérification est stricte (`is True`) pour ne pas confondre avec les doubles de test. Aucune
+autre lecture de `GroupConfig.handle_response` dans le dépôt ni dans les templates du scaffolding.
+L'item 5 couvre les deux ordres sur les chemins Rich et non Rich.
 
 ## Item 7+ : Autres défauts trouvés
 

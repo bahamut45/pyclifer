@@ -24,6 +24,9 @@ Key parameters:
   Defaults to `True`. It only changes how the help is drawn: the group exposes the same options
   either way, and click-extra's own default options (`--color`, `--theme`, `--show-params`, ...) are
   not added. Pass `params=[...]` to add options of your own.
+- `handle_response` — `True` by default on an application: every command returning a `Response`
+  has it printed in the output format. `False` opts the application out. See `HandleResponseMixin`
+  for the three values and how a sub-group inherits or opts out.
 - `on` — mapping of lifecycle event names to lists of handler functions, for example
   `on={"config.loaded": [check_config]}`. Keys are framework event names or `Event` objects; a plain
   string that is not a framework event raises `ValueError` at decoration time. See the
@@ -35,7 +38,8 @@ Key parameters:
 
 ## group
 
-Creates a subgroup that inherits global options from its parent.
+Creates a subgroup that inherits global options from its parent. Its `handle_response` is `None`
+by default: it follows the application once attached. `handle_response=False` protects its commands.
 
 ::: pyclifer.group
 

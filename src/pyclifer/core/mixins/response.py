@@ -36,6 +36,10 @@ def _apply_handle_response_to_group(group) -> None:
     """
     from pyclifer.core.decorators import returns_response
 
+    # A group that opted out explicitly keeps its whole sub-tree out of the propagation.
+    if getattr(group, "handle_response_opted_out", False) is True:
+        return
+
     # Enable for future registrations if the group supports the mixin.
     if isinstance(group, HandleResponseMixin):
         group.handle_response_by_default = True
@@ -77,6 +81,7 @@ class HandleResponseMixin:
     """
 
     handle_response_by_default: bool = False
+    handle_response_opted_out: bool = False
     output_format_default: str = "table"
 
     def parse_args(self, ctx: click_extra.Context, args: list[str]) -> list[str]:
@@ -164,7 +169,7 @@ class HandleResponseMixin:
         self, *args: Any, handle_response: bool | None = None, **kwargs: Any
     ) -> Callable[..., Any]:
         """Override Click.Group.command to automatically handle Response objects."""
-        explicit = handle_response is not None
+        explicit = handle_response is not None or self.handle_response_opted_out
         if handle_response is None:
             handle_response = self.handle_response_by_default
         # noinspection PyUnresolvedReferences

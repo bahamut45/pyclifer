@@ -451,8 +451,12 @@ class GroupDecorator:
         """
         validate_exit_codes_class(self.config.exit_codes_class)
 
-        if self.config.handle_response:
+        if self.config.handle_response is True:
             f.handle_response_by_default = True
+        elif self.config.handle_response is False:
+            # An explicit False protects the group and its sub-tree from the propagation of
+            # a parent that handles responses; None leaves the choice to the parent.
+            f.handle_response_opted_out = True
 
     def _configure_events(self, f: click_extra.Group) -> None:
         """Attach the handlers declared with on= to the group instance.
@@ -487,6 +491,18 @@ class GroupDecorator:
         return None
 
 
+def _root_handle_response(value: bool | None) -> bool:
+    """Resolve handle_response for the root group, where None means the default (True).
+
+    Args:
+        value: The handle_response argument given to app_group, or its default.
+
+    Returns:
+        True unless handle_response=False was given explicitly.
+    """
+    return True if value is None else value
+
+
 def app_group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group]:
     """Decorator for the main CLI application entry point.
 
@@ -496,7 +512,8 @@ def app_group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group
     All keyword arguments map to `GroupConfig` fields or are forwarded to Click.
     Notable options:
 
-    - `handle_response` (bool): intercept and print `Response` objects automatically.
+    - `handle_response` (bool): intercept and print `Response` objects automatically. Defaults
+      to True on an application; `False` protects the whole group from the propagation.
     - `timer` (bool): inject `--time/--no-time`. Prints elapsed time in rich/table/raw;
       injects `execution_time` and `execution_time_str` into `Response.data` in json/yaml.
     - `output_format_default` (str): the format the whole application answers in
@@ -518,7 +535,7 @@ def app_group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group
         add_log_file_option=config_kwargs.pop("add_log_file_option", True),
         add_version_option=config_kwargs.pop("add_version_option", True),
         add_output_format_option=config_kwargs.pop("add_output_format_option", True),
-        handle_response=config_kwargs.pop("handle_response", True),
+        handle_response=_root_handle_response(config_kwargs.pop("handle_response", True)),
         **config_kwargs,
     )
 

@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 import click
+import pytest
 
 from pyclifer.core import app_group, command, option
 
@@ -349,3 +350,90 @@ class TestCommandDefinedBeforeItsGroupIsAttached:
         app.add_command(sub)
 
         assert invoke(app, ["sub", "leaf"]).output.strip() == ""
+
+
+class TestGroupLevelHandleResponse:
+    """handle_response on a group is tri-state: None inherits, True enables, False protects."""
+
+    @staticmethod
+    def _answer(handle_response, order, app_handles=True):
+        """Output of a leaf command of a sub-group, for one value and one declaration order."""
+        from pyclifer.core.decorators import group
+
+        @app_group(output_format_default="json", handle_response=app_handles)
+        def app():
+            """App"""
+
+        @group(handle_response=handle_response)
+        def sub():
+            """Sub"""
+
+        def define_leaf():
+            @sub.command()
+            def leaf():
+                """Leaf"""
+                return Response(success=True, message="leaf")
+
+        if order == "define_first":
+            define_leaf()
+            app.add_command(sub)
+        else:
+            app.add_command(sub)
+            define_leaf()
+        return invoke(app, ["sub", "leaf"]).output.strip()
+
+    def test_the_default_of_a_group_is_none(self):
+        from pyclifer.core.classes import GroupConfig
+
+        assert GroupConfig().handle_response is None
+
+    @pytest.mark.parametrize("order", ["define_first", "attach_first"])
+    def test_none_inherits_the_application_setting(self, order):
+        assert '"message": "leaf"' in self._answer(None, order)
+
+    @pytest.mark.parametrize("order", ["define_first", "attach_first"])
+    def test_false_protects_the_commands_of_the_group(self, order):
+        assert self._answer(False, order) == ""
+
+    @pytest.mark.parametrize("order", ["define_first", "attach_first"])
+    def test_true_enables_the_group_under_an_application_that_does_not(self, order):
+        answer = self._answer(True, order, app_handles=False)
+
+        assert '"message": "leaf"' in answer
+
+    def test_false_also_protects_a_group_nested_in_the_protected_group(self):
+        from pyclifer.core.decorators import group
+
+        @app_group(output_format_default="json")
+        def app():
+            """App"""
+
+        @group(handle_response=False)
+        def sub():
+            """Sub"""
+
+        @group()
+        def nested():
+            """Nested"""
+
+        @nested.command()
+        def leaf():
+            """Leaf"""
+            return Response(success=True, message="leaf")
+
+        sub.add_command(nested)
+        app.add_command(sub)
+
+        assert invoke(app, ["sub", "nested", "leaf"]).output.strip() == ""
+
+    def test_an_application_given_none_handles_responses_like_the_default(self):
+        @app_group(output_format_default="json", handle_response=None)
+        def app():
+            """App"""
+
+        @app.command()
+        def hello():
+            """Hello"""
+            return Response(success=True, message="hello")
+
+        assert invoke(app, ["hello"]).json["message"] == "hello"
