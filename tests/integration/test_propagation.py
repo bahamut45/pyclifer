@@ -355,6 +355,81 @@ class TestGroupsThatTakeNoArgument:
         assert "--region" in result.output
 
 
+RICH_BOX = "\u256d"  # first corner of a Rich panel; plain Click help never draws one
+
+
+@pytest.mark.parametrize("order", ORDERS)
+class TestHelpRenderingFollowsTheApplication:
+    """use_rich_help applies to the whole application, not only to its root group.
+
+    Measured before the fix: with use_rich_help=False the root printed plain help, while a subgroup
+    made by group() and a command made by command() printed Rich panels, and their usage errors
+    were laid out the Rich way.
+    """
+
+    HELP_SCREENS = {
+        "root": [],
+        "subgroup": ["ops"],
+        "second-level group": ["ops", "deep"],
+        "first-level leaf": ["leaf1"],
+        "nested leaf": ["ops", "deep", "leaf3"],
+    }
+
+    @pytest.mark.parametrize("screen", HELP_SCREENS)
+    def test_a_plain_application_prints_plain_help_everywhere(self, order, screen):
+        tree = _tree(False, order)
+
+        result = invoke(tree.cli, [*self.HELP_SCREENS[screen], "--help"])
+
+        assert result.exit_code == 0, result.output
+        assert RICH_BOX not in result.output
+        assert "Usage:" in result.output
+
+    @pytest.mark.parametrize("screen", HELP_SCREENS)
+    def test_a_rich_application_keeps_its_rich_help_everywhere(self, order, screen):
+        tree = _tree(True, order)
+
+        result = invoke(tree.cli, [*self.HELP_SCREENS[screen], "--help"])
+
+        assert result.exit_code == 0, result.output
+        assert RICH_BOX in result.output
+
+    def test_the_options_of_a_plain_subcommand_help_are_listed(self, order):
+        tree = _tree(False, order)
+
+        output = invoke(tree.cli, ["ops", "deep", "leaf3", "--help"]).output
+
+        assert "--region" in output
+        assert "--env" in output
+
+    def test_the_subcommands_of_a_plain_group_are_listed(self, order):
+        tree = _tree(False, order)
+
+        output = invoke(tree.cli, ["ops", "--help"]).output
+
+        assert "Commands:" in output
+        assert "leaf2" in output
+        assert "deep" in output
+
+    def test_a_usage_error_below_a_plain_group_is_laid_out_like_the_root(self, order):
+        tree = _tree(False, order)
+
+        below = invoke(tree.cli, ["ops", "nosuchcommand"])
+        root = invoke(tree.cli, ["nosuchcommand"])
+
+        assert below.exit_code == root.exit_code == 2
+        assert below.stderr.startswith("Usage:")  # Click writes usage errors to stderr
+        assert root.stderr.startswith("Usage:")
+
+    def test_commands_still_run_and_parse_their_options(self, order):
+        tree = _tree(False, order)
+
+        result = invoke(tree.cli, ["ops", "deep", "leaf3", "--region", "X"])
+
+        assert result.exit_code == 0, result.output
+        assert tree.regions[3] == "X"
+
+
 class TestOwnOptionsOfTheDecorators:
     """group() and command() declare no option of their own."""
 

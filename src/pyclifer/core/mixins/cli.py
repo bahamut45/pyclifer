@@ -8,6 +8,7 @@ from typing import Any
 import click_extra
 
 from pyclifer.core.callbacks import get_meta_storing_callback
+from pyclifer.core.mixins.plain_help import has_plain_help, make_help_plain
 
 CONTEXT_OPTIONS_PANEL = "Context Options (anywhere-passable)"
 
@@ -179,6 +180,11 @@ class GlobalOptionsMixin:
             name: The name to register the command with.
             **kwargs: Additional arguments passed to the parent method.
         """
+        # 0. An application that asked for plain help gets plain help from every command in it,
+        # including the rich-click ones that group() and command() build.
+        if has_plain_help(self):  # type: ignore[arg-type]
+            make_help_plain(cmd)
+
         # 1. Find global options attached to this group
         global_options = [
             param for param in getattr(self, "params", []) if getattr(param, "is_global", False)

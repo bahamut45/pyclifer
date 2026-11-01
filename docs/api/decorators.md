@@ -29,9 +29,11 @@ Key parameters:
 - `rich_help_config` — `RichHelpConfiguration` instance (or dict) forwarded to rich-click.
   Lets you customise colours, column widths, and panel styles in `--help` output.
 - `use_rich_help` — set to `False` to disable rich-click rendering and use plain Click help.
-  Defaults to `True`. It only changes how the help is drawn: the group exposes the same options
-  either way, and click-extra's own default options (`--color`, `--theme`, `--show-params`, ...) are
-  not added. Pass `params=[...]` to add options of your own.
+  Defaults to `True`. It is a choice of the whole application: the subgroups and commands built by
+  `group()` and `command()` print plain help too once they are attached to it, and so do their usage
+  errors. It only changes how the help is drawn: the group exposes the same options either way, and
+  click-extra's own default options (`--color`, `--theme`, `--show-params`, ...) are not added. Pass
+  `params=[...]` to add options of your own.
 - `handle_response` — `True` by default on an application: every command returning a `Response`
   has it printed in the output format. `False` opts the application out. See `HandleResponseMixin`
   for the three values and how a sub-group inherits or opts out.

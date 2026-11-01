@@ -489,9 +489,36 @@ chemins) ; le nom du panneau n'est affirmé que sur le chemin Rich, car l'aide p
 panneau (l'option y figure dans la liste des options) : mesuré, ajusté aussi dans les tests de l'item 5.
 Neutraliser la retransmission, ou la remplacer par le panneau par défaut, fait échouer les tests.
 
-## Item 16 : Défaut — `use_rich_help=False` non appliqué aux sous-groupes et sous-commandes
+## ✅ Item 16 : Défaut — `use_rich_help=False` non appliqué aux sous-groupes et sous-commandes
 
-À faire.
+Trouvé à l'item 5. Dans une application `use_rich_help=False`, mesuré : l'aide de la racine est plain, mais celle d'un
+sous-groupe créé par `group()` et d'une commande créée par `command()` dessine des panneaux Rich, et leurs erreurs
+d'usage sont mises en page à la façon de Rich ; seule une commande créée par `cli.command()` était plain. La doc
+disait « disable rich-click rendering and use plain Click help ». `group()` et `command()` s'exécutent avant le
+rattachement et ne connaissent pas le réglage de l'application : arbitrage de l'utilisateur, corriger au rattachement.
+
+**Mécanisme, mesuré avant d'être retenu.** Le rendu Rich passe par la classe de contexte (`RichContext`, formateur
+`RichHelpFormatter`) et par les méthodes `format_*` de `RichCommand`. Échanger seulement la classe de contexte plante
+(`TypeError` sur `rich_help_config`, puis `'HelpFormatter' object has no attribute 'config'`) ; les erreurs d'usage
+deviennent plain, mais pas l'aide. Il faut donc aussi redonner à la commande les `format_*` de Click.
+
+**Correctif.** `core/mixins/plain_help.py` : `PlainCommandHelpMixin` et `PlainGroupHelpMixin` (contexte de click-extra,
+`format_help`, `format_help_text`, `format_options`, `format_epilog`, `get_help_option`, et `format_commands` pour un
+groupe), `_plain_twin` (une sous-classe jumelle par classe Rich, construite une fois) et `make_help_plain`, qui change le
+`__class__` de la commande vers sa jumelle, retire `rich_help_config` de `context_settings` et visite les commandes
+contenues. Une sous-classe n'ajoute aucun attribut d'instance, donc options, callback, gestionnaires et commandes sont
+conservés ; passer à une autre hiérarchie (cloup) aurait laissé des attributs manquants. `GlobalOptionsMixin.add_command`
+appelle `make_help_plain` quand le parent affiche une aide plain (`has_plain_help`) : les trois ordres d'enregistrement
+sont couverts, car un groupe déjà converti convertit à son tour ce qu'on lui ajoute. Une application Rich n'est pas
+touchée.
+
+**Limites.** L'aide plain est celle de Click (même structure Usage / Options / Commands que celle de cloup, mesuré sur
+les deux ordres) ; le titre du panneau des options de contexte n'existe qu'en Rich. Cet item modifie les classes de
+base des groupes que la spec 09 (chargement paresseux) modifie aussi : à rejouer à ce moment-là.
+
+Dix-neuf tests unitaires (`tests/core/mixins/test_plain_help.py`) et quarante-deux cas d'intégration (cinq écrans
+d'aide, Rich et plain, trois ordres, plus options listées, commandes listées, erreurs d'usage et exécution). Sept mutations détectées. `plain_help.py` et
+`mixins/cli.py` à 100 % de branches.
 
 ## ✅ Item 17 : Défaut — groupe intermédiaire qui ne peut pas recevoir l'option globale
 

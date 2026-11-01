@@ -28,6 +28,8 @@ Propagates options from a parent group to all child commands and subgroups at re
 
 - Options marked `is_global=True` are added as real subcommand parameters — visible in help
   and forwarded to each callback.
+- **The help follows the application.** A group that prints plain help (`use_rich_help=False`)
+  switches the rich-click commands it receives to Click's help, along with everything they hold.
 - **A group takes a propagated option only if it wants it.** The callback of a subgroup receives a
   propagated global option when it declares the parameter (or `**kwargs`); `def ops():` works and
   simply does not see it. An option the group declares itself is always passed, and a leaf command
