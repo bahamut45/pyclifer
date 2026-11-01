@@ -129,3 +129,24 @@ class TestEventsMixin:
 
         with pytest.raises(ValueError, match=r"Event\('typo'\)"):
             group.on("typo", lambda _ctx: None)
+
+    def test_emit_rejects_an_unknown_plain_name_like_on_does(self):
+        group = _Group(name="cli")
+        ctx = click_extra.Context(group)
+
+        with pytest.raises(ValueError, match="Unknown event 'typo'"):
+            group.emit("typo", ctx)
+
+    def test_emit_rejects_the_plain_name_of_a_custom_event(self):
+        group = _Group(name="cli")
+        ctx = click_extra.Context(group)
+        group.on(Event("myplugin.ready"), lambda _ctx: "never called")
+
+        with pytest.raises(ValueError, match=r"Event\('myplugin.ready'\)"):
+            group.emit("myplugin.ready", ctx)
+
+    def test_emit_of_a_custom_event_without_handler_returns_an_empty_list(self):
+        group = _Group(name="cli")
+        ctx = click_extra.Context(group)
+
+        assert group.emit(Event("myplugin.ready"), ctx) == []

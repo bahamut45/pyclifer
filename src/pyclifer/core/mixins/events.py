@@ -28,6 +28,16 @@ class EventsMixin:
         self._event_handlers: dict[str, list[EventHandler]] = {}
         super().__init__(*args, **kwargs)
 
+    @staticmethod
+    def _check_event(event: str) -> None:
+        """Accept an Event object or a framework event name, reject any other string."""
+        if not isinstance(event, Event) and event not in EVENTS:
+            valid = ", ".join(sorted(EVENTS))
+            raise ValueError(
+                f"Unknown event '{event}'. Valid events: {valid}. "
+                f"To define your own, use Event('{event}')."
+            )
+
     def on(self, event: str, handler: EventHandler | None = None) -> Any:
         """Attach a handler to an event, or return a decorator when handler is omitted.
 
@@ -42,12 +52,7 @@ class EventsMixin:
         Raises:
             ValueError: When event is a plain string that is not a framework event.
         """
-        if not isinstance(event, Event) and event not in EVENTS:
-            valid = ", ".join(sorted(EVENTS))
-            raise ValueError(
-                f"Unknown event '{event}'. Valid events: {valid}. "
-                f"To define your own, use Event('{event}')."
-            )
+        self._check_event(event)
 
         def register(function: EventHandler) -> EventHandler:
             """Add the function to the handlers of the event."""
@@ -62,10 +67,14 @@ class EventsMixin:
         """Call every handler attached to an event, in registration order.
 
         Args:
-            event: The event name.
+            event: An Event object, or the plain name of a framework event.
             ctx: The Click context passed to each handler.
 
         Returns:
             The values returned by the handlers, in the order they ran.
+
+        Raises:
+            ValueError: When event is a plain string that is not a framework event.
         """
+        self._check_event(event)
         return [handler(ctx) for handler in self._event_handlers.get(event, [])]

@@ -39,8 +39,8 @@ context, so `ctx.command_path` is the name of your CLI.
 
 - Handlers run in the order they were attached, and each group keeps its own handlers.
 - An exception raised by a handler is never swallowed: it propagates.
-- A plain string that is not a framework event raises `ValueError` as soon as you attach the handler,
-  and the message lists the valid names, so a typo never goes unnoticed.
+- A plain string that is not a framework event raises `ValueError`, both when you attach a handler
+  and when you emit, and the message lists the valid names, so a typo never goes unnoticed.
 
 ```python
 @app_group(on={"config.laoded": [check_config]})  # ValueError: Unknown event 'config.laoded'...
@@ -123,8 +123,8 @@ def cli(): ...
 
 - An `Event` needs no registration, so the order in which plugins are loaded does not matter.
 - `Event` is a string: `READY == "myplugin.ready"`. Only an `Event` object is accepted for your own
-  names; a plain string must be a framework event. A typo in the name of an imported `Event` becomes
-  an import error.
+  names, by `on()` as well as by `emit()`; a plain string must be a framework event. A typo in the
+  name of an imported `Event` becomes an import error.
 - Handlers belong to a group, so a handler attached to one group is not called for another.
 - `emit()` returns the values the handlers returned, in the order they ran.
 

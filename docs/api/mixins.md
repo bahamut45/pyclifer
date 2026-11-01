@@ -7,7 +7,7 @@ for advanced subclassing.
 
 Lets a group attach handlers to named lifecycle events with `on()` and call them with `emit()`.
 Handlers run in registration order, a plain string that is not a framework event raises
-`ValueError`, and an exception raised by a handler propagates. See the
+`ValueError` from both `on()` and `emit()`, and an exception raised by a handler propagates. See the
 [Lifecycle events](../how-to/lifecycle-events.md) guide.
 
 ::: pyclifer.EventsMixin

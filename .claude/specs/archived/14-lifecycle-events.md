@@ -134,7 +134,9 @@ CONFIG_LOADED = Event("config.loaded")
   framework (`EVENTS`). La faute de frappe sur un événement personnalisé devient une erreur d'import.
 - Un plugin définit `READY = Event("myplugin.ready")` dans son module, l'émet avec `emit(READY, ctx)`,
   et les autres l'importent. Les handlers restent **par groupe** (pas de registre global).
-- `emit()` ne valide pas le nom (inchangé) : il appelle les handlers inscrits sous ce nom.
+- `on()` et `emit()` appliquent la **même règle** (méthode partagée `_check_event`) : un `Event`, ou le nom
+  d'un événement du framework. Sans cela, une faute de frappe dans `emit()` n'appellerait aucun handler,
+  sans erreur (corrigé après l'item 7 : la première version de `emit()` ne validait rien).
 - `Event` est exporté par `pyclifer/__init__.py`. Les specs 09, 05 et 06 déclarent leurs événements
   comme des `Event`.
 
