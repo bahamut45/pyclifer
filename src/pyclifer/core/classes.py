@@ -79,7 +79,11 @@ class PycliferTimerOption(TimerOption):
 
 
 class PycliferExtraGroup(HandleResponseMixin, GlobalOptionsMixin, click_extra.Group):
-    """Custom group based on click-extra that propagates global options."""
+    """Custom group extending click-extra's Group that propagates global options.
+
+    click_extra.Group was named ExtraGroup before click-extra 8.0.0; the pyclifer name
+    keeps the historical Extra prefix to stay stable for existing users.
+    """
 
 
 class PycliferRichGroup(HandleResponseMixin, GlobalOptionsMixin, RichGroup):
