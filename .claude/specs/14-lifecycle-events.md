@@ -49,13 +49,12 @@ l'arbre de commandes (`list_commands` puis `get_command`). Deux conséquences po
   se déclencherait deux fois. Le double appel vu dans un premier prototype était un autre phénomène :
   une commande construite avec `click_extra.command` embarque **sa propre** `ConfigOption`, d'où une
   visite pour `cli` et une pour `cli hello` (deux options, deux contextes).
-- **Limite connue (mesurée à l'item 4).** Dans ce cas d'appel nu, la première visite est entourée d'un
-  `try/except ClickException` côté click-extra (`_resolve_subcommands_eagerly`). Une `ClickException`
-  levée par un handler y est avalée : click-extra conclut qu'il n'y a rien à injecter, **n'effectue pas
-  de seconde visite** et affiche l'aide (code 2) sans le message d'erreur. Sur tous les autres
-  chemins (sous-commande explicite, `--help`, appel nu sans `_default_subcommands`), l'erreur remonte
-  normalement. Cette spec ne contourne pas ce cas : un handler de `config.loaded` ne doit pas compter sur
-  une `ClickException` pour un appel nu avec `_default_subcommands` ; la documentation le dit (item 6).
+- **Erreur avalée sur tout appel nu (mesuré à l'item 4).** Sur **tout** appel sans argument, avec ou
+  sans `_default_subcommands`, la première visite est entourée d'un `try/except ClickException` côté
+  click-extra (`_resolve_subcommands_eagerly`). Une `ClickException` levée par un handler y est avalée :
+  click-extra conclut qu'il n'y a rien à injecter, **n'effectue pas de seconde visite** et Click affiche
+  l'aide (code 2) sans le message. Sur une sous-commande explicite, l'erreur remonte normalement.
+  Réponse de cette spec (voir décision 5) : l'erreur est gardée puis rapportée par le groupe.
 
 ---
 
@@ -103,6 +102,15 @@ L'API objet (`cli.on(...)`) reste disponible pour les plugins.
 - émis que le fichier existe ou non (`ctx.meta[CONF_SOURCE]` dit lequel) ;
 - **non émis** si `ctx.resilient_parsing` (aide, complétion), comme click-extra ne lit pas le fichier
   dans ce cas.
+
+### Décision 5 — Une erreur de handler n'est jamais perdue sur un appel nu
+
+Quand l'émission de `config.loaded` lève une `ClickException`, `CustomConfigOption.load_conf` la range
+dans `ctx.meta[PENDING_ERROR_META]` (constante de `core/events.py`) puis la relance. Sur un appel normal,
+elle remonte jusqu'à `HandleResponseMixin.parse_args`, qui reconnaît la même instance et ne fait rien de
+plus (pas de doublon). Sur un appel nu, click-extra l'avale puis Click lève l'erreur d'aide : `parse_args`
+trouve alors une erreur en attente qui n'est pas celle qu'il attrape. En format structuré, il répond avec
+l'erreur du handler (et sort) ; en format texte, il affiche le message du handler puis laisse l'aide.
 
 ---
 
@@ -180,7 +188,11 @@ Tests d'abord (`tests/core/options/test_custom_config_option.py`, application r�
 - appel **nu** dont le fichier de config (découvert via `XDG_CONFIG_HOME`) contient `_default_subcommands` :
   `load_conf` est visité deux fois pour la même option, le handler n'est appelé qu'une fois ;
 - un handler qui lève une `ClickException` sur un appel normal (`hello`) : code de sortie 2 et message sur
-  stderr. Le cas de l'appel nu n'est pas testé : voir « Limite connue » dans le constat préalable ;
+  stderr, affichés une seule fois ;
+- un handler qui lève une `ClickException` sur un **appel nu** (sans config, puis avec
+  `_default_subcommands`) : code 2, message du handler sur stderr, puis l'aide ;
+- le même appel nu avec `output_format_default="json"` : réponse JSON dont le message est celui du handler
+  et `error_type` vaut `usage_error` (le groupe répond avec l'erreur du handler, pas avec l'aide) ;
 - une sous-commande construite avec `click_extra.command` (donc avec sa propre `ConfigOption`) n'émet rien
   et n'empêche pas l'émission de la racine ;
 - `--help` (`resilient_parsing`) : pas d'émission ;

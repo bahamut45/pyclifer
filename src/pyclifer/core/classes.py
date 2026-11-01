@@ -16,7 +16,7 @@ from click_extra.config import ConfigOption
 from extra_platforms import is_linux
 from rich_click import RichGroup, RichHelpConfiguration
 
-from .events import CONFIG_LOADED
+from .events import CONFIG_LOADED, PENDING_ERROR_META
 from .mixins import EventsMixin, GlobalOptionsMixin, HandleResponseMixin, StoreInMetaMixin
 from .mixins.events import EventHandler
 from .output.exit_codes import ExitCode
@@ -137,7 +137,12 @@ class CustomConfigOption(StoreInMetaMixin, ConfigOption):
         emitted = ctx.meta.setdefault(_CONFIG_LOADED_EMITTED, set())
         if ctx.command_path in emitted:
             return
-        ctx.command.emit(CONFIG_LOADED, ctx)
+        try:
+            ctx.command.emit(CONFIG_LOADED, ctx)
+        except click_extra.ClickException as error:
+            # click-extra swallows this on a bare call: keep it for the group to report.
+            ctx.meta[PENDING_ERROR_META] = error
+            raise
         emitted.add(ctx.command_path)
 
     def get_default(self, ctx, call=True):

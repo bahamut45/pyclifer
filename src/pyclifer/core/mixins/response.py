@@ -6,6 +6,8 @@ from typing import Any
 
 import click_extra
 
+from pyclifer.core.events import PENDING_ERROR_META
+
 _log = logging.getLogger(__name__)
 
 _STRUCTURED_FORMATS = ("json", "yaml")
@@ -91,7 +93,14 @@ class HandleResponseMixin:
             # noinspection PyUnresolvedReferences
             return super().parse_args(ctx, args)
         except click_extra.ClickException as error:
-            self._answer_click_exception(ctx, error)
+            # On a bare call click-extra swallows an error raised by an event handler,
+            # then Click shows the help. Report the handler error rather than lose it.
+            pending = ctx.meta.pop(PENDING_ERROR_META, None)
+            if pending is None or pending is error:
+                self._answer_click_exception(ctx, error)
+                raise
+            self._answer_click_exception(ctx, pending)
+            pending.show()
             raise
 
     def invoke(self, ctx: click_extra.Context) -> Any:

@@ -491,10 +491,10 @@ class TestCustomConfigOptionConfigLoadedEvent:
         (app_dir / "config.toml").write_text(content)
 
     @staticmethod
-    def _make_app(handler):
+    def _make_app(handler, **group_kwargs):
         """Build an app named cli with one command and a config.loaded handler."""
 
-        @app_group(on={"config.loaded": [handler]})
+        @app_group(on={"config.loaded": [handler]}, **group_kwargs)
         def cli():
             """App"""
 
@@ -557,6 +557,41 @@ class TestCustomConfigOptionConfigLoadedEvent:
 
         assert result.exit_code == 2
         assert "handler refused the configuration" in result.stderr
+
+    @staticmethod
+    def _refusing(ctx):
+        """Handler that rejects the configuration with a usage error."""
+        raise click_extra.UsageError("handler refused the configuration")
+
+    def test_handler_error_is_shown_with_the_help_on_a_bare_call(self, xdg_home):
+        """click-extra swallows the error on a bare call, so it is reported before the help."""
+        result = invoke(self._make_app(self._refusing), [])
+
+        assert result.exit_code == 2
+        assert "handler refused the configuration" in result.stderr
+        assert "Usage: cli" in result.output
+
+    def test_handler_error_is_shown_on_a_bare_call_with_default_subcommands(self, xdg_home):
+        self._write_user_config(xdg_home, '[cli]\n_default_subcommands = ["hello"]\n')
+
+        result = invoke(self._make_app(self._refusing), [])
+
+        assert result.exit_code == 2
+        assert "handler refused the configuration" in result.stderr
+
+    def test_handler_error_is_answered_as_json_on_a_bare_call(self, xdg_home):
+        cli = self._make_app(self._refusing, output_format_default="json")
+
+        result = invoke(cli, [])
+
+        assert result.exit_code == 2
+        assert result.json["message"] == "handler refused the configuration"
+        assert result.json["data"]["error_type"] == "usage_error"
+
+    def test_handler_error_is_not_shown_twice_on_a_normal_call(self, xdg_home):
+        result = invoke(self._make_app(self._refusing), ["hello"])
+
+        assert result.stderr.count("handler refused the configuration") == 1
 
     def test_standalone_command_with_its_own_config_option_emits_nothing(self, tmp_path):
         """A click_extra command carries its own ConfigOption, which must not emit on its own."""
