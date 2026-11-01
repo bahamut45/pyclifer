@@ -61,12 +61,14 @@ Un scénario construit une application avec une configuration donnée, puis vér
 - `--version`, `--config`, `--verbosity`, `--log-file`, `--output-format` présents si et seulement si leur
   drapeau `add_*_option` est actif.
 
-### Décision 3 — Matrice bornée par combinaisons deux à deux
+### Décision 3 — Matrice : produit complet des axes principaux, un champ à la fois pour le reste
 
-Axes : `use_rich_help` (oui/non), les cinq `add_*_option` (défauts de `app_group`, tous inactifs, tous actifs),
-`output_format_default` (json, yaml, table, rich, raw, text), `handle_response` (oui/non), fichier de config
-(aucun, explicite), `timer`, `auto_envvar_prefix`. Le produit complet est écarté au profit d'un échantillonnage
-deux à deux, pour tenir sous une durée de suite raisonnable (objectif : quelques secondes).
+Axes croisés en produit complet (48 configurations) : `use_rich_help` (oui/non), options automatiques
+(défauts de `app_group` ou toutes inactives), `output_format_default` (json, yaml, table, rich, raw, text),
+`handle_response` (oui/non). Tous les autres champs, `timer` compris, sont variés **un à la fois** sur les deux
+chemins d'aide. Le plan initial prévoyait un échantillonnage deux à deux ; il est écarté : à ce volume le
+produit complet est plus simple et plus complet. Mesuré : la construction d'une application coûte moins d'une
+milliseconde, ce sont les invocations (4 à 17 ms, surtout le rendu Rich) qui font la durée.
 
 ### Décision 4 — Mesurer d'abord, ne rien supposer
 
@@ -144,16 +146,42 @@ un message qui nomme le problème : option dupliquée, option absente pour un dr
 pour un drapeau inactif, avertissement à la construction, commande en échec, sortie JSON invalide, commande
 inconnue qui ne sort pas avec le code 2.
 
-## Item 3 : Matrice `GroupConfig` — mesure
+## ✅ Item 3 : Matrice `GroupConfig` — mesure
 
-Test paramétré sur l'échantillon deux à deux. **Aucune correction à cet item** : le résultat est consigné dans
-cette spec (tableau scénario, résultat) et chaque échec devient un item 3.x. Les cas qui échouent sont marqués
-`xfail(strict=True)` avec la raison, pour que la suite reste verte et que la correction les fasse « passer »
-visiblement.
+`tests/integration/test_group_config_matrix.py` : 48 configurations croisées (`TestMainAxes`), 28
+variations d'un champ (`TestSingleFields`) et les effets observables (`TestFieldEffects`). **Aucune correction
+à cet item.** Chaque attente a été mesurée sur le code avant d'être écrite.
+
+| Mesure (122 configurations au relevé)                         | Résultat                                                      |
+|---------------------------------------------------------------|---------------------------------------------------------------|
+| Construction, `--help`, `hello`, commande inconnue, options    | sains, sauf le défaut ci-dessous                              |
+| Appel nu                                                       | l'aide, code 2, dans 100 % des cas                            |
+| `--config fichier hello` (cas qui ont l'option)               | code 0, dans 100 % des cas                                    |
+| Commande qui lève une exception                               | code 1, dans 100 % des cas                                    |
+| `unhandled_exception_log_level`                               | le niveau de l'enregistrement suit la config (error, warning, critical) |
+| `exit_codes_class`                                            | un code personnalisé devient le code de sortie ; une classe invalide lève `ValueError` |
+| `name`                                                        | nom de l'application et ligne d'usage                         |
+
+**Défaut trouvé (1)** : `output_format_default` est **ignoré quand `add_output_format_option=False`**.
+Dans une même application (`output_format_default="json"`, sans `--output-format`), une commande inconnue
+répond en JSON, tandis qu'une commande normale et une commande en échec répondent en `table`
+(« No dataset available. »). Avec l'option présente, la commande en échec répond bien en JSON ou YAML
+(`success: false`, `error_code: 1`). Un format par défaut invalide (`"bogus"`) est rejeté avec l'option
+(code 2) et ignoré en silence sans elle. Cas concernés : option absente, `handle_response` actif, format json
+ou yaml, soit 4 configurations ; ils sont marqués `xfail(strict=True)` (8 résultats : 2 tests chacun).
+
+**Non observé** : l'effet de `use_rich_logging`, `enable_secrets_filter` et `sensitive_fields` (masquage des
+secrets, gestionnaire Rich). Ces champs sont construits et lancés sans erreur seulement, et déclarés comme tels
+dans `scenarios.py`. À mesurer avec les options de journalisation de l'item 4.
+
+**Durée** : la matrice ajoute environ 10 s (sans mesure de couverture) à la suite, soit près du double de
+la durée actuelle, répartis uniformément sur 299 tests. Si cela gêne, un marqueur `integration` permettra de
+l'exclure du cycle rapide.
 
 ## Item 4 : Options automatiques
 
-Pour chaque `add_*_option` et `timer` : présence ; valeur par défaut ; variable d'environnement
+Pour chaque `add_*_option` et `timer` (et l'effet réel de `use_rich_logging`, `enable_secrets_filter`,
+`sensitive_fields`, non observé à l'item 3) : présence ; valeur par défaut ; variable d'environnement
 (`auto_envvar_prefix`) ; effet réel (`--verbosity` change le niveau de journalisation, `--log-file` crée le
 fichier, `--version` affiche la version, `--config` charge le fichier, `--output-format` choisit le rendu).
 
@@ -166,7 +194,15 @@ Les invariants de la décision 5, sur les chemins Rich et non Rich.
 Chaque symbole de `pyclifer.__all__` est importable et utilisable dans une application minimale (les types
 Click réexportés, le journaliseur, les classes de réponse et de rendu).
 
-## Item 7+ : Défauts trouvés
+## Item 7 : Défaut — `output_format_default` ignoré sans `--output-format`
+
+Trouvé à l'item 3 (voir son rapport). Tests en échec : les 8 `xfail(strict=True)` de la matrice, qui doivent
+« passer » visiblement une fois corrigé, ce qui oblige à retirer les marqueurs. Décision à prendre avec
+l'utilisateur avant de corriger : sans l'option, `output_format_default` doit-il fixer le format pour toute
+l'application (hypothèse la plus cohérente avec la réponse déjà donnée aux erreurs d'usage), et que fait
+un format invalide ?
+
+## Item 7+ : Autres défauts trouvés
 
 Un item par défaut mesuré aux items 3 à 6 : test en échec, correctif minimal, mise à jour de la documentation,
 et validation de l'utilisateur si le comportement change.

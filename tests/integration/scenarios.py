@@ -1,16 +1,31 @@
 """Where each pyclifer feature is exercised, or why it is not.
 
-
 Every feature found by inventory.discover_inventory() appears in exactly one of the three
 mappings below. PENDING is temporary: each item of the integration-test-matrix spec removes
 the entries it exercises and moves them to COVERED, until PENDING is empty.
 """
+
+_MATRIX = "tests/integration/test_group_config_matrix.py"
 
 # Feature name -> "path/to/test_file.py::TestClass" that exercises it.
 COVERED: dict[str, str] = {
     "event.config.loaded": (
         "tests/core/options/test_custom_config_option.py::TestCustomConfigOptionConfigLoadedEvent"
     ),
+    # Full product of the main axes, with the effect observed (answer format, response handling).
+    "GroupConfig.use_rich_help": f"{_MATRIX}::TestMainAxes",
+    "GroupConfig.output_format_default": f"{_MATRIX}::TestMainAxes",
+    "GroupConfig.handle_response": f"{_MATRIX}::TestMainAxes",
+    # Effect observed directly: application name, exit code, record level, help rendering.
+    "GroupConfig.name": f"{_MATRIX}::TestFieldEffects",
+    "GroupConfig.exit_codes_class": f"{_MATRIX}::TestFieldEffects",
+    "GroupConfig.unhandled_exception_log_level": f"{_MATRIX}::TestFieldEffects",
+    "GroupConfig.rich_help_config": f"{_MATRIX}::TestFieldEffects",
+    # Built and run without error only: the effect itself is not observed (secret masking,
+    # Rich logging handler).
+    "GroupConfig.use_rich_logging": f"{_MATRIX}::TestSingleFields",
+    "GroupConfig.enable_secrets_filter": f"{_MATRIX}::TestSingleFields",
+    "GroupConfig.sensitive_fields": f"{_MATRIX}::TestSingleFields",
 }
 
 # Feature name -> reason it is not exercised, and why that is acceptable.
@@ -18,18 +33,6 @@ EXCLUDED: dict[str, str] = {}
 
 # Item of the spec that will write the scenario -> feature names.
 PENDING: dict[str, list[str]] = {
-    "item 3 (GroupConfig matrix)": [
-        "GroupConfig.enable_secrets_filter",
-        "GroupConfig.exit_codes_class",
-        "GroupConfig.handle_response",
-        "GroupConfig.name",
-        "GroupConfig.output_format_default",
-        "GroupConfig.rich_help_config",
-        "GroupConfig.sensitive_fields",
-        "GroupConfig.unhandled_exception_log_level",
-        "GroupConfig.use_rich_help",
-        "GroupConfig.use_rich_logging",
-    ],
     "item 4 (automatic options)": [
         "GroupConfig.add_config_option",
         "GroupConfig.add_log_file_option",
