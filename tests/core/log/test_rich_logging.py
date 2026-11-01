@@ -432,6 +432,46 @@ class TestSecretsMasker:
         assert redacted["bearer_token"] == "*CENSORED*"
         assert redacted["password"] == "*CENSORED*"
 
+    def test_a_custom_field_unrelated_to_the_defaults_is_censored(self):
+        """A name that contains no default field is masked only because it was declared.
+
+        bearer_token would pass for the wrong reason: it contains the default field token.
+        """
+        masker = SecretsMasker(sensitive_fields=["mycode"])
+
+        assert masker.redact({"mycode": "mc-777"}) == {"mycode": "*CENSORED*"}
+
+    def test_a_custom_field_is_matched_whatever_its_case_and_surroundings(self):
+        masker = SecretsMasker(sensitive_fields=["MyCode"])
+
+        redacted = masker.redact({" MYCODE ": "a", "user_mycode_2": "b", "name": "c"})
+
+        assert redacted == {" MYCODE ": "*CENSORED*", "user_mycode_2": "*CENSORED*", "name": "c"}
+
+    def test_a_custom_field_does_not_leak_to_another_masker(self):
+        SecretsMasker(sensitive_fields=["mycode"])
+
+        assert SecretsMasker().redact({"mycode": "mc-777"}) == {"mycode": "mc-777"}
+
+    def test_a_custom_field_is_censored_in_a_log_record(self):
+        masker = SecretsMasker(sensitive_fields=["mycode"])
+        record = logging.LogRecord(
+            "t", logging.INFO, "", 0, "payload %s", ({"mycode": "mc-777"},), None
+        )
+
+        masker.filter(record)
+
+        # LogRecord unwraps a lone dict argument, as it does for a real log call.
+        assert record.args == {"mycode": "*CENSORED*"}
+
+    def test_a_key_that_is_not_a_string_is_left_alone(self):
+        """A security filter must never fail on a dict keyed by something other than text."""
+        masker = SecretsMasker(sensitive_fields=["mycode"])
+
+        data = {42: "value", ("a", "b"): "other"}
+
+        assert masker.redact(data) == data
+
     def test_sensitive_fields_empty_list_behaves_like_none(self):
         """sensitive_fields=[] and sensitive_fields=None produce identical results."""
         masker_none = SecretsMasker(sensitive_fields=None)
@@ -543,6 +583,44 @@ class TestPycliferVerbosityOption:
         assert "--verbosity" in verbosity_option.opts
 
     @patch("pyclifer.core.log.config.configure_rich_logging")
+    def test_set_level_reconfigures_logging_with_the_secrets_settings_of_the_option(
+        self, mock_configure
+    ):
+        """The handler rebuilt on a level change keeps the application's secrets settings."""
+        option = PycliferVerbosityOption(enable_secrets_filter=False, sensitive_fields=["mycode"])
+        mock_ctx = Mock()
+        mock_ctx.meta = {}
+
+        with patch.object(
+            type(option), "all_loggers", new_callable=PropertyMock
+        ) as mock_all_loggers:
+            mock_all_loggers.return_value = iter([])
+            with patch.object(option, "reset_loggers"):
+                option.set_level(mock_ctx, Mock(), "DEBUG")
+
+        mock_configure.assert_called_with(
+            enable_secrets_filter=False, sensitive_fields=["mycode"], force_reconfigure=True
+        )
+
+    @patch("pyclifer.core.log.config.configure_rich_logging")
+    def test_secrets_settings_default_to_the_filter_with_the_default_fields(
+        self, mock_configure, verbosity_option
+    ):
+        mock_ctx = Mock()
+        mock_ctx.meta = {}
+
+        with patch.object(
+            type(verbosity_option), "all_loggers", new_callable=PropertyMock
+        ) as mock_all_loggers:
+            mock_all_loggers.return_value = iter([])
+            with patch.object(verbosity_option, "reset_loggers"):
+                verbosity_option.set_level(mock_ctx, Mock(), "DEBUG")
+
+        mock_configure.assert_called_with(
+            enable_secrets_filter=True, sensitive_fields=None, force_reconfigure=True
+        )
+
+    @patch("pyclifer.core.log.config.configure_rich_logging")
     def test_set_level_more_verbose_overrides_current_level(self, mock_configure, verbosity_option):
         """set_level proceeds when new level is more verbose than current (not skipped)."""
         mock_ctx = Mock()
@@ -578,7 +656,9 @@ class TestPycliferVerbosityOption:
                 # noinspection PyTypeChecker
                 verbosity_option.set_level(mock_ctx, mock_param, "DEBUG")
 
-        mock_configure.assert_called_once_with(force_reconfigure=True)
+        mock_configure.assert_called_once_with(
+            enable_secrets_filter=True, sensitive_fields=None, force_reconfigure=True
+        )
 
         mock_logger1.setLevel.assert_called_once_with(PYCLIFER_LOG_LEVELS["DEBUG"])
         mock_logger2.setLevel.assert_called_once_with(PYCLIFER_LOG_LEVELS["DEBUG"])

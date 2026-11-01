@@ -126,7 +126,11 @@ class GroupDecorator:
             f = config_option()(f)
 
         if self.config.add_verbosity_option:
-            f = verbosity_option(default=self.config.verbosity_default_level)(f)
+            f = verbosity_option(
+                default=self.config.verbosity_default_level,
+                enable_secrets_filter=self.config.enable_secrets_filter,
+                sensitive_fields=self.config.sensitive_fields or None,
+            )(f)
 
         if self.config.add_log_file_option:
             f = log_file_option(
@@ -780,7 +784,8 @@ def verbosity_option(
         *param_decls: Parameter declarations (default: '--verbosity', '-v').
         is_global: If True, the option is propagated to all subcommands.
         show_envvar: Show environment variables in the help output.
-        **kwargs: Additional arguments passed to the option decorator.
+        **kwargs: Additional arguments passed to the option, including enable_secrets_filter
+            and sensitive_fields, which the option keeps when it rebuilds the console handler.
 
     Returns:
         The decorated function.

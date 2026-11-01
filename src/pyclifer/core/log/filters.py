@@ -60,6 +60,8 @@ class SecretsMasker(logging.Filter):
         all_fields = self.DEFAULT_FIELDS | set(sensitive_fields or [])
         pattern = "|".join(re.escape(f) for f in sorted(all_fields))
         self._regex = re.compile(rf"\b({pattern})\b", re.IGNORECASE)
+        # The fields this masker hides, lowercase, matched as substrings of a key name.
+        self._fields = frozenset(field.strip().lower() for field in all_fields)
 
     def filter(self, record: logging.LogRecord) -> bool:
         """Filter a log record by redacting sensitive values.
@@ -89,6 +91,17 @@ class SecretsMasker(logging.Filter):
         record_dict[self.ALREADY_FILTERED_FLAG] = True
         return True
 
+    def _hides(self, name: Any) -> bool:
+        """Tell whether a key name holds one of the fields this masker hides.
+
+        Unlike should_hide_value_for_key, which only knows the default fields, this takes the
+        sensitive_fields given to the masker into account.
+        """
+        if isinstance(name, str):
+            name = name.strip().lower()
+            return any(field in name for field in self._fields)
+        return False
+
     def _redact_all(self, item, depth):
         """Recursively replace all string values with a censored placeholder."""
         if isinstance(item, str):
@@ -113,7 +126,7 @@ class SecretsMasker(logging.Filter):
         reference to itself.
         """
         try:
-            if name and should_hide_value_for_key(name):
+            if name and self._hides(name):
                 return self._redact_all(item, depth)
             if isinstance(item, dict):
                 return {

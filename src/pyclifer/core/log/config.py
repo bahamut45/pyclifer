@@ -48,7 +48,13 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         for logger in self.all_loggers:
             logger.setLevel(min_level)
 
-        configure_rich_logging(force_reconfigure=True)
+        # Rebuild the console handler with the application's own settings: calling this with
+        # no arguments would put back the defaults chosen at declaration time.
+        configure_rich_logging(
+            enable_secrets_filter=self.enable_secrets_filter,
+            sensitive_fields=self.sensitive_fields,
+            force_reconfigure=True,
+        )
 
         # Restrict stream handlers so the console output respects its explicit verbosity
         root_logger = logging.getLogger()
@@ -65,6 +71,8 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         type=Choice(PYCLIFER_LOG_LEVELS, case_sensitive=False),  # noqa: B008
         help="Either TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL.",
         is_global: bool = False,
+        enable_secrets_filter: bool = True,
+        sensitive_fields: list[str] | None = None,
         **kwargs,
     ):
         """Initialize the Pyclif Verbosity Option.
@@ -74,12 +82,16 @@ class PycliferVerbosityOption(BaseVerbosityOption):
             type: Choice type with PYCLIFER_LOG_LEVELS.
             help: Help message.
             is_global: If True, this option will be propagated to subcommands.
+            enable_secrets_filter: Mask secrets in the console handler it rebuilds.
+            sensitive_fields: Field names to mask on top of the defaults.
             **kwargs: Additional keyword arguments.
         """
         if not param_decls:
             param_decls = ("--verbosity",)
 
         self.is_global = is_global
+        self.enable_secrets_filter = enable_secrets_filter
+        self.sensitive_fields = sensitive_fields
         kwargs.setdefault("show_default", True)
         super().__init__(param_decls=param_decls, type=type, help=help, **kwargs)
 

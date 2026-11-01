@@ -214,9 +214,7 @@ qu'une fois. Ce n'est pas un défaut.
 4. **`sensitive_fields` n'a aucun effet.** Un champ personnalisé n'est pas masqué, alors que la documentation
    promet qu'il l'est « en plus des défauts », console et fichier.
 
-Les défauts 3 et 4 ont une cause commune, mesurée : à la décoration, le gestionnaire de la console est créé avec la
-bonne configuration (sans filtre pour `enable_secrets_filter=False`), mais à l'exécution il est remplacé par un
-gestionnaire construit avec les valeurs par défaut.
+Les défauts 3 et 4 ont été corrigés à l'item 10 (cause mesurée : voir cet item).
 
 ## Item 5 : Propagation et parité
 
@@ -277,13 +275,41 @@ Trouvé à l'item 4. Décision à prendre : que commande le champ ? Option de mo
 `show_envvar` de toutes les options automatiques ; les options de l'utilisateur gardent leur propre argument.
 L'alternative est de supprimer le champ, ce qui est un changement d'API.
 
-## Item 10 : Défaut — `enable_secrets_filter` et `sensitive_fields` perdus à l'exécution
+## ✅ Item 10 : Défaut — `enable_secrets_filter` et `sensitive_fields` perdus à l'exécution
 
-Trouvé à l'item 4 (défauts 3 et 4). Le correctif consiste à faire atteindre à l'exécution le gestionnaire créé avec
-la configuration de l'application, au lieu d'en reconstruire un avec les défauts. Les deux `xfail` doivent
-« passer » ensemble.
+Le plus grave des défauts trouvés : le framework promet de masquer les secrets (`docs/logging.md`) et ne le
+faisait pas pour un champ personnalisé, ni ne pouvait être désactivé. Il y avait **deux causes indépendantes**,
+mesurées une à une :
 
-## Item 11+ : Autres défauts trouvés
+1. **Configuration perdue à l'exécution.** À la décoration, le gestionnaire de la console est créé avec la bonne
+   configuration (sans filtre pour `enable_secrets_filter=False`, avec les champs pour `sensitive_fields`). Puis
+   `PycliferVerbosityOption.set_level` appelle `configure_rich_logging(force_reconfigure=True)` **sans argument** et
+   le reconstruit avec les valeurs par défaut. Correctif : l'option reçoit `enable_secrets_filter` et
+   `sensitive_fields` de l'application (`verbosity_option`, `GroupDecorator`) et les repasse à chaque
+   reconfiguration.
+2. **`SecretsMasker` ignorait ses propres champs.** `_redact` décidait avec la fonction de module
+   `should_hide_value_for_key`, qui ne connaît que `DEFAULT_SENSITIVE_FIELDS` ; la liste de l'instance ne servait
+   qu'à un test de vérité. Même un `SecretsMasker(sensitive_fields=["mycode"])` construit seul ne masquait pas
+   `mycode`. Correctif : la méthode `_hides` utilise les champs de l'instance (insensible à la casse, par
+   sous-chaîne comme pour les défauts).
+
+**Pourquoi les tests ne l'avaient pas vu.** `test_sensitive_fields_are_added_to_defaults` utilisait `bearer_token`,
+qui contient `token`, un champ par défaut : le test passait pour la mauvaise raison. Quatre tests avec `mycode`
+(aucun champ par défaut dans son nom) ont été ajoutés ; l'ancien reste, il vérifie autre chose.
+
+Vérifié de bout en bout, un processus par configuration, console et fichier : défaut (mot de passe masqué,
+`mycode` visible), filtre désactivé (tout visible), champ personnalisé (les deux masqués, la valeur ordinaire
+reste visible). Les deux `xfail` de secrets de l'item 4 ont été retirés.
+
+## Item 11 : Défaut — `use_rich_logging=False` perdu à l'exécution
+
+Trouvé en corrigeant l'item 10, même cause : `set_level` reconstruit un gestionnaire Rich quoi que dise la
+configuration. Mesuré : après la décoration il n'y a aucun gestionnaire, après l'exécution il y a un
+`RichExtraStreamHandler` et la sortie est formatée par Rich. Test à faire « passer » : le `xfail`
+`test_false_does_not_install_the_rich_handler`. **Décision à prendre avant de corriger** : sans Rich, à quoi
+ressemble la journalisation de la console ? Il faut un gestionnaire simple qui respecte `--verbosity`.
+
+## Item 12+ : Autres défauts trouvés
 
 Un item par défaut mesuré aux items 5 et 6.
 

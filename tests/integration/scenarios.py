@@ -22,9 +22,9 @@ COVERED: dict[str, str] = {
     "GroupConfig.exit_codes_class": f"{_MATRIX}::TestFieldEffects",
     "GroupConfig.unhandled_exception_log_level": f"{_MATRIX}::TestFieldEffects",
     "GroupConfig.rich_help_config": f"{_MATRIX}::TestFieldEffects",
-    # Effect observed on the real option or the real log output (item 4).
+    # Effect observed on the real log output (item 4). use_rich_logging has a defect recorded
+    # as a strict xfail: the setting is lost at run time.
     "GroupConfig.use_rich_logging": f"{_OPTIONS}::TestRichLogging",
-    # A defect is recorded for these two as a strict xfail: the field has no effect yet.
     "GroupConfig.enable_secrets_filter": f"{_OPTIONS}::TestSecretsFiltering",
     "GroupConfig.sensitive_fields": f"{_OPTIONS}::TestSecretsFiltering",
     "GroupConfig.add_config_option": f"{_OPTIONS}::TestConfigOption",

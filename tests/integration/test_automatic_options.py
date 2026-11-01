@@ -14,6 +14,7 @@ from click.testing import CliRunner
 
 from pyclifer import app_group, get_logger, option
 from pyclifer.core import decorators
+from pyclifer.core.log.handlers import RichExtraStreamHandler
 from pyclifer.core.output import Response
 from pyclifer.testing import invoke
 
@@ -111,6 +112,21 @@ class TestRichLogging:
         result = invoke(_app(use_rich_logging=use_rich_logging), ["hello"])
 
         assert "WARNING-LINE" in _logged(result)
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "Measured at item 10: use_rich_logging=False is lost at run time, the verbosity option "
+            "rebuilds the Rich handler. Fixed by a later item."
+        ),
+    )
+    def test_false_does_not_install_the_rich_handler(self):
+        logging.getLogger().handlers.clear()
+
+        invoke(_app(use_rich_logging=False), ["hello"])
+
+        handlers = logging.getLogger().handlers
+        assert not any(isinstance(handler, RichExtraStreamHandler) for handler in handlers)
 
 
 def _rotating_handlers() -> list[logging.handlers.TimedRotatingFileHandler]:
@@ -292,26 +308,12 @@ class TestSecretsFiltering:
         assert "bob" in console
         assert "bob" in file
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "Measured at item 4: sensitive_fields never reaches the handler that writes, which is "
-            "rebuilt with the default fields at run time. Fixed by a later item."
-        ),
-    )
     def test_a_custom_sensitive_field_is_masked(self, tmp_path):
         console, file = _log_with_secrets(tmp_path, sensitive_fields=["mycode"])
 
         assert "mc-777" not in console
         assert "mc-777" not in file
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "Measured at item 4: enable_secrets_filter=False has no effect, the handler keeps the "
-            "default masker. Fixed by a later item."
-        ),
-    )
     def test_disabling_the_filter_shows_the_values(self, tmp_path):
         console, file = _log_with_secrets(tmp_path, enable_secrets_filter=False)
 

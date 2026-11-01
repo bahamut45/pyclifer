@@ -28,15 +28,16 @@ def _all_loggers() -> list[logging.Logger]:
 def restore_logging():
     """Give every test the logging configuration it found.
 
-    Building an application configures loggers, which are global to the process. Handlers a
-    test added, on any logger, are removed and closed afterwards, so they never leak.
+    Building an application configures loggers, which are global to the process. On the way
+    out, every logger gets back exactly the handlers it had, and handlers a test added are closed.
     """
-    handlers = {logger.name: list(logger.handlers) for logger in _all_loggers()}
+    original = {logger.name: list(logger.handlers) for logger in _all_loggers()}
     root_level = logging.getLogger().level
     yield
     for logger in _all_loggers():
-        for handler in list(logger.handlers):
-            if handler not in handlers.get(logger.name, []):
-                logger.removeHandler(handler)
+        kept = original.get(logger.name, [])
+        for handler in logger.handlers:
+            if handler not in kept:
                 handler.close()
+        logger.handlers[:] = kept
     logging.getLogger().setLevel(root_level)

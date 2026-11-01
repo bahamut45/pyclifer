@@ -200,6 +200,21 @@ def cli():
 `sensitive_fields` propagates to both the console handler and the file handler (if `--log-file`
 is active). The complete default list is available as `SecretsMasker.DEFAULT_FIELDS`.
 
+A field matches when its name contains one of the listed names, ignoring case: with `token` in the
+list, `bearer_token` and `Token` are masked too. Set `enable_secrets_filter=False` to turn the
+filter off.
+
+!!! note "Masking works on keys, not on free text"
+    The filter hides the **value of a key**, in a dict, a named tuple or a log record attribute:
+
+    ```python
+    log.warning("payload %s", {"password": "hunter2", "user": "bob"})
+    # payload {'password': '*CENSORED*', 'user': 'bob'}
+    ```
+
+    A plain message such as `log.warning("password=hunter2")` is not scanned and is logged as is.
+    Pass secrets as structured arguments to have them masked.
+
 ### Preserved Functionality
 
 - **TRACE level**: Custom debug level (value 5)
