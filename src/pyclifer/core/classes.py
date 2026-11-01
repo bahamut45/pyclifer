@@ -1,7 +1,7 @@
 """Custom Click classes for pyclifer."""
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import perf_counter
@@ -9,6 +9,7 @@ from typing import Any
 
 import click_extra
 from boltons.iterutils import flatten, unique
+from boltons.urlutils import URL
 from click_extra import TimerOption, get_app_dir, get_current_context
 from click_extra.config import ConfigOption
 from extra_platforms import is_linux
@@ -77,7 +78,7 @@ class PycliferTimerOption(TimerOption):
         click_extra.echo(f"Execution time: {elapsed:.3f} seconds.")
 
 
-class PycliferExtraGroup(HandleResponseMixin, GlobalOptionsMixin, click_extra.ExtraGroup):
+class PycliferExtraGroup(HandleResponseMixin, GlobalOptionsMixin, click_extra.Group):
     """Custom group based on click-extra that propagates global options."""
 
 
@@ -145,6 +146,34 @@ class CustomConfigOption(StoreInMetaMixin, ConfigOption):
             return self._get_fallback_pattern()
 
         return "|".join(all_patterns)
+
+    def search_and_read_file(self, pattern: str) -> Iterator[tuple[Path | URL, str, str | None]]:
+        """Search each pipe-separated sub-pattern in order to preserve priority.
+
+        click-extra sorts the matches of a single pattern alphabetically, which would
+        override the priority order built by default_pattern (system before user).
+        Searching sub-patterns one at a time keeps that order.
+
+        Args:
+            pattern: Pipe-separated glob patterns, or a single pattern or URL.
+
+        Yields:
+            Triples of location, raw content and media type, in sub-pattern order.
+
+        Raises:
+            FileNotFoundError: When no sub-pattern matches any file.
+        """
+        found = False
+        for sub_pattern in pattern.split("|"):
+            try:
+                for result in super().search_and_read_file(sub_pattern):
+                    found = True
+                    yield result
+            except FileNotFoundError:
+                # This sub-pattern matched nothing; the next one may still match.
+                continue
+        if not found:
+            raise FileNotFoundError(f"No file found matching {pattern}")
 
     def _get_extension_pattern(self) -> str:
         """Build a file extension pattern from supported formats.

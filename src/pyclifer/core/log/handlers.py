@@ -5,17 +5,17 @@ import sys
 from io import TextIOBase
 from typing import Any
 
-from click_extra.logging import ExtraStreamHandler
+from click_extra.logging import StreamHandler
 from rich.console import Console
 from rich.logging import RichHandler
 
 from .filters import SecretsMasker
 
 
-class RichExtraStreamHandler(ExtraStreamHandler):
-    """Enhanced ExtraStreamHandler with Rich support and built-in security filtering.
+class RichExtraStreamHandler(StreamHandler):
+    """Enhanced StreamHandler with Rich support and built-in security filtering.
 
-    Extends click-extra's ExtraStreamHandler to use Rich for beautiful logging
+    Extends click-extra's StreamHandler to use Rich for beautiful logging
     while maintaining compatibility with click.echo() and color support.
     Automatically includes SecretsMasker for sensitive data protection.
     """

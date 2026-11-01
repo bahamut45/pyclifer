@@ -310,6 +310,46 @@ class TestCustomConfigOptionMultiPathSearch:
         # The system config is returned first (pattern ordering is preserved).
         assert content.get("myapp", {}).get("source") == "system"
 
+    def test_search_yields_triples_in_pattern_order(self, tmp_path):
+        """Files come back as (location, content, media_type) in sub-pattern order."""
+        first_dir = tmp_path / "zzz"
+        first_dir.mkdir()
+        (first_dir / "a.toml").write_text("[a]\nx = 1\n")
+        second_dir = tmp_path / "aaa"
+        second_dir.mkdir()
+        (second_dir / "b.toml").write_text("[b]\nx = 2\n")
+
+        option = self._make_option_with_patterns()
+        results = list(
+            option.search_and_read_file(f"{first_dir / '*.toml'}|{second_dir / '*.toml'}")
+        )
+
+        # Alphabetical order would put "aaa" first; the sub-pattern order must win.
+        assert [location.name for location, _content, _media in results] == ["a.toml", "b.toml"]
+        assert all(media_type is None for _location, _content, media_type in results)
+        assert results[0][1] == "[a]\nx = 1\n"
+
+    def test_search_skips_subpattern_without_match(self, tmp_path):
+        """A sub-pattern matching nothing is ignored when another one matches."""
+        empty_dir = tmp_path / "etc" / "myapp"
+        empty_dir.mkdir(parents=True)
+        user_dir = tmp_path / "home" / "myapp"
+        user_dir.mkdir(parents=True)
+        (user_dir / "myapp.toml").write_text("[myapp]\nsource = 'user'\n")
+
+        option = self._make_option_with_patterns()
+        results = list(option.search_and_read_file(f"{empty_dir / '*.toml'}|{user_dir / '*.toml'}"))
+
+        assert [location.name for location, _content, _media in results] == ["myapp.toml"]
+
+    def test_search_raises_when_no_subpattern_matches(self, tmp_path):
+        """FileNotFoundError is raised when none of the sub-patterns match a file."""
+        option = self._make_option_with_patterns()
+        pattern = f"{tmp_path / 'one' / '*.toml'}|{tmp_path / 'two' / '*.toml'}"
+
+        with pytest.raises(FileNotFoundError, match="No file found matching"):
+            list(option.search_and_read_file(pattern))
+
 
 @pytest.mark.tox
 class TestCustomConfigOptionForTox:

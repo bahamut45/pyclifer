@@ -112,15 +112,15 @@ L'audit manuel n'a couvert que Python 3.13. Avant de fusionner, `tox` doit passe
 
 ---
 
-## Tâche 1 : Créer la branche et bumper les contraintes
+## ✅ Tâche 1 : Créer la branche et bumper les contraintes
 
-- [ ] **Étape 1 : Créer la branche**
+- [x] **Étape 1 : Créer la branche**
 
 ```bash
 git checkout -b feat/click-extra-9-upgrade
 ```
 
-- [ ] **Étape 2 : `pyproject.toml`**
+- [x] **Étape 2 : `pyproject.toml`**
 
 ```toml
 dependencies = [
@@ -131,7 +131,7 @@ dependencies = [
 ]
 ```
 
-- [ ] **Étape 3 : Synchroniser l'environnement**
+- [x] **Étape 3 : Synchroniser l'environnement**
 
 ```bash
 uv sync --extra dev --extra docs
@@ -140,9 +140,9 @@ python -c "from importlib.metadata import version; print(version('click-extra'))
 
 ---
 
-## Tâche 2 : Constater l'échec (tests existants cassés par la montée de version)
+## ✅ Tâche 2 : Constater l'échec (tests existants cassés par la montée de version)
 
-- [ ] **Étape 1 : Lancer la suite sans toucher au code**
+- [x] **Étape 1 : Lancer la suite sans toucher au code**
 
 ```bash
 python -m pytest tests/ -v
@@ -153,11 +153,11 @@ Attendu : `AttributeError: module 'click_extra' has no attribute 'ExtraGroup'` �
 
 ---
 
-## Tâche 3 : Renommer `ExtraGroup` → `Group`
+## ✅ Tâche 3 : Renommer `ExtraGroup` → `Group`
 
 **Fichier :** `src/pyclifer/core/classes.py`
 
-- [ ] **Étape 1 :**
+- [x] **Étape 1 :**
 
 ```python
 class PycliferExtraGroup(HandleResponseMixin, GlobalOptionsMixin, click_extra.Group):
@@ -165,11 +165,11 @@ class PycliferExtraGroup(HandleResponseMixin, GlobalOptionsMixin, click_extra.Gr
 
 ---
 
-## Tâche 4 : Renommer `ExtraFormatter` → `Formatter`
+## ✅ Tâche 4 : Renommer `ExtraFormatter` → `Formatter`
 
 **Fichier :** `src/pyclifer/core/log/formatters.py`
 
-- [ ] **Étape 1 :** attention à ne remplacer que le symbole de click-extra, pas
+- [x] **Étape 1 :** attention à ne remplacer que le symbole de click-extra, pas
   `RichExtraFormatter` (utiliser des bornes de mots, ex. `\bExtraFormatter\b`).
 
 ```python
@@ -186,11 +186,11 @@ class RichExtraFormatter(Formatter):
 
 ---
 
-## Tâche 5 : Renommer `ExtraStreamHandler` → `StreamHandler`
+## ✅ Tâche 5 : Renommer `ExtraStreamHandler` → `StreamHandler`
 
 **Fichier :** `src/pyclifer/core/log/handlers.py`
 
-- [ ] **Étape 1 :** même précaution (`\bExtraStreamHandler\b`).
+- [x] **Étape 1 :** même précaution (`\bExtraStreamHandler\b`).
 
 ```python
 from click_extra.logging import StreamHandler
@@ -207,17 +207,17 @@ class RichExtraStreamHandler(StreamHandler):
 
 ---
 
-## Tâche 6 : Renommer `extraBasicConfig` → `basicConfig`
+## ✅ Tâche 6 : Renommer `extraBasicConfig` → `basicConfig`
 
 **Fichier :** `src/pyclifer/core/log/config.py`
 
-- [ ] **Étape 1 : Import**
+- [x] **Étape 1 : Import**
 
 ```python
 from click_extra.logging import basicConfig
 ```
 
-- [ ] **Étape 2 : Appel** (dans `configure_rich_logging`)
+- [x] **Étape 2 : Appel** (dans `configure_rich_logging`)
 
 ```python
         basicConfig(
@@ -227,20 +227,20 @@ from click_extra.logging import basicConfig
         )
 ```
 
-- [ ] **Étape 3 : Docstring** — remplacer "Global configuration via extraBasicConfig"
+- [x] **Étape 3 : Docstring** — remplacer "Global configuration via extraBasicConfig"
   par "Global configuration via basicConfig".
 
 ---
 
-## Tâche 7 : Mettre à jour les cibles de mock dans les tests
+## ✅ Tâche 7 : Mettre à jour les cibles de mock dans les tests
 
 **Fichier :** `tests/core/log/test_rich_logging.py`
 
-- [ ] **Étape 1 :** remplacer toutes les occurrences de `pyclifer.core.log.config.extraBasicConfig`
+- [x] **Étape 1 :** remplacer toutes les occurrences de `pyclifer.core.log.config.extraBasicConfig`
   (décorateurs `@patch` et `patch(...)`) par `pyclifer.core.log.config.basicConfig`, et les
   mentions dans les docstrings de test.
 
-- [ ] **Étape 2 : Constater l'échec restant**
+- [x] **Étape 2 : Constater l'échec restant**
 
 ```bash
 python -m pytest tests/ -v
@@ -252,11 +252,11 @@ Attendu : un seul échec,
 
 ---
 
-## Tâche 8 : Préserver l'ordre de priorité des fichiers de config (TDD)
+## ✅ Tâche 8 : Préserver l'ordre de priorité des fichiers de config (TDD)
 
 **Fichiers :** `tests/core/options/test_custom_config_option.py`, `src/pyclifer/core/classes.py`
 
-- [ ] **Étape 1 : Tests (rouge)** — `test_etc_takes_priority_over_user_config` existe déjà et
+- [x] **Étape 1 : Tests (rouge)** — `test_etc_takes_priority_over_user_config` existe déjà et
   échoue. Ajouter :
   - `test_search_skips_subpattern_without_match` : `/etc` vide, fichier utilisateur présent →
     le fichier utilisateur est renvoyé (couvre le `continue` sur `FileNotFoundError`).
@@ -265,7 +265,7 @@ Attendu : un seul échec,
   - `test_search_yields_triples_in_pattern_order` : les résultats sont des triplets
     `(location, content, media_type)` dans l'ordre des sous-motifs.
 
-- [ ] **Étape 2 : Implémentation (vert)** — dans `CustomConfigOption`, avant
+- [x] **Étape 2 : Implémentation (vert)** — dans `CustomConfigOption`, avant
   `_get_extension_pattern` :
 
 ```python
@@ -300,7 +300,7 @@ Attendu : un seul échec,
   Imports : `Iterator` depuis `collections.abc`, `URL` depuis `boltons.urlutils` (placés selon
   l'ordre d'imports défini dans `.claude/CLAUDE.md`).
 
-- [ ] **Étape 3 : Confirmer le succès**
+- [x] **Étape 3 : Confirmer le succès**
 
 ```bash
 python -m pytest tests/ -v
@@ -310,9 +310,9 @@ Attendu : tous les tests passent.
 
 ---
 
-## Tâche 9 : Vérification complète multi-version
+## ✅ Tâche 9 : Vérification complète multi-version
 
-- [ ] **Étape 1 : Suite complète + coverage**
+- [x] **Étape 1 : Suite complète + coverage**
 
 ```bash
 python -m pytest tests/ -v
@@ -321,14 +321,14 @@ python -m pytest tests/ -q -W error::DeprecationWarning -W error::PendingDepreca
 
 Attendu : 100% de couverture de branches maintenu sur les modules touchés.
 
-- [ ] **Étape 2 : Lint**
+- [x] **Étape 2 : Lint**
 
 ```bash
 ruff check src/ tests/
 ruff format src/ tests/
 ```
 
-- [ ] **Étape 3 : Matrice complète 3.10–3.13**
+- [x] **Étape 3 : Matrice complète 3.10–3.13**
 
 ```bash
 tox
@@ -336,7 +336,7 @@ tox
 
 Si un échec apparaît sur une version précise de Python, l'investiguer avant de continuer.
 
-- [ ] **Étape 4 : Vérification de bout en bout de la recherche de config**
+- [x] **Étape 4 : Vérification de bout en bout de la recherche de config**
 
 Les tests unitaires ne lisent pas un vrai `/etc`. Rejouer le scénario réel dans un espace de noms
 utilisateur isolé (`unshare -Urm`, `/etc` remplacé par un tmpfs privé, aucun impact sur le
@@ -355,7 +355,7 @@ Mesuré avant la montée de version (click-extra 7.20.1) : A à E conformes au t
 surcharge de la Tâche 8, click-extra 9.5.1 donne en D les valeurs *utilisateur* (tri
 alphabétique) : c'est la régression que cette tâche empêche.
 
-- [ ] **Étape 5 : Documentation**
+- [x] **Étape 5 : Documentation**
 
 ```bash
 mkdocs build --strict
@@ -366,7 +366,7 @@ compléter la page de configuration si elle décrit l'ordre de recherche des fic
 
 ---
 
-## Tâche 10 : Commit
+## ✅ Tâche 10 : Commit
 
 ```bash
 git add pyproject.toml uv.lock src/ tests/ docs/ .claude/specs/11-click-extra-9-upgrade.md

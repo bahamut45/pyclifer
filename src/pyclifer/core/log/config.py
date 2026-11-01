@@ -7,7 +7,7 @@ from typing import Any
 
 from click_extra import Choice, Context, Parameter, get_current_context
 from click_extra.logging import VerbosityOption as BaseVerbosityOption
-from click_extra.logging import extraBasicConfig
+from click_extra.logging import basicConfig
 
 from .formatters import RichExtraFormatter
 from .handlers import RichExtraStreamHandler
@@ -94,7 +94,7 @@ def configure_rich_logging(
     """Configure the Rich logging system once and centrally.
 
     This function sets up the entire logging system in one place:
-    - Global configuration via extraBasicConfig
+    - Global configuration via basicConfig
     - Adds trace() method to all Python loggers
     - Prevents multiple configurations with built-in checks
 
@@ -135,13 +135,13 @@ def configure_rich_logging(
 
         _preconfigure_click_extra_logger(shared_handler)
 
-        extraBasicConfig(
+        basicConfig(
             stream_handler_class=RichExtraStreamHandler,
             formatter_class=RichExtraFormatter,
             force=True,
         )
 
-        # Replace the generic handler added by extraBasicConfig with our configured shared instance
+        # Replace the generic handler added by basicConfig with our configured shared instance
         root_logger = logging.getLogger()
         for h in list(root_logger.handlers):
             if type(h) is RichExtraStreamHandler and h is not shared_handler:

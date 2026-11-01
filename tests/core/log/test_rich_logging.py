@@ -41,7 +41,7 @@ class TestLoggingConfiguration:
         assert "TRACE" in PYCLIFER_LOG_LEVELS
         assert PYCLIFER_LOG_LEVELS["TRACE"] == TRACE
 
-    @patch("pyclifer.core.log.config.extraBasicConfig")
+    @patch("pyclifer.core.log.config.basicConfig")
     @patch("pyclifer.core.log.config._preconfigure_click_extra_logger")
     @patch("pyclifer.core.log.config.logging.getLogger")
     def test_configure_rich_logging_basic(
@@ -70,12 +70,12 @@ class TestLoggingConfiguration:
         mock_root_logger.handlers = [mock_handler]
         mock_get_logger.return_value = mock_root_logger
 
-        with patch("pyclifer.core.log.config.extraBasicConfig") as mock_config:
+        with patch("pyclifer.core.log.config.basicConfig") as mock_config:
             # noinspection PyArgumentEqualDefault
             configure_rich_logging(force_reconfigure=False)
             mock_config.assert_not_called()
 
-    @patch("pyclifer.core.log.config.extraBasicConfig")
+    @patch("pyclifer.core.log.config.basicConfig")
     def test_configure_rich_logging_force_reconfigure(self, mock_extra_config):
         """Test that force_reconfigure bypasses existing configuration check."""
         with patch("pyclifer.core.log.config._preconfigure_click_extra_logger"):
@@ -83,7 +83,7 @@ class TestLoggingConfiguration:
             mock_extra_config.assert_called_once()
 
     # noinspection PyUnusedLocal
-    @patch("pyclifer.core.log.config.extraBasicConfig")
+    @patch("pyclifer.core.log.config.basicConfig")
     def test_configure_rich_logging_no_tracebacks(self, mock_extra_config):
         """use_rich=True but rich_tracebacks=False skips traceback install."""
         with (
@@ -99,7 +99,7 @@ class TestLoggingConfiguration:
                 configure_rich_logging(use_rich=True, rich_tracebacks=False, force_reconfigure=True)
                 mock_install.assert_not_called()
 
-    @patch("pyclifer.core.log.config.extraBasicConfig")
+    @patch("pyclifer.core.log.config.basicConfig")
     def test_configure_rich_logging_use_rich_false(self, mock_extra_config):
         """use_rich=False skips all Rich handler setup."""
         configure_rich_logging(use_rich=False, force_reconfigure=True)
@@ -119,7 +119,7 @@ class TestLoggingConfiguration:
         assert handler_count_after == handler_count_before
 
     def test_configure_rich_logging_preserves_file_handler_already_present(self):
-        """File handler already in root_logger after extraBasicConfig is not re-added."""
+        """File handler already in root_logger after basicConfig is not re-added."""
         import tempfile
         from logging.handlers import TimedRotatingFileHandler
 
@@ -130,7 +130,7 @@ class TestLoggingConfiguration:
         file_handler = TimedRotatingFileHandler(log_path)
         root_logger.addHandler(file_handler)
         try:
-            # extraBasicConfig (called internally) does not remove file handlers,
+            # basicConfig (called internally) does not remove file handlers,
             # so the restore loop finds the handler already present and skips addHandler.
             configure_rich_logging(force_reconfigure=True)
             file_handlers = [

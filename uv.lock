@@ -272,7 +272,7 @@ wheels = [
 
 [[package]]
 name = "click-extra"
-version = "7.20.1"
+version = "9.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "boltons" },
@@ -281,15 +281,15 @@ dependencies = [
     { name = "deepmerge" },
     { name = "extra-platforms", version = "13.13.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "extra-platforms", version = "14.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "requests" },
     { name = "tabulate", extra = ["widechars"] },
     { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "wcmatch", version = "11.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "wcmatch", version = "11.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "wcwidth" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5d/54/9e41967fbbd5bc333ea37d62b6bfa26175dd8f25f6fbdc3c1881d64ca552/click_extra-7.20.1.tar.gz", hash = "sha256:4f32c16969a8c1f456dfd354a8e6c3c6968bc60bd9917967c488cc9b74cb826d", size = 227567, upload-time = "2026-06-18T12:25:19.516Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c8/b8/e43719f26249218419c40c71e0f70936c5f1f3b7df266845a21c03986854/click_extra-9.5.1.tar.gz", hash = "sha256:0398ce20bba177504faca37752fe5e0e0756cb1d543765b4d4b6d119d5e3bd48", size = 1830880, upload-time = "2026-10-27T11:52:23.78Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5c/8b/3e8e47a67cc40229dd885f1388590fbdb35cc4a8ff70a32d76353d844cc9/click_extra-7.20.1-py3-none-any.whl", hash = "sha256:d73d8865af6add91dd4ff272eaf96299940ad7674b9e3d7bc32e36ad27ffb612", size = 246632, upload-time = "2026-06-18T12:25:17.972Z" },
+    { url = "https://files.pythonhosted.org/packages/be/74/50e7ee690b689ab5c91bb5c0972b9b9c0af76dafe22fa95102aa46378f32/click_extra-9.5.1-py3-none-any.whl", hash = "sha256:f3f009268bbc28b8ee7060321a156f85a56118791209e64570770a625a2b121c", size = 699337, upload-time = "2026-10-27T11:52:21.524Z" },
 ]
 
 [[package]]
@@ -1307,7 +1307,10 @@ name = "pyclifer"
 version = "0.8.0"
 source = { editable = "." }
 dependencies = [
+    { name = "boltons" },
     { name = "click-extra" },
+    { name = "extra-platforms", version = "13.13.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "extra-platforms", version = "14.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "jinja2" },
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -1340,7 +1343,9 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "click-extra", specifier = ">=7.20.1,<8.0.0" },
+    { name = "boltons", specifier = ">=26.2" },
+    { name = "click-extra", specifier = ">=9.5.1,<10.0.0" },
+    { name = "extra-platforms", specifier = ">=13.4" },
     { name = "git-cliff", marker = "extra == 'dev'", specifier = ">=2.0" },
     { name = "jinja2", specifier = ">=3.1.0,<4.0.0" },
     { name = "mike", marker = "extra == 'docs'", specifier = ">=2.1" },

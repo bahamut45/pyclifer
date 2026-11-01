@@ -3,16 +3,16 @@
 import logging
 
 from click_extra import get_default_theme, style
-from click_extra.logging import ExtraFormatter
+from click_extra.logging import Formatter
 from rich.text import Text
 
 from .levels import TRACE
 
 
-class RichExtraFormatter(ExtraFormatter):
-    """Enhanced ExtraFormatter with Rich text capabilities and TRACE level support.
+class RichExtraFormatter(Formatter):
+    """Enhanced Formatter with Rich text capabilities and TRACE level support.
 
-    Extends click-extra's ExtraFormatter to support Rich markup and custom TRACE level
+    Extends click-extra's Formatter to support Rich markup and custom TRACE level
     while preserving a click-extra's colorization system.
     """
 
