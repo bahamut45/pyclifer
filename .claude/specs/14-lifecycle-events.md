@@ -1,7 +1,7 @@
 # Événements de cycle de vie (`on()`, `config.loaded`)
 
-**Issue GitHub :** à créer (enhancement). Socle partagé par les specs 09 (commandes paresseuses),
-05 (hooks avant/après commande) et 06 (plugins).
+**Contexte :** socle partagé par les specs 09 (commandes paresseuses), 05 (hooks avant/après
+commande) et 06 (plugins). Pas d'issue dédiée : la spec naît de l'analyse de l'issue #7.
 
 **Objectif :** Donner au framework un seul mécanisme d'extension : des points de cycle de vie
 nommés auxquels l'application ou un plugin attache des fonctions. Cette spec pose l'infrastructure
