@@ -1,7 +1,10 @@
 """Tests for the TRACE level setup in pyclifer.core.log.levels."""
 
+import logging
 import subprocess
 import sys
+
+from pyclifer import TRACE
 
 
 def _run_fresh(code: str) -> subprocess.CompletedProcess:
@@ -37,3 +40,45 @@ class TestTraceAvailability:
             "import logging, pyclifer\nprint(callable(logging.getLogger('other').trace))\n"
         )
         assert result.stdout.strip() == "True"
+
+
+class TestTraceSourceLocation:
+    """A TRACE record points at the code that called trace(), like DEBUG and INFO records do."""
+
+    @staticmethod
+    def _record_for(call, caplog):
+        """Run call(logger) with TRACE enabled and return the single record it produced."""
+        logger = logging.getLogger("tests.trace.location")
+        with caplog.at_level(TRACE, logger=logger.name):
+            call(logger)
+        assert len(caplog.records) == 1
+        return caplog.records[0]
+
+    def test_record_points_at_the_caller(self, caplog):
+        def caller(logger):
+            logger.trace("message")
+
+        record = self._record_for(caller, caplog)
+        assert record.filename == "test_levels.py"
+        assert record.funcName == "caller"
+
+    def test_record_location_matches_a_debug_record(self, caplog):
+        def caller(logger):
+            logger.debug("d")
+            logger.trace("t")
+
+        logger = logging.getLogger("tests.trace.location")
+        with caplog.at_level(TRACE, logger=logger.name):
+            caller(logger)
+        debug, trace = caplog.records
+        assert (trace.filename, trace.funcName) == (debug.filename, debug.funcName)
+
+    def test_stacklevel_given_by_the_caller_is_relative_to_the_caller(self, caplog):
+        def helper(logger):
+            logger.trace("message", stacklevel=2)
+
+        def outer(logger):
+            helper(logger)
+
+        record = self._record_for(outer, caplog)
+        assert record.funcName == "outer"

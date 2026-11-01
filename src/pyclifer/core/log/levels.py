@@ -53,6 +53,9 @@ def add_trace_method(logger_class: type) -> type:
             **kwargs: Additional keyword arguments for logging.
         """
         if self.isEnabledFor(TRACE):
+            # One frame deeper than debug() and info(): count this method so the record points at
+            # the caller, and shift a stacklevel given by the caller by the same frame.
+            kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + 1
             self._log(TRACE, msg, args, **kwargs)
 
     logger_class.trace = trace

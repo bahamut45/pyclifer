@@ -551,7 +551,7 @@ class TestAddTraceMethod:
         mock_logger.trace("test trace message")
 
         mock_logger.isEnabledFor.assert_called_once_with(TRACE)
-        mock_logger._log.assert_called_once_with(TRACE, "test trace message", ())
+        mock_logger._log.assert_called_once_with(TRACE, "test trace message", (), stacklevel=2)
 
     def test_trace_method_skips_log_when_level_disabled(self):
         """Test that trace() does not call _log when the TRACE level is disabled."""

@@ -611,7 +611,17 @@ appelait aussi `add_trace_method(logger)` avec une instance, ce qui lève `TypeE
 devenu redondant dans `configure_rich_logging` est retiré. Trois tests en processus neuf
 (`tests/core/log/test_levels.py`) ; l'exemple de la doc est corrigé.
 
-## Item 22+ : Autres défauts trouvés
+## ✅ Item 22 : Défaut — une ligne TRACE pointait sur `levels.py`
+
+Trouvé à l'item 6. Mesuré avec `--verbosity TRACE` : la ligne `trace-line` affichait `levels.py:56` comme source, alors
+que les lignes DEBUG et INFO du même appelant affichaient son fichier et sa ligne. `trace` appelait `self._log` sans
+`stacklevel`, donc l'enregistrement décrivait la méthode `trace` elle-même (nom de fonction `trace` aussi).
+
+**Décision de l'utilisateur.** Corriger. `trace` passe `stacklevel + 1` à `_log`, et un `stacklevel` donné par
+l'appelant reste relatif à l'appelant. Trois tests avec un vrai logger (`TestTraceSourceLocation`) : fichier et
+fonction de l'appelant, identiques à ceux d'un enregistrement DEBUG, `stacklevel=2` relatif à l'appelant.
+
+## Item 23+ : Autres défauts trouvés
 
 Un item par défaut mesuré aux items 5 et 6.
 
