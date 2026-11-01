@@ -215,7 +215,7 @@ A field matches when its name contains one of the listed names, ignoring case: w
 list, `bearer_token` and `Token` are masked too. Set `enable_secrets_filter=False` to turn the
 filter off.
 
-!!! note "Masking works on keys, not on free text"
+!!! note "By default, masking works on keys, not on free text"
     The filter hides the **value of a key**, in a dict, a named tuple or a log record attribute:
 
     ```python
@@ -223,8 +223,36 @@ filter off.
     # payload {'password': '*CENSORED*', 'user': 'bob'}
     ```
 
-    A plain message such as `log.warning("password=hunter2")` is not scanned and is logged as is.
-    Pass secrets as structured arguments to have them masked.
+    A plain message such as `log.warning("password=hunter2")` is logged as is, unless you turn on
+    `mask_free_text`.
+
+### Masking Free Text
+
+Set `mask_free_text=True` to also mask `key=value` pairs written inside a message:
+
+```python
+@app_group(mask_free_text=True, sensitive_fields=["mycode"])
+def cli():
+    """Masks secrets written in the text of a message."""
+```
+
+```python
+log.warning("login password=hunter2 mycode=mc-777 for bob")
+# login password=*CENSORED* mycode=*CENSORED* for bob
+```
+
+It finds a sensitive name followed by `=` or `:`: `password=x`, `password: x`, JSON such as
+`{"password": "x"}`, a query string `?api_key=x&user=bob`, and an `Authorization: Bearer x` header.
+It applies to the console (Rich or plain) and to the log file. It is off by default.
+
+Know its limits before turning it on:
+
+- **A secret with no name next to it is not found.** `"the password is hunter2"` is logged as is.
+- **It can mask too much.** The rule is the same as for keys: a name that *contains* a sensitive
+  field matches, whatever its value means. `max_tokens=100` and `token: expired` are masked.
+- **Exception tracebacks are not scanned.** A secret inside the text of an exception still appears in
+  the traceback that `log.exception` prints and writes.
+- **`enable_secrets_filter=False` turns it off too.**
 
 ### Preserved Functionality
 

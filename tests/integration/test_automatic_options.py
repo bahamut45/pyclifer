@@ -355,6 +355,84 @@ class TestSecretsFiltering:
         assert "hunter2" in file
 
 
+def _log_free_text(tmp_path, *args, **config):
+    """Log a plain message holding two secrets as key=value, to the console and to a file."""
+
+    @app_group(**{"output_format_default": "json", **config})
+    def cli():
+        """Test application."""
+
+    @cli.command()
+    def hello():
+        """Log a message."""
+        get_logger("probe").warning("login password=hunter2 mycode=mc-777 for bob")
+        return Response(success=True, message="ok")
+
+    log_file = tmp_path / "free.log"
+    result = invoke(cli, ["--log-file", str(log_file), *args, "hello"])
+    return result.stderr, log_file.read_text()
+
+
+class TestFreeTextMasking:
+    """mask_free_text hides key=value secrets written inside a message, on every path."""
+
+    # Without the verbosity option rebuilding the console handler, and with it.
+    PATHS = [(), ("--verbosity", "DEBUG")]
+
+    @pytest.mark.parametrize("use_rich_logging", [True, False])
+    @pytest.mark.parametrize("args", PATHS)
+    def test_the_secrets_are_masked_on_the_console_and_in_the_file(
+        self, tmp_path, use_rich_logging, args
+    ):
+        console, file = _log_free_text(
+            tmp_path,
+            *args,
+            mask_free_text=True,
+            sensitive_fields=["mycode"],
+            use_rich_logging=use_rich_logging,
+        )
+
+        for output in (console, file):
+            assert "hunter2" not in output
+            assert "mc-777" not in output
+            assert "bob" in output
+
+    @pytest.mark.parametrize("use_rich_logging", [True, False])
+    def test_without_the_option_free_text_is_kept(self, tmp_path, use_rich_logging):
+        console, file = _log_free_text(tmp_path, use_rich_logging=use_rich_logging)
+
+        assert "password=hunter2" in console
+        assert "password=hunter2" in file
+
+    @pytest.mark.parametrize("use_rich_logging", [True, False])
+    def test_the_file_masks_by_itself_when_the_console_never_sees_the_record(
+        self, tmp_path, use_rich_logging
+    ):
+        """A record below the console level skips its filters, so the file must mask it itself."""
+        console, file = _log_free_text(
+            tmp_path,
+            "--verbosity",
+            "ERROR",
+            mask_free_text=True,
+            use_rich_logging=use_rich_logging,
+        )
+
+        assert "login" not in console
+        assert "login" in file
+        assert "hunter2" not in file
+
+    def test_the_option_does_nothing_when_the_filter_is_off(self, tmp_path):
+        console, file = _log_free_text(tmp_path, mask_free_text=True, enable_secrets_filter=False)
+
+        assert "hunter2" in console
+        assert "hunter2" in file
+
+    def test_it_applies_without_a_verbosity_option(self, tmp_path):
+        console, _ = _log_free_text(tmp_path, mask_free_text=True, add_verbosity_option=False)
+
+        assert "hunter2" not in console
+
+
 def _plain_command(factory, args):
     """Run a command that carries a single option factory, outside any app_group."""
 

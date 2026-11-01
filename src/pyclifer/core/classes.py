@@ -382,6 +382,8 @@ class GroupConfig:
 
     # Security
     sensitive_fields: list[str] = field(default_factory=list)
+    # Also mask key=value pairs written inside the text of a log message (off by default).
+    mask_free_text: bool = False
 
     # Context construction
     context_factory: Callable[..., Any] | None = None

@@ -22,6 +22,10 @@ Key parameters:
   variables of the automatic options (`--output-format`, `--config`, `--verbosity`, `--log-file`,
   `--time`). The variables still work. Options you declare with `@option` keep their own
   `show_envvar` argument.
+- `sensitive_fields` — field names to mask in log records on top of the defaults (`password`, `token`,
+  `secret`, ...). `enable_secrets_filter=False` turns the filter off.
+- `mask_free_text` — `False` by default. Also masks `key=value` pairs written inside the text of a log
+  message. See [Masking Free Text](../logging.md#masking-free-text) for what it finds and its limits.
 - `rich_help_config` — `RichHelpConfiguration` instance (or dict) forwarded to rich-click.
   Lets you customise colours, column widths, and panel styles in `--help` output.
 - `use_rich_help` — set to `False` to disable rich-click rendering and use plain Click help.

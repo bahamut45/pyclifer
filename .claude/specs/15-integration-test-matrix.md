@@ -343,17 +343,41 @@ ajoutés (six unitaires du gestionnaire simple, deux du décorateur, cinq d'int�
 Rich, lignes simples, niveaux, secrets masqués, fichier de log). Contrôle de bout en bout, un processus par mode.
 Documenté dans `docs/logging.md`.
 
-## Item 12 : Amélioration — masquer aussi le texte libre (option `mask_free_text`)
+## ✅ Item 12 : Amélioration — masquer aussi le texte libre (option `mask_free_text`)
 
-Proposition issue de l'item 10, **pas encore décidée**. Aujourd'hui le filtre masque la valeur d'une **clé**
-(dict, tuple nommé, attribut du record) et laisse passer une chaîne comme `"password=hunter2"`. Un motif
-`clé=valeur`, `clé: valeur`, JSON, requête d'URL ou en-tête (`Authorization: Bearer`) a été essayé sur des
-lignes réalistes : il masque ces formes, mais pas « the password is hunter2 » (aucun séparateur), et il masque
-à tort `max_tokens=100` et `token: expired`. Ces faux positifs déroutent l'utilisateur, d'où la proposition :
-une option **`mask_free_text`, à `False` par défaut** (aucune régression, activée en connaissance de cause),
-les limites écrites dans la doc et les faux positifs épinglés par des tests. La règle de correspondance
-(nom qui contient le champ) reste la même qu'avec les clés. Le filtre doit alors formater le message avant de
-le masquer (`record.msg` formaté, `record.args` vidé).
+Issu de l'item 10. Décision : une option **`mask_free_text`, à `False` par défaut**, parce qu'un motif sur du texte
+produit des faux positifs que l'utilisateur ne comprendrait pas (`max_tokens=100`, `token: expired`), et que le
+comportement actuel ne change pas pour qui ne l'active pas.
+
+**Ce qu'elle fait.** `SecretsMasker(mask_free_text=True)` formate le message (`record.getMessage()`, arguments
+repliés dans le texte), le passe à `redact_text`, puis vide `record.args`. `redact_text` reconnaît un nom qui
+contient un champ sensible, suivi de `=` ou `:`, d'un schéma d'autorisation optionnel (`Bearer`, `Basic`, `Token`) et
+de la valeur : entre guillemets jusqu'au guillemet fermant, sinon jusqu'à un espace ou un délimiteur. Même règle de
+correspondance que pour les clés. Un message qui ne peut pas être formaté est laissé tel quel (c'est `logging` qui le
+signalera) ; le filtre de sécurité ne doit jamais faire planter la journalisation.
+
+**Plomberie.** `GroupConfig.mask_free_text` est transmis par douze sites (décorateur, option `--verbosity`,
+option `--log-file`, gestionnaire Rich, gestionnaire simple, fichier). Un contrôle par **mutation** a neutralisé
+chaque site l'un après l'autre : tous sont détectés par au moins un test. Il a révélé un cas subtil : le filtre de la
+console modifie l'enregistrement sur place, donc il cachait le câblage du fichier ; seul un enregistrement **sous le
+niveau de la console** (`--verbosity ERROR`) oblige le fichier à masquer lui-même, d'où un test dédié.
+
+**Limites mesurées, documentées dans `docs/logging.md`.** « the password is hunter2 » n'est pas trouvé (aucun nom à
+côté) ; les faux positifs ci-dessus ; **les traces d'exception ne sont pas analysées** (le secret d'un message
+d'exception apparaît dans la console et le fichier, avec les deux gestionnaires). Corriger ce dernier point oblige à
+formater la trace avant le gestionnaire, ce qui ferait perdre le rendu Rich des traces : arbitrage laissé à
+l'utilisateur.
+
+**Défaut de mon code de production trouvé en chemin.** `_configure_plain_logging` marquait et filtrait *tous* les
+gestionnaires de la racine après `basicConfig`, en supposant que celui-ci avait tout effacé. Un test existant simule
+`basicConfig` : les gestionnaires de capture de pytest restaient alors sur la racine, recevaient la marque et un filtre,
+et faussaient ensuite la détection « déjà configuré ». Il ne décore plus que le gestionnaire qu'il vient de créer
+(test dédié).
+
+**Observation, non corrigée.** Sans `force_reconfigure`, `configure_rich_logging` considère la console comme déjà
+configurée dès qu'un gestionnaire de pyclifer existe : dans un même processus, la journalisation de la **deuxième**
+application déclarée n'est pas appliquée. Sans effet pour une application en ligne de commande (un processus, une
+application), mais cela oblige les tests d'intégration à repartir d'une racine vide, ce que fait le fixture.
 
 ## Item 13+ : Autres défauts trouvés
 

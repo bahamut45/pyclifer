@@ -84,6 +84,7 @@ class GroupDecorator:
             rich_tracebacks=True,
             enable_secrets_filter=self.config.enable_secrets_filter,
             sensitive_fields=self.config.sensitive_fields or None,
+            mask_free_text=self.config.mask_free_text,
         )
 
     def _apply_rich_help(self, f: Callable) -> Callable:
@@ -134,6 +135,7 @@ class GroupDecorator:
                 use_rich=self.config.use_rich_logging,
                 enable_secrets_filter=self.config.enable_secrets_filter,
                 sensitive_fields=self.config.sensitive_fields or None,
+                mask_free_text=self.config.mask_free_text,
             )(f)
 
         if self.config.add_log_file_option:
@@ -145,6 +147,7 @@ class GroupDecorator:
                 show_envvar=self.config.show_envvar,
                 enable_secrets_filter=self.config.enable_secrets_filter,
                 sensitive_fields=self.config.sensitive_fields or None,
+                mask_free_text=self.config.mask_free_text,
             )(f)
 
         if self.config.add_version_option:
@@ -817,6 +820,7 @@ def log_file_option(
     backup_count: int = 7,
     enable_secrets_filter: bool = False,
     sensitive_fields: list[str] | None = None,
+    mask_free_text: bool = False,
     is_global: bool = False,
     show_envvar: bool = True,
     **kwargs: Any,
@@ -831,6 +835,7 @@ def log_file_option(
         backup_count: Number of backup files to keep.
         enable_secrets_filter: Enable secrets filtering in logs.
         sensitive_fields: Additional field names to mask on top of the defaults.
+        mask_free_text: Also mask key=value pairs written inside the text of a message.
                           Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
         is_global: If True, the option is propagated to all subcommands.
         show_envvar: Show environment variables in the help output.
@@ -853,6 +858,7 @@ def log_file_option(
         backup_count=backup_count,
         enable_secrets_filter=enable_secrets_filter,
         sensitive_fields=sensitive_fields,
+        mask_free_text=mask_free_text,
     )
 
     return option(*param_decls, is_global=is_global, show_envvar=show_envvar, **kwargs)

@@ -28,11 +28,16 @@ def _all_loggers() -> list[logging.Logger]:
 def restore_logging():
     """Give every test the logging configuration it found.
 
-    Building an application configures loggers, which are global to the process. On the way
-    out, every logger gets back exactly the handlers it had, and handlers a test added are closed.
+    Building an application configures loggers, which are global to the process. A test starts
+    with no handler of the application on the root logger, and on the way out every logger gets
+    back exactly the handlers it had, handlers a test added being closed.
     """
     original = {logger.name: list(logger.handlers) for logger in _all_loggers()}
     root_level = logging.getLogger().level
+    # Start like a fresh process: a console handler left by an application declared earlier
+    # would count as "already configured" and hide the settings of the one under test.
+    root = logging.getLogger()
+    root.handlers[:] = [h for h in root.handlers if type(h).__module__.startswith("_pytest")]
     yield
     for logger in _all_loggers():
         kept = original.get(logger.name, [])

@@ -603,6 +603,7 @@ class TestPycliferVerbosityOption:
             use_rich=True,
             enable_secrets_filter=False,
             sensitive_fields=["mycode"],
+            mask_free_text=False,
             force_reconfigure=True,
         )
 
@@ -621,7 +622,11 @@ class TestPycliferVerbosityOption:
                 verbosity_option.set_level(mock_ctx, Mock(), "DEBUG")
 
         mock_configure.assert_called_with(
-            use_rich=True, enable_secrets_filter=True, sensitive_fields=None, force_reconfigure=True
+            use_rich=True,
+            enable_secrets_filter=True,
+            sensitive_fields=None,
+            mask_free_text=False,
+            force_reconfigure=True,
         )
 
     @staticmethod
@@ -721,7 +726,11 @@ class TestPycliferVerbosityOption:
                 verbosity_option.set_level(mock_ctx, mock_param, "DEBUG")
 
         mock_configure.assert_called_once_with(
-            use_rich=True, enable_secrets_filter=True, sensitive_fields=None, force_reconfigure=True
+            use_rich=True,
+            enable_secrets_filter=True,
+            sensitive_fields=None,
+            mask_free_text=False,
+            force_reconfigure=True,
         )
 
         mock_logger1.setLevel.assert_called_once_with(PYCLIFER_LOG_LEVELS["DEBUG"])
@@ -914,6 +923,19 @@ class TestPlainConsoleLogging:
         (handler,) = self._console_handlers(clean_root_logger)
         assert handler.filters[0].redact({"mycode": "mc-777"}) == {"mycode": "*CENSORED*"}
 
+    @patch("pyclifer.core.log.config.basicConfig")
+    def test_a_handler_it_did_not_create_is_left_untouched(self, _basic_config, clean_root_logger):
+        """Only the handler basicConfig creates is marked and filtered, never a foreign one."""
+        from pyclifer.core.log import configure_rich_logging
+
+        foreign = logging.StreamHandler()
+        clean_root_logger.addHandler(foreign)
+
+        configure_rich_logging(use_rich=False, force_reconfigure=True)
+
+        assert foreign.filters == []
+        assert not hasattr(foreign, "_pyclifer_console")
+
     def test_a_file_handler_survives_the_reconfiguration(self, clean_root_logger, tmp_path):
         from logging.handlers import TimedRotatingFileHandler
 
@@ -935,3 +957,98 @@ class TestPlainConsoleLogging:
         configure_rich_logging(use_rich=False, enable_secrets_filter=False)
 
         assert self._console_handlers(clean_root_logger) == [first]
+
+
+class TestSecretsMaskerFreeText:
+    """With mask_free_text, secrets written as key=value inside a message are masked too."""
+
+    @staticmethod
+    def _masked(text: str, **options) -> str:
+        return SecretsMasker(mask_free_text=True, **options).redact_text(text)
+
+    def test_free_text_is_left_alone_by_default(self):
+        record = logging.LogRecord("t", logging.INFO, "", 0, "password=hunter2", (), None)
+
+        SecretsMasker().filter(record)
+
+        assert record.getMessage() == "password=hunter2"
+
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("login with password=hunter2 for bob", "login with password=*CENSORED* for bob"),
+            ("password: hunter2", "password: *CENSORED*"),
+            ('{"password": "hunter2", "user": "bob"}', '{"password": "*CENSORED*", "user": "bob"}'),
+            ('{"password": "my long phrase"}', '{"password": "*CENSORED*"}'),
+            ("GET /api?api_key=abc123&user=bob", "GET /api?api_key=*CENSORED*&user=bob"),
+            ("Authorization: Bearer eyJhb.abc.def", "Authorization: Bearer *CENSORED*"),
+            ("refresh_token=rt_9 expires in 3600", "refresh_token=*CENSORED* expires in 3600"),
+            ("PASSWORD=HunTer2", "PASSWORD=*CENSORED*"),
+        ],
+    )
+    def test_the_value_of_a_sensitive_key_is_masked(self, text, expected):
+        assert self._masked(text) == expected
+
+    def test_a_custom_field_is_masked(self):
+        assert self._masked("mycode=mc-777 accepted", sensitive_fields=["mycode"]) == (
+            "mycode=*CENSORED* accepted"
+        )
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "the password is hunter2",
+            "token expired for user bob",
+            "/etc/secret/file.txt not found",
+            "nothing sensitive here",
+        ],
+    )
+    def test_text_without_a_key_and_a_separator_is_kept(self, text):
+        assert self._masked(text) == text
+
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("used max_tokens=100 out of 4000", "used max_tokens=*CENSORED* out of 4000"),
+            ("token: expired, please log in again", "token: *CENSORED*, please log in again"),
+        ],
+    )
+    def test_known_false_positives_are_masked(self, text, expected):
+        """A name that contains a sensitive field is masked, whatever its value means."""
+        assert self._masked(text) == expected
+
+    def test_masking_twice_changes_nothing(self):
+        once = self._masked("password=hunter2")
+
+        assert self._masked(once) == once
+
+    def test_a_message_is_masked_once_its_arguments_are_filled_in(self):
+        record = logging.LogRecord("t", logging.INFO, "", 0, "pwd=%s", ("hunter2",), None)
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert record.getMessage() == "pwd=*CENSORED*"
+
+    def test_structured_arguments_are_still_masked_by_key(self):
+        record = logging.LogRecord(
+            "t", logging.INFO, "", 0, "payload %s", ({"password": "hunter2", "user": "bob"},), None
+        )
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert "hunter2" not in record.getMessage()
+        assert "bob" in record.getMessage()
+
+    def test_a_malformed_message_does_not_break_the_filter(self):
+        record = logging.LogRecord("t", logging.INFO, "", 0, "%d", ("not a number",), None)
+
+        assert SecretsMasker(mask_free_text=True).filter(record) is True
+
+    def test_a_message_that_is_not_text_is_masked_too(self):
+        record = logging.LogRecord(
+            "t", logging.INFO, "", 0, ValueError("password=hunter2"), (), None
+        )
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert record.getMessage() == "password=*CENSORED*"

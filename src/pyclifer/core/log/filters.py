@@ -49,12 +49,17 @@ class SecretsMasker(logging.Filter):
     ALREADY_FILTERED_FLAG = "__SecretsMasker_filtered"
     DEFAULT_FIELDS: ClassVar[frozenset[str]] = DEFAULT_SENSITIVE_FIELDS
 
-    def __init__(self, sensitive_fields: list[str] | None = None) -> None:
+    def __init__(
+        self, sensitive_fields: list[str] | None = None, mask_free_text: bool = False
+    ) -> None:
         """Initialize the masker, merging sensitive_fields into DEFAULT_FIELDS.
 
         Args:
             sensitive_fields: Additional field names to mask on top of DEFAULT_FIELDS.
                               None and [] are equivalent — only DEFAULT_FIELDS are used.
+            mask_free_text: Also mask key=value pairs written inside the text of a message.
+                            Off by default: a name that contains a sensitive field is masked
+                            whatever its value means, so max_tokens=100 is masked too.
         """
         super().__init__()
         all_fields = self.DEFAULT_FIELDS | set(sensitive_fields or [])
@@ -62,6 +67,8 @@ class SecretsMasker(logging.Filter):
         self._regex = re.compile(rf"\b({pattern})\b", re.IGNORECASE)
         # The fields this masker hides, lowercase, matched as substrings of a key name.
         self._fields = frozenset(field.strip().lower() for field in all_fields)
+        self._mask_free_text = mask_free_text
+        self._text_regex = self._build_text_regex(self._fields)
 
     def filter(self, record: logging.LogRecord) -> bool:
         """Filter a log record by redacting sensitive values.
@@ -88,8 +95,64 @@ class SecretsMasker(logging.Filter):
         else:
             return False
 
+        if self._mask_free_text:
+            self._mask_message(record)
+
         record_dict[self.ALREADY_FILTERED_FLAG] = True
         return True
+
+    @staticmethod
+    def _build_text_regex(fields: frozenset[str]) -> re.Pattern[str]:
+        """Compile the pattern that finds a sensitive key and its value inside a text.
+
+        The key is any name that contains a sensitive field, possibly quoted. It is followed by
+        = or :, an optional authorization scheme, then the value: quoted up to the closing
+        quote, or unquoted up to a space or a delimiter.
+        """
+        alternatives = "|".join(re.escape(f) for f in sorted(fields, key=len, reverse=True))
+        return re.compile(
+            rf"""
+            (?P<key>["']?[\w.\-]*(?:{alternatives})[\w.\-]*["']?)
+            (?P<separator>\s*[:=]\s*)
+            (?P<scheme>(?:Bearer|Basic|Token)\s+)?
+            (?:"(?P<double>[^"]*)"|'(?P<single>[^']*)'|(?P<bare>[^\s"',;&)\]}}]+))
+            """,
+            re.IGNORECASE | re.VERBOSE,
+        )
+
+    def redact_text(self, text: str) -> str:
+        """Mask the value of every sensitive key written as key=value inside a text.
+
+        Args:
+            text: The text to scan, for example a log message.
+
+        Returns:
+            The text with those values replaced by a placeholder. A secret with no key next to it,
+            as in "the password is hunter2", cannot be found and is kept.
+        """
+
+        def replace(match: re.Match[str]) -> str:
+            quote = (
+                '"' if match["double"] is not None else "'" if match["single"] is not None else ""
+            )
+            return (
+                f"{match['key']}{match['separator']}{match['scheme'] or ''}{quote}*CENSORED*{quote}"
+            )
+
+        return self._text_regex.sub(replace, text)
+
+    def _mask_message(self, record: logging.LogRecord) -> None:
+        """Replace a record's message by its formatted and masked text.
+
+        The arguments are folded into the message first, since a secret can sit in either, and
+        emptied afterwards. A message that cannot be formatted is left to logging to report.
+        """
+        try:
+            message = record.getMessage()
+        except (TypeError, ValueError):  # bad format string or arguments: logging will report it
+            return
+        record.msg = self.redact_text(message)
+        record.args = ()
 
     def _hides(self, name: Any) -> bool:
         """Tell whether a key name holds one of the fields this masker hides.

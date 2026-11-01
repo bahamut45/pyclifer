@@ -60,6 +60,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
             use_rich=self.use_rich,
             enable_secrets_filter=self.enable_secrets_filter,
             sensitive_fields=self.sensitive_fields,
+            mask_free_text=self.mask_free_text,
             force_reconfigure=True,
         )
 
@@ -81,6 +82,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         use_rich: bool = True,
         enable_secrets_filter: bool = True,
         sensitive_fields: list[str] | None = None,
+        mask_free_text: bool = False,
         **kwargs,
     ):
         """Initialize the Pyclif Verbosity Option.
@@ -93,6 +95,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
             use_rich: Rebuild a Rich console handler, or a plain one when False.
             enable_secrets_filter: Mask secrets in the console handler it rebuilds.
             sensitive_fields: Field names to mask on top of the defaults.
+            mask_free_text: Also mask key=value pairs written inside the text of a message.
             **kwargs: Additional keyword arguments.
         """
         if not param_decls:
@@ -102,6 +105,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         self.use_rich = use_rich
         self.enable_secrets_filter = enable_secrets_filter
         self.sensitive_fields = sensitive_fields
+        self.mask_free_text = mask_free_text
         kwargs.setdefault("show_default", True)
         super().__init__(param_decls=param_decls, type=type, help=help, **kwargs)
 
@@ -111,6 +115,7 @@ def configure_rich_logging(
     rich_tracebacks: bool = True,
     enable_secrets_filter: bool = True,
     sensitive_fields: list[str] | None = None,
+    mask_free_text: bool = False,
     force_reconfigure: bool = False,
 ) -> None:
     """Configure the Rich logging system once and centrally.
@@ -126,6 +131,7 @@ def configure_rich_logging(
         enable_secrets_filter: Enable automatic secrets filtering.
         sensitive_fields: Additional field names to mask on top of the defaults.
                           Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
+        mask_free_text: Also mask key=value pairs written inside the text of a message.
         force_reconfigure: Force reconfiguration even if already configured.
     """
     # Check if the console is already configured, with Rich or without
@@ -145,6 +151,7 @@ def configure_rich_logging(
             rich_tracebacks=rich_tracebacks,
             enable_secrets_filter=enable_secrets_filter,
             sensitive_fields=sensitive_fields,
+            mask_free_text=mask_free_text,
         )
         shared_handler.setFormatter(RichExtraFormatter())
 
@@ -175,7 +182,7 @@ def configure_rich_logging(
                 root_logger.addHandler(h)
 
     else:
-        _configure_plain_logging(enable_secrets_filter, sensitive_fields)
+        _configure_plain_logging(enable_secrets_filter, sensitive_fields, mask_free_text)
 
     add_trace_method(logging.Logger)
 
@@ -186,26 +193,31 @@ def _is_console_handler(handler: logging.Handler) -> bool:
 
 
 def _configure_plain_logging(
-    enable_secrets_filter: bool, sensitive_fields: list[str] | None
+    enable_secrets_filter: bool, sensitive_fields: list[str] | None, mask_free_text: bool
 ) -> None:
     """Install click-extra's standard console handler, with the same secrets filter as Rich.
 
     Args:
         enable_secrets_filter: Add the SecretsMasker filter to the console handler.
         sensitive_fields: Field names to mask on top of the defaults.
+        mask_free_text: Also mask key=value pairs written inside the text of a message.
     """
     root_logger = logging.getLogger()
+    existing = list(root_logger.handlers)
     # basicConfig(force=True) removes every handler: keep the file handlers.
-    file_handlers = [h for h in root_logger.handlers if isinstance(h, TimedRotatingFileHandler)]
+    file_handlers = [h for h in existing if isinstance(h, TimedRotatingFileHandler)]
 
     basicConfig(force=True)
 
-    # basicConfig just removed every handler and created the console one: the file handlers
-    # are put back below, so what is on the root logger now is the console handler.
+    # Only the handler basicConfig just created is the console one. Never touch another.
     for handler in root_logger.handlers:
+        if handler in existing:
+            continue
         handler._pyclifer_console = True  # type: ignore[attr-defined]
         if enable_secrets_filter:
-            handler.addFilter(SecretsMasker(sensitive_fields=sensitive_fields))
+            handler.addFilter(
+                SecretsMasker(sensitive_fields=sensitive_fields, mask_free_text=mask_free_text)
+            )
 
     for handler in file_handlers:
         if handler not in root_logger.handlers:  # pragma: no branch
@@ -240,6 +252,7 @@ def setup_file_logging(
     backup_count: int = 7,
     enable_secrets_filter: bool = True,
     sensitive_fields: list[str] | None = None,
+    mask_free_text: bool = False,
 ) -> None:
     """Configure a time-based rotating file handler for logging.
 
@@ -252,6 +265,7 @@ def setup_file_logging(
         enable_secrets_filter: Apply the secret filter to the file logs.
         sensitive_fields: Additional field names to mask on top of the defaults.
                           Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
+        mask_free_text: Also mask key=value pairs written inside the text of a message.
     """
     root_logger = logging.getLogger()
     abs_log_file = str(Path(log_file).resolve())
@@ -317,7 +331,9 @@ def setup_file_logging(
     if enable_secrets_filter:
         from .filters import SecretsMasker
 
-        handler.addFilter(SecretsMasker(sensitive_fields=sensitive_fields))
+        handler.addFilter(
+            SecretsMasker(sensitive_fields=sensitive_fields, mask_free_text=mask_free_text)
+        )
 
     root_logger.addHandler(handler)
 
@@ -333,6 +349,7 @@ def create_log_file_callback(
     backup_count: int = 7,
     enable_secrets_filter: bool = True,
     sensitive_fields: list[str] | None = None,
+    mask_free_text: bool = False,
 ):
     """Create a Click callback for the log file option."""
 
@@ -350,6 +367,7 @@ def create_log_file_callback(
                 backup_count=backup_count,
                 enable_secrets_filter=enable_secrets_filter,
                 sensitive_fields=sensitive_fields,
+                mask_free_text=mask_free_text,
             )
         return value
 
