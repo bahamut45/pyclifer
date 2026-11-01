@@ -217,6 +217,15 @@ handle non-serializable domain objects gracefully.
 Tests mirror the `src/` layout under `tests/`. The `tox` configuration in `pyproject.toml`
 runs the suite against Python 3.10, 3.11, 3.12, and 3.13 using `tox-uv`.
 
+`tests/integration/` runs every pyclifer feature in a real application (spec 15). Features are
+discovered by introspection (`inventory.py`: `GroupConfig` fields, option factories, `pyclifer.__all__`,
+framework events) and each one must appear in `scenarios.py` as `COVERED` (a test that exercises it) or
+`EXCLUDED` (a stated reason). Adding a `GroupConfig` field, option factory, public symbol or event without
+declaring it there fails `test_inventory.py`. `PENDING` stays empty. Measure the behaviour in a fresh
+process before writing the expectation; a defect found this way gets its own failing test and commit.
+The full suite takes about 26 s without coverage (about 48 s with the default coverage options), of
+which about 17 s is `tests/integration/`.
+
 ## Versioning
 
 Managed with `bumpversion`. Version is synced across `pyproject.toml`, `README.md`, and

@@ -70,10 +70,38 @@ uv run python -m pytest tests/ --cov=pyclifer --cov-report=html
 ### Test Categories
 
 1. **Unit tests**: Test individual components in isolation
-2. **Integration tests**: Test decorator interactions and CLI flows
+2. **Integration tests** (`tests/integration/`): Run every feature in a real application (see below)
 3. **Configuration tests**: Test `CustomConfigOption` functionality
 4. **Logging tests**: Test verbosity, file logging, Rich formatting
 5. **Tox compatibility tests**: Marked `@pytest.mark.tox` — multi-version checks
+
+### The Integration Suite
+
+`tests/integration/` builds real applications and drives them from the command line, to find defects
+that appear only when features are combined. It has four parts:
+
+- **`inventory.py`** discovers the features by introspection: every `GroupConfig` field, every option
+  factory, every name in `pyclifer.__all__` and every framework event. Nothing is listed by hand.
+- **`scenarios.py`** says where each feature is exercised. A feature is either `COVERED` (it maps to
+  `path/to/test_file.py::TestClass`) or `EXCLUDED` (it maps to the reason it is not tested). `PENDING`
+  stays empty.
+- **`test_inventory.py`** fails when a discovered feature is not declared, when a declaration is stale or
+  duplicated, or when a `COVERED` entry points at a test that does not exist. A new `GroupConfig` field,
+  option factory, public symbol or event therefore needs an entry in `scenarios.py`.
+- **`harness.py`** builds an application and `assert_healthy` checks the contract that says it works: no
+  warning while building, unique option names, `--help` working, a command answering in the requested
+  format, and an unknown command exiting with code 2.
+
+The scenarios cover the `GroupConfig` matrix (`test_group_config_matrix.py`), the automatic options
+(`test_automatic_options.py`), propagation and Rich/plain help parity at three depths
+(`test_propagation.py`) and the public API (`test_public_api.py`).
+
+When you write a scenario, run the case in a fresh process first and assert what it printed, not what
+you expect it to print. Logging is global to the process, which is why `conftest.py` restores it around
+every test. A defect found this way gets its own failing test and its own commit.
+
+The whole suite takes about 26 seconds without coverage and about 48 seconds with the default
+coverage options. The integration tests are about 17 seconds of that.
 
 ### Writing Tests
 

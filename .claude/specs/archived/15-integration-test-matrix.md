@@ -691,14 +691,19 @@ sortie partielle. En `rich`, l'affichage `Live` déjà dessiné reste à l'écra
 Huit tests (`TestRenderFailure`) : JSON, YAML, table, log sans traceback en JSON, libellé « rendering », liste
 de données en JSON, erreur Click au rendu, renderer sain inchangé.
 
-## Item 26+ : Autres défauts trouvés
-
-Un item par défaut mesuré aux items 5 et 6.
-
-## Item final : Vérification complète et documentation
+## ✅ Item final : Vérification complète et documentation
 
 `ruff`, `pytest`, `tox` (Python 3.10 à 3.13), `mkdocs build --strict`, durée de la suite relevée, mise à jour de
 `CLAUDE.md` et de `docs/development.md`. Archivage de la spec quand tous les items sont `✅`.
 
 Procédure par item (CLAUDE.md) : branche, TDD, ruff, pytest, un commit (code, tests, docs, spec avec `✅`),
 validation de l'utilisateur, fusion dans `main`, branche supprimée.
+
+**Réalisé.** `ruff check` et `ruff format`, `pytest` (1674 tests, 100 % de couverture de branches), `tox` 3.10 à 3.13 et
+`mkdocs build --strict` passent. Durée relevée : 26 s sans couverture, 48 s avec les options par défaut, dont 17 s pour
+`tests/integration/`. `CLAUDE.md` (« Testing Structure ») et `docs/development.md` (« The Integration Suite ») décrivent
+l'inventaire, `scenarios.py` et la règle de mesurer avant d'écrire une attente. Les tests de `BaseRenderer` de l'item 24
+sont dans `tests/core/test_renderer.py`, avec les autres.
+
+**Bilan.** Vingt-cinq items. Les défauts de composition trouvés par la suite (items 7 à 25) sont corrigés dans la
+branche, chacun dans son commit, après arbitrage de l'utilisateur.
