@@ -29,6 +29,11 @@ class ExitCode:
     PERMISSION_DENIED = 4
     INVALID_INPUT = 5
 
+    # Click exits with 2 on a usage error (missing option, unknown command, ...).
+    # Deliberate alias of ALREADY_EXISTS: both keep the value 2, so structured
+    # responses for usage errors also carry data["error_type"] == "usage_error".
+    USAGE_ERROR = 2
+
 
 def validate_exit_codes_class(cls: type) -> None:
     """Raise ValueError if cls is not a valid ExitCode subclass.

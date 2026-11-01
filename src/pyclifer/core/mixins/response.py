@@ -4,7 +4,12 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
+import click_extra
+
 _log = logging.getLogger(__name__)
+
+_STRUCTURED_FORMATS = ("json", "yaml")
+"""Output formats in which a Click error is answered with a Response."""
 
 _PYCLIFER_RESPONSE_DECIDED = "_pyclif_response_decided"
 """Attribute set on a command callback before Click registers it, to signal
@@ -70,6 +75,81 @@ class HandleResponseMixin:
     """
 
     handle_response_by_default: bool = False
+    output_format_default: str = "table"
+
+    def parse_args(self, ctx: click_extra.Context, args: list[str]) -> list[str]:
+        """Parse the arguments, answering a Click error in a structured format.
+
+        Args:
+            ctx: The context of this group.
+            args: The arguments to parse.
+
+        Returns:
+            The remaining arguments, as returned by Click.
+        """
+        try:
+            # noinspection PyUnresolvedReferences
+            return super().parse_args(ctx, args)
+        except click_extra.ClickException as error:
+            self._answer_click_exception(ctx, error)
+            raise
+
+    def invoke(self, ctx: click_extra.Context) -> Any:
+        """Invoke the group, answering a Click error in a structured format.
+
+        Args:
+            ctx: The context of this group.
+
+        Returns:
+            The value returned by the invoked command.
+        """
+        try:
+            # noinspection PyUnresolvedReferences
+            return super().invoke(ctx)
+        except click_extra.ClickException as error:
+            self._answer_click_exception(ctx, error)
+            raise
+
+    def _answer_click_exception(
+        self, ctx: click_extra.Context, error: click_extra.ClickException
+    ) -> None:
+        """Answer a Click error with a Response and exit, or return to leave it to Click.
+
+        Only acts when response handling is enabled and the output format is
+        structured (json or yaml). The usual message stays on stderr for a person
+        at a terminal; the Response goes to stdout for a program.
+
+        Args:
+            ctx: The context in which the error was raised.
+            error: The Click error (usage error or any other ClickException).
+        """
+        if not self.handle_response_by_default:
+            return
+        root = ctx.find_root()
+        default_format = getattr(root.command, "output_format_default", self.output_format_default)
+        output_format = root.meta.get("pyclifer.output_format", default_format)
+        if output_format not in _STRUCTURED_FORMATS:
+            return
+
+        # Lazy imports to break circular dependencies: these modules import the mixins.
+        from pyclifer.core.context import BaseContext
+        from pyclifer.core.output import Response
+
+        error_type = "usage_error" if isinstance(error, click_extra.UsageError) else "click_error"
+        # A UsageError carries the context of the command that failed, which is more
+        # precise than the context of the group that caught it.
+        failing_ctx = getattr(error, "ctx", None) or ctx
+        response = Response(
+            success=False,
+            message=error.format_message(),
+            error_code=error.exit_code,
+            data={"results": [], "error_type": error_type, "command": failing_ctx.command_path},
+        )
+        error.show()
+        output_ctx = ctx.obj if isinstance(ctx.obj, BaseContext) else BaseContext()
+        output_ctx.output_format = output_format
+        output_ctx.print_result_based_on_format(response)
+        ctx.exit(error.exit_code)
 
     def command(
         self, *args: Any, handle_response: bool | None = None, **kwargs: Any

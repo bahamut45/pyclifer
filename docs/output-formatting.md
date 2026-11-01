@@ -526,6 +526,39 @@ def main():
     """My CLI."""
 ```
 
+## Usage Errors in Structured Formats
+
+A usage error is a mistake in the command line itself: a missing required option, an unknown
+option or command, or an invalid value. With `handle_response=True` and a structured output
+format (`json`, the default, or `yaml`), pyclifer answers it on **stdout** with the same schema as
+any other failure, so a program that parses stdout always gets a response it can read:
+
+```json
+{
+  "success": false,
+  "message": "Missing option '--name'.",
+  "data": {
+    "results": [],
+    "error_type": "usage_error",
+    "command": "myapp greet"
+  },
+  "error_code": 2
+}
+```
+
+- The process still exits with code `2` (`ExitCode.USAGE_ERROR`), the code Click uses.
+- `error_code` equals the exit code. `ExitCode.ALREADY_EXISTS` also has the value `2`, so use
+  `data["error_type"]` (`"usage_error"`) to tell the two apart.
+- `data["command"]` is the command that failed, as typed (`myapp greet`).
+- The usual Click error message stays on **stderr** for a person at a terminal.
+- Other `ClickException` errors raised while the command line is parsed are answered the same
+  way, with `error_type` set to `"click_error"` and their own exit code (usually `1`).
+- If the error occurs before `--output-format` has been read (for example a missing required
+  global option), the application's `output_format_default` decides the format.
+
+Nothing changes for the `table`, `rich` and `raw` formats, for applications that do not use
+`handle_response`, or for `--help` and `--version`: Click keeps printing its own text.
+
 ## BaseContext and Mixins
 
 Commands can print a `Response` manually by calling `ctx.print_result_based_on_format()`:

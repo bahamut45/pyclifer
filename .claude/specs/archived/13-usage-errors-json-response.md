@@ -5,8 +5,8 @@
 **Objectif :** Avec `handle_response=True` et un format de sortie structuré (`json` par défaut,
 `yaml`), une erreur d'usage Click (option manquante, option ou commande inconnue, valeur invalide)
 doit être répondue sur stdout avec le même schéma que n'importe quel autre échec, au lieu d'une
-sortie vide. Le code de sortie reste 2 et la boîte Rich sur stderr est conservée pour un humain
-devant un terminal.
+sortie vide. Le code de sortie reste 2 et le message d'erreur Click reste sur stderr (en texte simple, sans la
+boîte Rich) pour un humain devant un terminal.
 
 **Constat (reproduit sur `main`, click-extra 9.5.1) :** application de test de l'issue.
 
@@ -97,11 +97,13 @@ Comme l'appelant qui ne lit que `error_code` ne distingue pas `USAGE_ERROR` de `
 data={"results": [], "error_type": ..., "command": ctx.command_path})`. Le texte d'usage complet
 n'est pas dupliqué dans `data` : il reste sur stderr.
 
-### Décision 6 — La boîte Rich sur stderr est conservée
+### Décision 6 — Le message d'erreur reste sur stderr, en texte simple
 
 Le helper appelle `exception.show()` (stderr) puis imprime la réponse sur stdout, puis
-`ctx.exit(exception.exit_code)`. Un humain devant un terminal voit toujours l'erreur lisible ;
-un programme lit stdout.
+`ctx.exit(exception.exit_code)`. Un humain devant un terminal voit toujours l'erreur lisible.
+`show()` produit le format texte de Click (usage puis `Error: ...`), pas la boîte Rich que rich-click
+dessine dans le chemin d'erreur standard : la reproduire demanderait de se coupler à l'API interne de
+rich-click pour un gain purement cosmétique, le contrat étant la réponse sur stdout.
 
 ### Limites connues
 
@@ -125,59 +127,59 @@ un programme lit stdout.
 
 ---
 
-## Tâche 1 : Branche
+## ✅ Tâche 1 : Branche
 
-- [ ] `git checkout -b fix/usage-errors-json-response`
+- [x] `git checkout -b fix/usage-errors-json-response`
 
-## Tâche 2 : `ExitCode.USAGE_ERROR` (TDD)
+## ✅ Tâche 2 : `ExitCode.USAGE_ERROR` (TDD)
 
-- [ ] **Étape 1 (rouge) :** dans `tests/core/output/test_exit_codes.py`, `test_usage_error_equals_two`
+- [x] **Étape 1 (rouge) :** dans `tests/core/output/test_exit_codes.py`, `test_usage_error_equals_two`
   (`ExitCode.USAGE_ERROR == 2`) et `test_subclass_keeps_usage_error` (une sous-classe de projet
   valide hérite de `USAGE_ERROR` et passe `validate_exit_codes_class`).
-- [ ] **Étape 2 (vert) :** ajouter `USAGE_ERROR = 2` avec un commentaire expliquant l'alias.
+- [x] **Étape 2 (vert) :** ajouter `USAGE_ERROR = 2` avec un commentaire expliquant l'alias.
 
-## Tâche 3 : Tests des erreurs d'usage (rouge)
+## ✅ Tâche 3 : Tests des erreurs d'usage (rouge)
 
 **Fichier :** `tests/core/mixins/test_response.py`. Application de test à partir de l'issue (groupe
 racine `json` par défaut, `--token` requis, sous-commande avec `--name` requis), via
 `pyclifer.testing`.
 
-- [ ] `test_missing_command_option_answers_json` : stdout JSON, `success` faux, message
+- [x] `test_missing_command_option_answers_json` : stdout JSON, `success` faux, message
   `Missing option '--name'.`, `error_code` 2, `data.error_type == "usage_error"`, exit 2.
-- [ ] `test_unknown_option_answers_json`, `test_unknown_command_answers_json`.
-- [ ] `test_missing_global_option_answers_json_with_default_format` : `--token` absent, aucun
+- [x] `test_unknown_option_answers_json`, `test_unknown_command_answers_json`.
+- [x] `test_missing_global_option_answers_json_with_default_format` : `--token` absent, aucun
   `--output-format` lu, le défaut `json` s'applique.
-- [ ] `test_invalid_value_answers_json` (`--verbosity NOPE`).
-- [ ] `test_explicit_yaml_format_answers_yaml` : `--output-format yaml` puis erreur → YAML sur stdout.
-- [ ] `test_table_format_keeps_click_behavior` : `--output-format table` → stdout vide, boîte sur stderr.
-- [ ] `test_stderr_message_is_kept` : le message est aussi sur stderr en mode JSON.
-- [ ] `test_without_handle_response_keeps_click_behavior` : application sans `handle_response`.
-- [ ] `test_help_and_version_are_unaffected`.
-- [ ] `test_plain_click_exception_uses_click_error_type` : une `ClickException` simple (exit 1) →
+- [x] `test_invalid_value_answers_json` (`--verbosity NOPE`).
+- [x] `test_explicit_yaml_format_answers_yaml` : `--output-format yaml` puis erreur → YAML sur stdout.
+- [x] `test_table_format_keeps_click_behavior` : `--output-format table` → stdout vide, boîte sur stderr.
+- [x] `test_stderr_message_is_kept` : le message est aussi sur stderr en mode JSON.
+- [x] `test_without_handle_response_keeps_click_behavior` : application sans `handle_response`.
+- [x] `test_help_and_version_are_unaffected`.
+- [x] `test_plain_click_exception_uses_click_error_type` : une `ClickException` simple (exit 1) →
   `error_type == "click_error"`, `error_code` 1.
-- [ ] `python -m pytest tests/core/mixins/test_response.py -v` → les nouveaux tests échouent.
+- [x] `python -m pytest tests/core/mixins/test_response.py -v` → les nouveaux tests échouent.
 
-## Tâche 4 : Implémentation (vert)
+## ✅ Tâche 4 : Implémentation (vert)
 
-- [ ] **Étape 1 :** `GroupDecorator` mémorise `output_format_default` sur le groupe.
-- [ ] **Étape 2 :** `HandleResponseMixin` : attribut `output_format_default = "table"`, helper
+- [x] **Étape 1 :** `GroupDecorator` mémorise `output_format_default` sur le groupe.
+- [x] **Étape 2 :** `HandleResponseMixin` : attribut `output_format_default = "table"`, helper
   privé de réponse, surcharges `parse_args` et `invoke` (docstrings Google, imports `click_extra`).
-- [ ] **Étape 3 :** `python -m pytest tests/ -v` → tout passe, 100 % de couverture de branches.
+- [x] **Étape 3 :** `python -m pytest tests/ -v` → tout passe, 100 % de couverture de branches.
 
-## Tâche 5 : Documentation
+## ✅ Tâche 5 : Documentation
 
-- [ ] `docs/output-formatting.md` : section « Usage errors » (comportement, exemple, `error_type`).
-- [ ] `docs/api/mixins.md` et `docs/api/output.md` : `HandleResponseMixin`, `ExitCode.USAGE_ERROR`.
-- [ ] `mkdocs build --strict`.
+- [x] `docs/output-formatting.md` : section « Usage errors » (comportement, exemple, `error_type`).
+- [x] `docs/api/mixins.md` et `docs/api/output.md` : `HandleResponseMixin`, `ExitCode.USAGE_ERROR`.
+- [x] `mkdocs build --strict`.
 
-## Tâche 6 : Vérification complète
+## ✅ Tâche 6 : Vérification complète
 
-- [ ] `ruff check src/ tests/` et `ruff format src/ tests/`.
-- [ ] `tox` (Python 3.10 à 3.13).
-- [ ] Rejouer le tableau du constat avec l'application de test de l'issue : plus aucune sortie vide
+- [x] `ruff check src/ tests/` et `ruff format src/ tests/`.
+- [x] `tox` (Python 3.10 à 3.13).
+- [x] Rejouer le tableau du constat avec l'application de test de l'issue : plus aucune sortie vide
   en JSON, `--help` et `--version` inchangés.
 
-## Tâche 7 : Commit
+## ✅ Tâche 7 : Commit
 
 ```bash
 git add src/ tests/ docs/ .claude/specs/

@@ -156,6 +156,9 @@ class GroupDecorator:
             self.click_kwargs["name"] = self.config.name
         result = group_decorator(**self.click_kwargs)(f)
         result._context_options_panel = self.config.context_options_panel
+        # Read by HandleResponseMixin to answer usage errors raised before
+        # --output-format has been processed.
+        result.output_format_default = self.config.output_format_default
         return result
 
     def _patch_make_context(self, f: click_extra.Group) -> None:

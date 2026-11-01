@@ -22,6 +22,17 @@ class TestExitCodeValues:
     def test_already_exists_is_two(self):
         assert ExitCode.ALREADY_EXISTS == 2
 
+    def test_usage_error_is_two(self):
+        """Click exits with 2 on a usage error; USAGE_ERROR names that value."""
+        assert ExitCode.USAGE_ERROR == 2
+
+    def test_usage_error_is_kept_by_project_subclass(self):
+        class MyExitCode(ExitCode):
+            QUOTA_EXCEEDED = 10
+
+        validate_exit_codes_class(MyExitCode)
+        assert MyExitCode.USAGE_ERROR == 2
+
     def test_not_found_is_three(self):
         assert ExitCode.NOT_FOUND == 3
 

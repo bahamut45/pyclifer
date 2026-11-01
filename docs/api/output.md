@@ -17,6 +17,13 @@ the actual OS exit code (`$?`). Values are POSIX-safe (0-127).
 | 3    | `NOT_FOUND`        | Resource not found                                     |
 | 4    | `PERMISSION_DENIED`| Insufficient permissions                               |
 | 5    | `INVALID_INPUT`    | Bad user input                                         |
+| 2    | `USAGE_ERROR`      | Click usage error — alias of `ALREADY_EXISTS` (same value) |
+
+`USAGE_ERROR` is the exit code Click uses when the command line itself is invalid (missing
+option, unknown option or command, invalid value). It shares the value `2` with
+`ALREADY_EXISTS`: to tell them apart in a structured response, read `data["error_type"]`, which
+is `"usage_error"` for a usage error. See
+[Usage Errors](../output-formatting.md#usage-errors-in-structured-formats).
 
 ### Safe value ranges for project codes
 

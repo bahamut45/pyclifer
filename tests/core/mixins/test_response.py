@@ -4,12 +4,17 @@ from unittest.mock import MagicMock, patch
 
 import click
 
+from pyclifer.core import app_group, command, option
+
 # noinspection PyProtectedMember
 from pyclifer.core.mixins.response import (
     _PYCLIFER_RESPONSE_DECIDED,
     HandleResponseMixin,
     _apply_handle_response_to_group,
 )
+from pyclifer.core.output import Response
+from pyclifer.core.output.exit_codes import ExitCode
+from pyclifer.testing import invoke
 
 
 class _PlainGroup:
@@ -88,3 +93,134 @@ class TestApplyHandleResponseToGroup:
         _apply_handle_response_to_group(group)
         # callback must be the original function, not a wrapped version
         assert cmd.callback is my_callback
+
+
+def _raise_click_exception(ctx, param, value):
+    """Option callback raising a plain ClickException (exit code 1) when a value is given."""
+    if value:
+        raise click.ClickException("boom")
+    return value
+
+
+def _make_usage_app(handle_response=True, output_format_default="json"):
+    """Build an application with a required global option and a required command option."""
+
+    @app_group(
+        name="repro",
+        output_format_default=output_format_default,
+        handle_response=handle_response,
+    )
+    @option("--token", required=True, help="A required global option.")
+    def app(**kwargs):
+        """Demo application."""
+
+    @command()
+    @option("--name", required=True, help="A required command option.")
+    @option("--check", callback=_raise_click_exception, help="Raises a plain ClickException.")
+    def greet(name, **kwargs):
+        """Say hello."""
+        return Response(success=True, message=f"hello {name}")
+
+    app.add_command(greet)
+    return app
+
+
+class TestUsageErrorsInStructuredFormat:
+    """Click usage errors are answered with a Response when the format is structured."""
+
+    @staticmethod
+    def _assert_usage_response(result, message_part):
+        assert result.exit_code == 2
+        payload = result.json
+        assert payload["success"] is False
+        assert message_part in payload["message"]
+        assert payload["error_code"] == ExitCode.USAGE_ERROR
+        assert payload["data"]["error_type"] == "usage_error"
+        assert payload["data"]["results"] == []
+
+    def test_missing_command_option_answers_json(self):
+        result = invoke(_make_usage_app(), ["--token", "t", "greet"])
+        self._assert_usage_response(result, "Missing option '--name'")
+        assert result.json["data"]["command"] == "repro greet"
+
+    def test_unknown_option_answers_json(self):
+        result = invoke(_make_usage_app(), ["--token", "t", "greet", "--nope"])
+        self._assert_usage_response(result, "No such option '--nope'")
+
+    def test_unknown_command_answers_json(self):
+        result = invoke(_make_usage_app(), ["--token", "t", "nosuchcommand"])
+        self._assert_usage_response(result, "No such command")
+
+    def test_missing_global_option_answers_json_with_default_format(self):
+        """The error occurs before --output-format is read: the app default applies."""
+        result = invoke(_make_usage_app(), ["greet", "--name", "bob"])
+        self._assert_usage_response(result, "Missing option '--token'")
+
+    def test_invalid_value_answers_json(self):
+        result = invoke(_make_usage_app(), ["--token", "t", "--verbosity", "NOPE", "greet"])
+        self._assert_usage_response(result, "NOPE")
+
+    def test_explicit_yaml_format_answers_yaml(self):
+        result = invoke(_make_usage_app(), ["--token", "t", "-o", "yaml", "greet"])
+        assert result.exit_code == 2
+        payload = result.yaml
+        assert payload["success"] is False
+        assert payload["error_code"] == ExitCode.USAGE_ERROR
+
+    def test_default_format_from_the_application_is_used(self):
+        """A yaml default is honored even when the error hides --output-format."""
+        result = invoke(_make_usage_app(output_format_default="yaml"), ["greet", "--name", "bob"])
+        assert result.exit_code == 2
+        assert result.yaml["success"] is False
+
+    def test_stderr_message_is_kept(self):
+        result = invoke(_make_usage_app(), ["--token", "t", "greet"])
+        assert "Missing option '--name'" in result.stderr
+
+    def test_plain_click_exception_uses_click_error_type(self):
+        result = invoke(
+            _make_usage_app(), ["--token", "t", "greet", "--name", "bob", "--check", "x"]
+        )
+        assert result.exit_code == 1
+        payload = result.json
+        assert payload["success"] is False
+        assert payload["message"] == "boom"
+        assert payload["error_code"] == ExitCode.ERROR
+        assert payload["data"]["error_type"] == "click_error"
+
+    def test_successful_call_is_unchanged(self):
+        result = invoke(_make_usage_app(), ["--token", "t", "greet", "--name", "bob"])
+        assert result.exit_code == 0
+        assert result.json["success"] is True
+
+
+class TestUsageErrorsKeepClickBehavior:
+    """Cases where Click keeps handling usage errors itself."""
+
+    def test_table_format_keeps_click_behavior(self):
+        result = invoke(_make_usage_app(), ["--token", "t", "-o", "table", "greet"])
+        assert result.exit_code == 2
+        assert result.output == ""
+        assert "Missing option '--name'" in result.stderr
+
+    def test_global_error_with_table_default_keeps_click_behavior(self):
+        result = invoke(_make_usage_app(output_format_default="table"), ["greet", "--name", "bob"])
+        assert result.exit_code == 2
+        assert result.output == ""
+        assert "Missing option '--token'" in result.stderr
+
+    def test_without_handle_response_keeps_click_behavior(self):
+        result = invoke(_make_usage_app(handle_response=False), ["--token", "t", "greet"])
+        assert result.exit_code == 2
+        assert result.output == ""
+        assert "Missing option '--name'" in result.stderr
+
+    def test_help_is_unaffected(self):
+        result = invoke(_make_usage_app(), ["--help"])
+        assert result.exit_code == 0
+        assert "Usage" in result.output
+
+    def test_subcommand_help_is_unaffected(self):
+        result = invoke(_make_usage_app(), ["--token", "t", "greet", "--help"])
+        assert result.exit_code == 0
+        assert "Say hello" in result.output
