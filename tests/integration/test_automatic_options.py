@@ -1,0 +1,375 @@
+"""Item 4 of the integration-test-matrix spec: the effect of every automatic option.
+
+Each expectation was measured on the code before being written, in a fresh process whenever
+the global logging state could change the answer. A strict xfail records a defect found by that
+measurement; it must be removed by the item that fixes it.
+"""
+
+import logging
+import logging.handlers
+
+import click_extra
+import pytest
+from click.testing import CliRunner
+
+from pyclifer import app_group, get_logger, option
+from pyclifer.core import decorators
+from pyclifer.core.output import Response
+from pyclifer.testing import invoke
+
+LEVELS = ("DEBUG-LINE", "INFO-LINE", "WARNING-LINE", "ERROR-LINE")
+
+
+def _app(**config):
+    """An app named cli whose hello command logs one line per level and returns a Response."""
+
+    @app_group(**{"output_format_default": "json", **config})
+    def cli():
+        """Test application."""
+
+    @cli.command()
+    @option("--name", default="World")
+    def hello(name):
+        """Say hello."""
+        log = get_logger("probe")
+        log.debug("DEBUG-LINE")
+        log.info("INFO-LINE")
+        log.warning("WARNING-LINE")
+        log.error("ERROR-LINE")
+        return Response(success=True, message=f"hello {name}")
+
+    return cli
+
+
+def _logged(result) -> set[str]:
+    """The probe lines that reached the console."""
+    return {line for line in LEVELS if line in result.stderr}
+
+
+class TestVersionOption:
+    """--version prints the version of the application."""
+
+    def test_prints_the_declared_version(self):
+        result = invoke(_app(version="1.2.3"), ["--version"])
+
+        assert result.exit_code == 0
+        assert "cli, version 1.2.3" in result.output
+
+
+class TestVerbosityOption:
+    """--verbosity sets the console log level."""
+
+    def test_warning_is_the_default_level(self):
+        assert _logged(invoke(_app(), ["hello"])) == {"WARNING-LINE", "ERROR-LINE"}
+
+    @pytest.mark.parametrize(
+        ("level", "expected"),
+        [
+            ("DEBUG", {"DEBUG-LINE", "INFO-LINE", "WARNING-LINE", "ERROR-LINE"}),
+            ("INFO", {"INFO-LINE", "WARNING-LINE", "ERROR-LINE"}),
+        ],
+    )
+    def test_a_more_verbose_level_shows_more(self, level, expected):
+        assert _logged(invoke(_app(), ["--verbosity", level, "hello"])) == expected
+
+    def test_the_option_is_accepted_after_the_subcommand(self):
+        result = invoke(_app(), ["hello", "--verbosity", "INFO"])
+
+        assert "INFO-LINE" in _logged(result)
+
+    def test_an_invalid_level_exits_with_two(self):
+        assert invoke(_app(), ["--verbosity", "BOGUS", "hello"]).exit_code == 2
+
+    def test_verbosity_default_level_changes_the_default(self):
+        result = invoke(_app(verbosity_default_level="DEBUG"), ["hello"])
+
+        assert "DEBUG-LINE" in _logged(result)
+
+    def test_the_environment_variable_sets_the_level(self):
+        result = invoke(_app(), ["hello"], env={"CLI_VERBOSITY": "DEBUG"})
+
+        assert "DEBUG-LINE" in _logged(result)
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "Measured at item 4: --verbosity ERROR keeps showing warnings, while plain click-extra "
+            "and verbosity_default_level='ERROR' hide them. Fixed by a later item."
+        ),
+    )
+    def test_a_stricter_level_than_the_default_hides_warnings(self):
+        result = invoke(_app(), ["--verbosity", "ERROR", "hello"])
+
+        assert "WARNING-LINE" not in _logged(result)
+
+
+class TestRichLogging:
+    """use_rich_logging chooses the console handler; records reach the console either way."""
+
+    @pytest.mark.parametrize("use_rich_logging", [True, False])
+    def test_a_warning_reaches_the_console(self, use_rich_logging):
+        result = invoke(_app(use_rich_logging=use_rich_logging), ["hello"])
+
+        assert "WARNING-LINE" in _logged(result)
+
+
+def _rotating_handlers() -> list[logging.handlers.TimedRotatingFileHandler]:
+    """Every rotating file handler attached to any logger, each counted once.
+
+    One handler object is attached to several loggers, so handlers are told apart by identity.
+    """
+    loggers = [logging.getLogger()] + [
+        logging.getLogger(name) for name in list(logging.root.manager.loggerDict)
+    ]
+    unique = {
+        id(handler): handler
+        for logger in loggers
+        for handler in logger.handlers
+        if isinstance(handler, logging.handlers.TimedRotatingFileHandler)
+    }
+    return list(unique.values())
+
+
+class TestLogFileOption:
+    """--log-file writes the records to a rotating file."""
+
+    def test_the_file_receives_the_records(self, tmp_path):
+        log_file = tmp_path / "app.log"
+
+        invoke(_app(), ["--log-file", str(log_file), "hello"])
+
+        assert "WARNING-LINE" in log_file.read_text()
+
+    def test_the_file_level_is_independent_of_the_console(self, tmp_path):
+        log_file = tmp_path / "app.log"
+
+        result = invoke(_app(), ["--log-file", str(log_file), "hello"])
+
+        assert "DEBUG-LINE" not in _logged(result)
+        assert "DEBUG-LINE" in log_file.read_text()
+
+    def test_log_file_default_level_filters_the_file(self, tmp_path):
+        log_file = tmp_path / "app.log"
+
+        invoke(_app(log_file_default_level="ERROR"), ["--log-file", str(log_file), "hello"])
+
+        content = log_file.read_text()
+        assert "ERROR-LINE" in content
+        assert "WARNING-LINE" not in content
+
+    def test_rotation_settings_reach_the_file_handler(self, tmp_path):
+        config = {
+            "log_file_rotation_when": "H",
+            "log_file_rotation_interval": 3,
+            "log_file_rotation_backup_count": 9,
+        }
+
+        invoke(_app(**config), ["--log-file", str(tmp_path / "app.log"), "hello"])
+
+        assert [(h.when, h.interval, h.backupCount) for h in _rotating_handlers()] == [
+            ("H", 3 * 3600, 9)
+        ]
+
+
+class TestConfigOption:
+    """--config turns the values of a file into defaults."""
+
+    @staticmethod
+    def _config_file(tmp_path):
+        config_file = tmp_path / "app.toml"
+        config_file.write_text('[cli.hello]\nname = "FromConfig"\n')
+        return config_file
+
+    def test_a_value_in_the_file_becomes_the_default(self, tmp_path):
+        result = invoke(_app(), ["--config", str(self._config_file(tmp_path)), "hello"])
+
+        assert result.json["message"] == "hello FromConfig"
+
+    def test_an_explicit_argument_wins_over_the_file(self, tmp_path):
+        args = ["--config", str(self._config_file(tmp_path)), "hello", "--name", "Cli"]
+
+        assert invoke(_app(), args).json["message"] == "hello Cli"
+
+
+class TestOutputFormatOption:
+    """--output-format picks how the answer is rendered."""
+
+    @pytest.mark.parametrize("flag", ["-o", "--output-format"])
+    def test_the_option_overrides_the_default(self, flag):
+        result = invoke(_app(output_format_default="table"), [flag, "yaml", "hello"])
+
+        assert result.yaml["success"] is True
+
+    def test_the_environment_variable_picks_the_format(self):
+        result = invoke(
+            _app(output_format_default="table"), ["hello"], env={"CLI_OUTPUT_FORMAT": "json"}
+        )
+
+        assert result.json["success"] is True
+
+    def test_an_invalid_format_exits_with_two(self):
+        assert invoke(_app(), ["-o", "xml", "hello"]).exit_code == 2
+
+
+class TestTimerOption:
+    """timer adds --time, which reports the execution time."""
+
+    def test_the_time_is_added_to_structured_data(self):
+        result = invoke(_app(timer=True), ["--time", "hello"])
+
+        assert {"execution_time", "execution_time_str"} <= set(result.json["data"])
+
+    def test_nothing_is_added_without_the_flag(self):
+        assert invoke(_app(timer=True), ["hello"]).json["data"] == {}
+
+    def test_the_time_is_printed_in_table_format(self):
+        result = invoke(_app(timer=True, output_format_default="table"), ["--time", "hello"])
+
+        assert "Execution time:" in result.output
+
+
+class TestEnvironmentVariables:
+    """Options read an environment variable named after the application."""
+
+    def test_the_help_shows_the_variable(self):
+        assert "CLI_VERBOSITY" in invoke(_app(), ["--help"]).output
+
+    def test_auto_envvar_prefix_renames_the_variables(self):
+        app = _app(auto_envvar_prefix="MYAPP")
+
+        assert "MYAPP_VERBOSITY" in invoke(app, ["--help"]).output
+
+    def test_a_prefixed_variable_drives_the_option(self):
+        app = _app(auto_envvar_prefix="MYAPP", output_format_default="table")
+
+        result = invoke(app, ["hello"], env={"MYAPP_OUTPUT_FORMAT": "yaml"})
+
+        assert result.yaml["success"] is True
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "Measured at item 4: GroupConfig.show_envvar is never read, so the help always shows "
+            "the variables. Fixed by a later item."
+        ),
+    )
+    def test_show_envvar_false_hides_the_variables(self):
+        assert "CLI_VERBOSITY" not in invoke(_app(show_envvar=False), ["--help"]).output
+
+
+def _log_with_secrets(tmp_path, **config):
+    """Log a dict holding two secrets and one plain value, to the console and to a file."""
+
+    @app_group(**{"output_format_default": "json", **config})
+    def cli():
+        """Test application."""
+
+    @cli.command()
+    def hello():
+        """Log secrets."""
+        get_logger("probe").warning(
+            "payload %s", {"password": "hunter2", "mycode": "mc-777", "user": "bob"}
+        )
+        return Response(success=True, message="ok")
+
+    log_file = tmp_path / "secrets.log"
+    result = invoke(cli, ["--log-file", str(log_file), "hello"])
+    return result.stderr, log_file.read_text()
+
+
+class TestSecretsFiltering:
+    """Records are redacted by key name, in the console and in the file."""
+
+    def test_a_default_sensitive_field_is_masked(self, tmp_path):
+        console, file = _log_with_secrets(tmp_path)
+
+        assert "hunter2" not in console
+        assert "hunter2" not in file
+
+    def test_a_plain_value_is_kept(self, tmp_path):
+        console, file = _log_with_secrets(tmp_path)
+
+        assert "bob" in console
+        assert "bob" in file
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "Measured at item 4: sensitive_fields never reaches the handler that writes, which is "
+            "rebuilt with the default fields at run time. Fixed by a later item."
+        ),
+    )
+    def test_a_custom_sensitive_field_is_masked(self, tmp_path):
+        console, file = _log_with_secrets(tmp_path, sensitive_fields=["mycode"])
+
+        assert "mc-777" not in console
+        assert "mc-777" not in file
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "Measured at item 4: enable_secrets_filter=False has no effect, the handler keeps the "
+            "default masker. Fixed by a later item."
+        ),
+    )
+    def test_disabling_the_filter_shows_the_values(self, tmp_path):
+        console, file = _log_with_secrets(tmp_path, enable_secrets_filter=False)
+
+        assert "hunter2" in console
+        assert "hunter2" in file
+
+
+def _plain_command(factory, args):
+    """Run a command that carries a single option factory, outside any app_group."""
+
+    @click_extra.command(params=[])
+    @factory
+    def cmd(**kwargs):
+        """Command under test."""
+        click_extra.echo("RAN")
+
+    return CliRunner().invoke(cmd, ["--help"]), CliRunner().invoke(cmd, args)
+
+
+class TestOptionFactories:
+    """Each option factory works on a command of its own, without app_group."""
+
+    @pytest.mark.parametrize(
+        ("factory", "args"),
+        [
+            (decorators.option("--x", default="1"), ["--x", "2"]),
+            (decorators.verbosity_option(), ["--verbosity", "DEBUG"]),
+            (decorators.output_format_option(), ["-o", "json"]),
+            (decorators.output_filter_option(), ["--output-filter", "data"]),
+            (decorators.pagination_options(), []),
+        ],
+        ids=[
+            "option",
+            "verbosity_option",
+            "output_format_option",
+            "output_filter_option",
+            "pagination_options",
+        ],
+    )
+    def test_the_factory_renders_help_and_runs(self, factory, args):
+        help_result, run_result = _plain_command(factory, args)
+
+        assert help_result.exit_code == 0
+        assert run_result.exit_code == 0
+
+    def test_config_option_loads_a_file(self, tmp_path):
+        config_file = tmp_path / "app.toml"
+        config_file.write_text("[cmd]\n")
+
+        _, result = _plain_command(decorators.config_option(), ["--config", str(config_file)])
+
+        assert result.exit_code == 0
+        assert "Load configuration matching" in result.stderr + result.output
+
+    def test_log_file_option_writes_a_file(self, tmp_path):
+        log_file = tmp_path / "plain.log"
+
+        _, result = _plain_command(decorators.log_file_option(), ["--log-file", str(log_file)])
+
+        assert result.exit_code == 0
+        assert log_file.exists()

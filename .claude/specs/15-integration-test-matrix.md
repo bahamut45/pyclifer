@@ -179,12 +179,44 @@ dans `scenarios.py`. À mesurer avec les options de journalisation de l'item 4.
 la durée actuelle, répartis uniformément sur 299 tests. Si cela gêne, un marqueur `integration` permettra de
 l'exclure du cycle rapide.
 
-## Item 4 : Options automatiques
+## ✅ Item 4 : Options automatiques — mesure
 
-Pour chaque `add_*_option` et `timer` (et l'effet réel de `use_rich_logging`, `enable_secrets_filter`,
-`sensitive_fields`, non observé à l'item 3) : présence ; valeur par défaut ; variable d'environnement
-(`auto_envvar_prefix`) ; effet réel (`--verbosity` change le niveau de journalisation, `--log-file` crée le
-fichier, `--version` affiche la version, `--config` charge le fichier, `--output-format` choisit le rendu).
+`tests/integration/test_automatic_options.py` (39 tests) : l'effet réel de chaque option, mesuré avant d'être
+écrit, **dans un processus neuf** chaque fois que l'état global de la journalisation pouvait fausser la réponse
+(deux mesures en un seul processus avaient d'abord donné de faux résultats). Un fixture restaure tous les
+loggers entre tests : les gestionnaires de fichier des tests précédents fuyaient, ce que le test de rotation a
+révélé.
+
+| Option ou champ | Effet observé |
+|---|---|
+| `--version` | affiche la version déclarée (`cli, version 1.2.3`) |
+| `--verbosity` | défaut WARNING ; DEBUG et INFO montrent plus ; acceptée après la sous-commande ; valeur invalide : code 2 ; `verbosity_default_level` ; variable d'environnement |
+| `--log-file` | fichier créé ; niveau du fichier indépendant de la console (TRACE par défaut) ; `log_file_default_level` ; `when`, `interval` et `backupCount` atteignent le gestionnaire |
+| `--config` | les valeurs du fichier deviennent des défauts ; un argument explicite l'emporte |
+| `--output-format` | `-o` et forme longue ; variable d'environnement ; valeur invalide : code 2 |
+| `timer` | `execution_time` et `execution_time_str` dans les données, `Execution time:` en table |
+| Variables d'environnement | `auto_envvar_prefix` renomme les variables et pilote les options |
+| Fabriques d'options | les 7 fonctionnent sur une commande seule, hors `app_group` |
+
+**Un seul gestionnaire de fichier** est attaché à deux loggers (`root` et `click_extra`) : la ligne n'est écrite
+qu'une fois. Ce n'est pas un défaut.
+
+**Observation, non assertée** : sans `version=` ni paquet installé, `--version` affiche `cli, version None`.
+
+**Défauts trouvés (4), chacun en `xfail(strict=True)`, aucun corrigé à cet item** :
+
+1. **`--verbosity ERROR` n'a aucun effet.** Les avertissements restent affichés, alors que click-extra seul et
+   `verbosity_default_level="ERROR"` les masquent. Le niveau passé en ligne de commande ne peut pas être plus strict
+   que le défaut. La logique `set_level` de pyclifer ignore un niveau « moins verbeux » que celui déjà posé.
+2. **`show_envvar=False` n'a aucun effet.** `GroupConfig.show_envvar` n'est lu nulle part dans le code et n'est
+   pas documenté.
+3. **`enable_secrets_filter=False` n'a aucun effet.** Le masquage reste actif.
+4. **`sensitive_fields` n'a aucun effet.** Un champ personnalisé n'est pas masqué, alors que la documentation
+   promet qu'il l'est « en plus des défauts », console et fichier.
+
+Les défauts 3 et 4 ont une cause commune, mesurée : à la décoration, le gestionnaire de la console est créé avec la
+bonne configuration (sans filtre pour `enable_secrets_filter=False`), mais à l'exécution il est remplacé par un
+gestionnaire construit avec les valeurs par défaut.
 
 ## Item 5 : Propagation et parité
 
@@ -232,10 +264,28 @@ sous-arbre ; la vérification est stricte (`is True`) pour ne pas confondre avec
 autre lecture de `GroupConfig.handle_response` dans le dépôt ni dans les templates du scaffolding.
 L'item 5 couvre les deux ordres sur les chemins Rich et non Rich.
 
-## Item 7+ : Autres défauts trouvés
+## Item 8 : Défaut — `--verbosity` ne peut pas être plus strict que le défaut
 
-Un item par défaut mesuré aux items 3 à 6 : test en échec, correctif minimal, mise à jour de la documentation,
-et validation de l'utilisateur si le comportement change.
+Trouvé à l'item 4. Les cas à faire « passer » : le `xfail` `test_a_stricter_level_than_the_default_hides_warnings`.
+Décision à prendre : l'option de la ligne de commande doit pouvoir **monter et descendre** le niveau. La règle
+« le plus verbeux gagne » est utile entre plusieurs options (`--verbosity`, `-v`, `--debug`), mais le défaut ne
+doit pas compter comme un choix déjà fait.
+
+## Item 9 : Défaut — `show_envvar` sans effet
+
+Trouvé à l'item 4. Décision à prendre : que commande le champ ? Option de moindre surprise : il fixe le
+`show_envvar` de toutes les options automatiques ; les options de l'utilisateur gardent leur propre argument.
+L'alternative est de supprimer le champ, ce qui est un changement d'API.
+
+## Item 10 : Défaut — `enable_secrets_filter` et `sensitive_fields` perdus à l'exécution
+
+Trouvé à l'item 4 (défauts 3 et 4). Le correctif consiste à faire atteindre à l'exécution le gestionnaire créé avec
+la configuration de l'application, au lieu d'en reconstruire un avec les défauts. Les deux `xfail` doivent
+« passer » ensemble.
+
+## Item 11+ : Autres défauts trouvés
+
+Un item par défaut mesuré aux items 5 et 6.
 
 ## Item final : Vérification complète et documentation
 

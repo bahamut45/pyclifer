@@ -6,6 +6,7 @@ the entries it exercises and moves them to COVERED, until PENDING is empty.
 """
 
 _MATRIX = "tests/integration/test_group_config_matrix.py"
+_OPTIONS = "tests/integration/test_automatic_options.py"
 
 # Feature name -> "path/to/test_file.py::TestClass" that exercises it.
 COVERED: dict[str, str] = {
@@ -21,11 +22,31 @@ COVERED: dict[str, str] = {
     "GroupConfig.exit_codes_class": f"{_MATRIX}::TestFieldEffects",
     "GroupConfig.unhandled_exception_log_level": f"{_MATRIX}::TestFieldEffects",
     "GroupConfig.rich_help_config": f"{_MATRIX}::TestFieldEffects",
-    # Built and run without error only: the effect itself is not observed (secret masking,
-    # Rich logging handler).
-    "GroupConfig.use_rich_logging": f"{_MATRIX}::TestSingleFields",
-    "GroupConfig.enable_secrets_filter": f"{_MATRIX}::TestSingleFields",
-    "GroupConfig.sensitive_fields": f"{_MATRIX}::TestSingleFields",
+    # Effect observed on the real option or the real log output (item 4).
+    "GroupConfig.use_rich_logging": f"{_OPTIONS}::TestRichLogging",
+    # A defect is recorded for these two as a strict xfail: the field has no effect yet.
+    "GroupConfig.enable_secrets_filter": f"{_OPTIONS}::TestSecretsFiltering",
+    "GroupConfig.sensitive_fields": f"{_OPTIONS}::TestSecretsFiltering",
+    "GroupConfig.add_config_option": f"{_OPTIONS}::TestConfigOption",
+    "GroupConfig.add_verbosity_option": f"{_OPTIONS}::TestVerbosityOption",
+    "GroupConfig.verbosity_default_level": f"{_OPTIONS}::TestVerbosityOption",
+    "GroupConfig.add_log_file_option": f"{_OPTIONS}::TestLogFileOption",
+    "GroupConfig.log_file_default_level": f"{_OPTIONS}::TestLogFileOption",
+    "GroupConfig.log_file_rotation_when": f"{_OPTIONS}::TestLogFileOption",
+    "GroupConfig.log_file_rotation_interval": f"{_OPTIONS}::TestLogFileOption",
+    "GroupConfig.log_file_rotation_backup_count": f"{_OPTIONS}::TestLogFileOption",
+    "GroupConfig.add_version_option": f"{_OPTIONS}::TestVersionOption",
+    "GroupConfig.add_output_format_option": f"{_OPTIONS}::TestOutputFormatOption",
+    "GroupConfig.timer": f"{_OPTIONS}::TestTimerOption",
+    "GroupConfig.auto_envvar_prefix": f"{_OPTIONS}::TestEnvironmentVariables",
+    "GroupConfig.show_envvar": f"{_OPTIONS}::TestEnvironmentVariables",
+    "option_factory.option": f"{_OPTIONS}::TestOptionFactories",
+    "option_factory.config_option": f"{_OPTIONS}::TestOptionFactories",
+    "option_factory.verbosity_option": f"{_OPTIONS}::TestOptionFactories",
+    "option_factory.log_file_option": f"{_OPTIONS}::TestOptionFactories",
+    "option_factory.output_filter_option": f"{_OPTIONS}::TestOptionFactories",
+    "option_factory.pagination_options": f"{_OPTIONS}::TestOptionFactories",
+    "option_factory.output_format_option": f"{_OPTIONS}::TestOptionFactories",
 }
 
 # Feature name -> reason it is not exercised, and why that is acceptable.
@@ -33,28 +54,6 @@ EXCLUDED: dict[str, str] = {}
 
 # Item of the spec that will write the scenario -> feature names.
 PENDING: dict[str, list[str]] = {
-    "item 4 (automatic options)": [
-        "GroupConfig.add_config_option",
-        "GroupConfig.add_log_file_option",
-        "GroupConfig.add_output_format_option",
-        "GroupConfig.add_verbosity_option",
-        "GroupConfig.add_version_option",
-        "GroupConfig.auto_envvar_prefix",
-        "GroupConfig.log_file_default_level",
-        "GroupConfig.log_file_rotation_backup_count",
-        "GroupConfig.log_file_rotation_interval",
-        "GroupConfig.log_file_rotation_when",
-        "GroupConfig.show_envvar",
-        "GroupConfig.timer",
-        "GroupConfig.verbosity_default_level",
-        "option_factory.config_option",
-        "option_factory.log_file_option",
-        "option_factory.option",
-        "option_factory.output_filter_option",
-        "option_factory.output_format_option",
-        "option_factory.pagination_options",
-        "option_factory.verbosity_option",
-    ],
     "item 5 (propagation and parity)": [
         "GroupConfig.context_factory",
         "GroupConfig.context_options_panel",
