@@ -34,6 +34,10 @@ Propagates options from a parent group to all child commands and subgroups at re
   propagated global option when it declares the parameter (or `**kwargs`); `def ops():` works and
   simply does not see it. An option the group declares itself is always passed, and a leaf command
   must accept every global option, since it is forwarded to its callback.
+- **A global option has one environment variable: the one of the root group.** For an application
+  named `myapp` with `--region`, every command reads `MYAPP_REGION`; the variable built from the path
+  of the command (`MYAPP_LEAF_REGION`) is not read. The help of each command shows the variable that
+  is read, with `use_rich_help` on or off. An `envvar=` given to the option is used instead.
 - **A global option is parsed where it is written.** `myapp --region eu leaf` gives `eu` to the
   group that declares the option, not to `leaf`, which parses its own copy and keeps its default.
   Write `myapp leaf --region eu` for the subcommand to receive it. This holds for a

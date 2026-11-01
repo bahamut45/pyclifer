@@ -269,6 +269,12 @@ class GroupDecorator:
                 # overrides it when exposed; without it, nothing else would set the format.
                 ctx.meta.setdefault("pyclifer.output_format", output_format_default)
 
+            # Concern 6 — give each global option the variable name of the root group, so that the
+            # help of every command shows the variable that is read. click-extra already does it
+            # on the plain path; rich-click would otherwise show one built from the command path.
+            if parent is None:
+                GroupDecorator._name_global_envvars(ctx)
+
             # Concern 5 — context_factory: build ctx.obj from context=True param values.
             # Skip during resilient_parsing (help mode) — required params are None
             # and the factory would fail on missing values.
@@ -285,6 +291,25 @@ class GroupDecorator:
             return ctx
 
         f.make_context = custom_make_context
+
+    @staticmethod
+    def _name_global_envvars(ctx: click_extra.Context) -> None:
+        """Write the environment variable of the root onto each global option that has none.
+
+        Args:
+            ctx: The context just made for the root group.
+        """
+        prefix = ctx.auto_envvar_prefix
+        if prefix is None:
+            return
+        for param in ctx.command.params:
+            if (
+                getattr(param, "is_global", False)
+                and param.envvar is None
+                and getattr(param, "allow_from_autoenv", True)
+                and param.name
+            ):
+                param.envvar = (f"{prefix}_{param.name.upper()}",)
 
     @staticmethod
     def _find_subcommand_boundary(args: list[str], f: click_extra.Group) -> int:

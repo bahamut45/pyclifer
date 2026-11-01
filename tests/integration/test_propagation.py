@@ -226,45 +226,101 @@ class TestGlobalOptionHelpWithoutContextOption:
         assert "--region" in result.output
 
 
+@pytest.mark.parametrize("use_rich_help", HELP_PATHS, ids=["rich", "plain"])
 class TestGlobalOptionEnvironmentVariable:
-    """The environment variable of a global option, read by the commands it is propagated to.
+    """A global option reads the same environment variable in every command, Rich or plain.
 
-    Measured, with an application named cli: on the Rich path a leaf reads CLI_LEAF_REGION and
-    ignores CLI_REGION; on the plain path it reads CLI_REGION and ignores CLI_LEAF_REGION (the
-    propagated option keeps the explicit variable of the root, and the context prefix of the leaf
-    is LEAF instead of CLI_LEAF). The two paths must agree: use_rich_help only changes the help.
+    It is the variable of the root group (CLI_REGION for an application named cli), whatever the
+    depth of the command that receives the option. The variable built from the path of the
+    command (CLI_LEAF_REGION) is not read: the option is global, so it has one name.
+    Measured before the fix: the Rich path read CLI_LEAF_REGION and ignored CLI_REGION, the plain
+    path did the reverse, because click-extra writes the name of the root onto the shared option.
     """
 
     @staticmethod
-    def _leaf_region(use_rich_help, environment):
+    def _regions(use_rich_help, environment, args=("leaf",), **option_kwargs):
+        """What the root callback and the leaf received."""
         seen = {}
 
+        @app_group(name="cli", use_rich_help=use_rich_help)
+        @option("--region", is_global=True, default=DEFAULT_REGION, **option_kwargs)
+        def cli(region):
+            """Root."""
+            seen["root"] = region
+
+        @group(name="ops")
+        def ops(**_):
+            """Ops."""
+
+        @cli.command(name="leaf")
+        def leaf(region):
+            """Leaf."""
+            seen["leaf"] = region
+
+        @ops.command(name="deep-leaf")
+        def deep_leaf(region):
+            """Deep leaf."""
+            seen["leaf"] = region
+
+        cli.add_command(ops)
+        result = invoke(cli, list(args), env=environment)
+        assert result.exit_code == 0, result.output
+        return seen
+
+    def test_the_variable_of_the_root_reaches_the_root_and_the_leaf(self, use_rich_help):
+        seen = self._regions(use_rich_help, {"CLI_REGION": "E1"})
+
+        assert seen == {"root": "E1", "leaf": "E1"}
+
+    def test_the_variable_of_the_root_reaches_a_nested_leaf(self, use_rich_help):
+        seen = self._regions(use_rich_help, {"CLI_REGION": "E1"}, args=("ops", "deep-leaf"))
+
+        assert seen["leaf"] == "E1"
+
+    def test_the_variable_built_from_the_path_of_the_leaf_is_not_read(self, use_rich_help):
+        seen = self._regions(use_rich_help, {"CLI_LEAF_REGION": "E2"})
+
+        assert seen == {"root": DEFAULT_REGION, "leaf": DEFAULT_REGION}
+
+    def test_the_command_line_wins_over_the_variable(self, use_rich_help):
+        seen = self._regions(use_rich_help, {"CLI_REGION": "E1"}, args=("leaf", "--region", "X"))
+
+        assert seen["leaf"] == "X"
+
+    def test_a_variable_chosen_by_the_author_is_read_by_the_leaf(self, use_rich_help):
+        seen = self._regions(
+            use_rich_help, {"MY_REGION": "E3", "CLI_REGION": "E1"}, envvar="MY_REGION"
+        )
+
+        assert seen == {"root": "E3", "leaf": "E3"}
+
+    @pytest.mark.parametrize(
+        "args", [["--help"], ["leaf", "--help"], ["ops", "deep-leaf", "--help"]]
+    )
+    def test_the_help_shows_the_variable_that_is_read(self, use_rich_help, args):
         @app_group(name="cli", use_rich_help=use_rich_help)
         @option("--region", is_global=True, default=DEFAULT_REGION)
         def cli(region):
             """Root."""
 
-        @cli.command(name="leaf")
-        def leaf(region):
-            """Leaf."""
-            seen["region"] = region
+        @group(name="ops")
+        def ops(**_):
+            """Ops."""
 
-        invoke(cli, ["leaf"], env=environment)
-        return seen["region"]
+        cli.command(name="leaf")(lambda region: None)
+        ops.command(name="deep-leaf")(lambda region: None)
+        cli.add_command(ops)
 
-    @pytest.mark.xfail(strict=True, reason="item 18: the two help paths read different variables")
-    def test_the_variable_of_the_root_reaches_the_leaf_the_same_way_on_both_paths(self):
-        rich = self._leaf_region(True, {"CLI_REGION": "E1"})
-        plain = self._leaf_region(False, {"CLI_REGION": "E1"})
+        output = " ".join(invoke(cli, args).output.split())  # Rich wraps long lines
 
-        assert rich == plain
+        assert "CLI_REGION" in output
+        assert "CLI_LEAF_REGION" not in output
+        assert "CLI_OPS_DEEP_LEAF_REGION" not in output
 
-    @pytest.mark.xfail(strict=True, reason="item 18: the two help paths read different variables")
-    def test_the_variable_of_the_leaf_is_read_the_same_way_on_both_paths(self):
-        rich = self._leaf_region(True, {"CLI_LEAF_REGION": "E2"})
-        plain = self._leaf_region(False, {"CLI_LEAF_REGION": "E2"})
+    def test_the_leaf_keeps_its_default_without_any_variable(self, use_rich_help):
+        seen = self._regions(use_rich_help, {})
 
-        assert rich == plain
+        assert seen == {"root": DEFAULT_REGION, "leaf": DEFAULT_REGION}
 
 
 @pytest.mark.parametrize("order", ORDERS)

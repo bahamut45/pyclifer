@@ -1543,3 +1543,50 @@ class TestOutputFormatDefaultContract:
     def test_an_unknown_default_format_is_rejected_at_decoration(self):
         with pytest.raises(ValueError, match="output_format_default.*'xml'"):
             self._app(output_format_default="xml")
+
+
+class TestNameGlobalEnvvars:
+    """The root context gives each global option the environment variable of the root."""
+
+    @staticmethod
+    def _context(prefix, *params):
+        """A context-like object for a root command holding the given options."""
+        ctx = MagicMock()
+        ctx.auto_envvar_prefix = prefix
+        ctx.command.params = list(params)
+        return ctx
+
+    def test_a_global_option_receives_the_variable_of_the_root(self):
+        option = PycliferOption(["--region"], is_global=True)
+
+        GroupDecorator._name_global_envvars(self._context("CLI", option))
+
+        assert option.envvar == ("CLI_REGION",)
+
+    def test_an_explicit_variable_is_kept(self):
+        option = PycliferOption(["--region"], is_global=True, envvar="MY_REGION")
+
+        GroupDecorator._name_global_envvars(self._context("CLI", option))
+
+        assert option.envvar == "MY_REGION"
+
+    def test_an_option_that_is_not_global_is_left_alone(self):
+        option = PycliferOption(["--name"])
+
+        GroupDecorator._name_global_envvars(self._context("CLI", option))
+
+        assert option.envvar is None
+
+    def test_an_option_that_refuses_the_automatic_variable_is_left_alone(self):
+        option = PycliferOption(["--region"], is_global=True, allow_from_autoenv=False)
+
+        GroupDecorator._name_global_envvars(self._context("CLI", option))
+
+        assert option.envvar is None
+
+    def test_nothing_is_written_without_a_prefix(self):
+        option = PycliferOption(["--region"], is_global=True)
+
+        GroupDecorator._name_global_envvars(self._context(None, option))
+
+        assert option.envvar is None

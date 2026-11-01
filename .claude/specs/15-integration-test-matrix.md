@@ -543,13 +543,33 @@ Douze tests unitaires et douze cas d'intégration (deux tests, trois ordres, deu
 survivre deux lignes (mise à jour de l'ensemble, limite aux groupes) : deux tests ajoutés, puis les cinq mutations sont
 détectées. `mixins/cli.py` à 100 % de branches.
 
-## Item 18 : Défaut — variable d'environnement d'une option globale, Rich et plain
+## ✅ Item 18 : Défaut — variable d'environnement d'une option globale, Rich et plain
 
-Mesuré avec une application nommée `cli` et `--region` globale : sur le chemin Rich la feuille lit `CLI_LEAF_REGION` et
-ignore `CLI_REGION` (`option.envvar` vaut `None`, préfixe du contexte `CLI_LEAF`) ; sur le chemin plain elle lit
-`CLI_REGION` et ignore `CLI_LEAF_REGION` (`option.envvar` vaut `('CLI_REGION',)`, préfixe du contexte `LEAF`). La doc
-(`docs/configuration.md`) ne décrit que les options de la racine. Deux tests `xfail` stricts consignent l'écart ; le
-choix de la variable canonique reste à arbitrer.
+Trouvé à l'item 5. Mesuré avec une application nommée `cli` et `--region` globale : sur le chemin Rich la feuille lisait
+`CLI_LEAF_REGION` et ignorait `CLI_REGION` (`option.envvar` vaut `None`, préfixe du contexte `CLI_LEAF`) ; sur le chemin
+plain elle lisait `CLI_REGION` et ignorait `CLI_LEAF_REGION` (`option.envvar` vaut `('CLI_REGION',)`, écrit par
+click-extra sur l'objet d'option partagé ; préfixe du contexte `LEAF`, donc `LEAF_REGION` aurait été lu). Une application
+qui passait de `use_rich_help=True` à `False` changeait de comportement alors que la doc dit que le réglage ne change
+que le dessin de l'aide. La doc (`docs/configuration.md`) ne décrit que les options de la racine.
+
+**Décision de l'utilisateur.** Il n'y a pas de raison que Rich et plain diffèrent, et le framework n'a pas encore
+d'utilisateurs avant la 1.0 : le changement de comportement côté Rich est accepté. Variable retenue : celle de la racine
+(`CLI_REGION`), c'est ce que le chemin plain faisait déjà et c'est cohérent avec « une option globale n'a qu'un nom ».
+
+**Deux correctifs, parce que lire et afficher sont deux chemins.**
+- Lecture : `PycliferOption.resolve_envvar_value` résout une option globale, dans une sous-commande, avec le contexte de
+  la racine. La variable construite depuis le chemin de la commande n'est plus lue, sur les deux chemins ; un `envvar=`
+  explicite de l'auteur est respecté.
+- Affichage : mesuré après le premier correctif, l'aide Rich de la feuille affichait encore `CLI_LEAF_REGION`, car
+  rich-click calcule le texte depuis `param.envvar` ou le préfixe du contexte de la feuille, sans point d'extension.
+  `GroupDecorator._name_global_envvars` écrit, à la création du contexte racine, le nom de variable de la racine sur
+  chaque option globale qui n'en a pas (ce que click-extra faisait déjà côté plain). Une option avec `envvar=`
+  ou `allow_from_autoenv=False` n'est pas touchée.
+
+Les deux tests `xfail` stricts sont remplacés par dix-huit cas qui vérifient les valeurs reçues (racine, feuille, feuille
+imbriquée, ligne de commande prioritaire, variable explicite, variable du chemin ignorée, aucune variable) et le texte
+des aides, sur les deux chemins ; onze tests unitaires de plus (`PycliferOption`, helper). Quatre mutations détectées.
+`classes.py` et `decorators.py` à 100 % de branches.
 
 ## Item 19+ : Autres défauts trouvés
 
