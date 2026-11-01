@@ -26,8 +26,15 @@ Tout le reste de l'API consommée par pyclifer est inchangé.
 Ce spec formalise ces changements avec TDD et les valide sur 3.10–3.13 via `tox`.
 
 **Cas d'usage cible :** aucun changement de comportement observable pour les utilisateurs de
-pyclifer — mise à jour de dépendance transparente. L'ordre de priorité des fichiers de config
-(système avant utilisateur) est conservé.
+pyclifer — mise à jour de dépendance transparente. Le comportement actuel des fichiers de config
+est conservé tel quel : le premier fichier trouvé gagne (`/etc/<cli>/` avant
+`~/.config/<cli>/`) et le fichier utilisateur est ignoré en entier, sans fusion.
+
+> **Écart connu avec la documentation :** `docs/configuration.md` promet que « les fichiers
+> trouvés plus tard surchargent les précédents, de sorte que les utilisateurs peuvent surcharger
+> les valeurs système ». Ce n'est pas le comportement réel, ni avant ni après cette spec. Le
+> remplacer par une fusion avec l'utilisateur prioritaire est un changement de comportement,
+> traité à part dans `12-config-system-user-merge.md` (à implémenter après celle-ci).
 
 **Stack :** deux dépendances directes déclarées explicitement (`boltons`, `extra-platforms`),
 déjà présentes de façon transitive via click-extra.
@@ -329,7 +336,26 @@ tox
 
 Si un échec apparaît sur une version précise de Python, l'investiguer avant de continuer.
 
-- [ ] **Étape 4 : Documentation**
+- [ ] **Étape 4 : Vérification de bout en bout de la recherche de config**
+
+Les tests unitaires ne lisent pas un vrai `/etc`. Rejouer le scénario réel dans un espace de noms
+utilisateur isolé (`unshare -Urm`, `/etc` remplacé par un tmpfs privé, aucun impact sur le
+système), avec une CLI de test dont le script s'appelle exactement comme `name=` (`info_name`
+détermine les dossiers cherchés) :
+
+| Scénario                      | Résultat attendu (comportement conservé)                       |
+|-------------------------------|----------------------------------------------------------------|
+| A. aucun fichier              | valeurs par défaut                                             |
+| B. `/etc/<cli>/` seul         | valeurs système                                                |
+| C. `~/.config/<cli>/` seul    | valeurs utilisateur                                            |
+| D. système + utilisateur      | valeurs système uniquement, fichier utilisateur ignoré         |
+| E. `--config` explicite       | valeurs du fichier explicite                                   |
+
+Mesuré avant la montée de version (click-extra 7.20.1) : A à E conformes au tableau. Sans la
+surcharge de la Tâche 8, click-extra 9.5.1 donne en D les valeurs *utilisateur* (tri
+alphabétique) : c'est la régression que cette tâche empêche.
+
+- [ ] **Étape 5 : Documentation**
 
 ```bash
 mkdocs build --strict
