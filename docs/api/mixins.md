@@ -3,6 +3,16 @@
 Feature mixins used internally by pyclifer's group and context classes. Exposed publicly
 for advanced subclassing.
 
+## EventsMixin
+
+Lets a group attach handlers to named lifecycle events with `on()` and call them with `emit()`.
+Handlers run in registration order, an unknown event name raises `ValueError`, and an exception
+raised by a handler propagates. See the [Lifecycle events](../how-to/lifecycle-events.md) guide.
+
+::: pyclifer.EventsMixin
+
+---
+
 ## GlobalOptionsMixin
 
 Propagates options from a parent group to all child commands and subgroups at registration time.

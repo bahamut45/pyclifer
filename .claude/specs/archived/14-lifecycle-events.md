@@ -128,7 +128,10 @@ l'erreur du handler (et sort) ; en format texte, il affiche le message du handle
 | `tests/core/options/test_custom_config_option.py` | Émission de `config.loaded`                                |
 | `tests/core/test_decorators.py`        | Inscription via `@app_group(on=...)`                                  |
 | `docs/api/mixins.md`                   | Documenter `EventsMixin`                                              |
-| `docs/api/classes.md`                  | `GroupConfig.on`, `CustomConfigOption` (émission)                     |
+| `docs/api/classes.md`                  | `PycliferGroup` (bases), `CustomConfigOption` (émission)              |
+| `docs/api/decorators.md`               | Paramètre `on` de `app_group` / `group` (les paramètres de groupe y sont documentés, pas dans `classes.md`) |
+| `src/pyclifer/__init__.py`             | Exporter `EventsMixin` (API publique, comme les autres mixins)        |
+| `tests/test_init.py` (nouveau)         | `EventsMixin` exporté et listé dans `__all__`                         |
 | `docs/how-to/lifecycle-events.md` (nouveau) | Guide d'usage                                                    |
 | `mkdocs.yml`                           | Ajouter la page au `nav`                                              |
 
@@ -213,12 +216,16 @@ tox
 
 Couverture de branches à 100 % sur les modules touchés.
 
-## Item 6 : Documentation
+## ✅ Item 6 : Documentation
 
 - `docs/how-to/lifecycle-events.md` (nouveau) : modèle mental (l'application déclare, les événements
   étendent), `on=` et `cli.on(...)`, liste des événements disponibles (pour l'instant `config.loaded`),
   règles d'ordre et d'erreur (ordre d'inscription, exceptions propagées).
-- `docs/api/mixins.md` : `EventsMixin`. `docs/api/classes.md` : `GroupConfig.on`.
+- `docs/api/mixins.md` : `EventsMixin`. `docs/api/decorators.md` : paramètre `on`.
+  `docs/api/classes.md` : bases de `PycliferGroup` et émission de `CustomConfigOption`.
+- Le guide ne décrit que des comportements mesurés (quand `config.loaded` est émis, y compris
+  `--config fichier --help`) ; `EventsMixin` est exporté par `pyclifer/__init__.py` pour que
+  `::: pyclifer.EventsMixin` fonctionne dans `mkdocs`.
 - `mkdocs.yml` : ajouter la page au `nav` dans le même commit.
 - `mkdocs build --strict`.
 

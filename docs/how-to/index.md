@@ -35,3 +35,8 @@ that do not use an interface.
 
 A practical decision guide: which `--output-format` value to use depending on whether the
 consumer is a human, a shell script, a CI pipeline, or an interactive terminal session.
+
+### [Lifecycle Events](lifecycle-events.md)
+
+Attach functions to named points of the run with `on=` or `cli.on()`. Covers the `config.loaded`
+event: when it is emitted, how to read the loaded file, and how to stop the run with a clear error.

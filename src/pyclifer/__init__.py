@@ -64,6 +64,7 @@ from .core.log import (
     logger,
 )
 from .core.mixins import (
+    EventsMixin,
     GlobalOptionsMixin,
     HandleResponseMixin,
     OutputFormatMixin,
@@ -146,6 +147,7 @@ __all__ = [
     "CustomConfigOption",
     "PycliferGroup",
     "PycliferOption",
+    "EventsMixin",
     "GlobalOptionsMixin",
     "HandleResponseMixin",
     "OutputFormatMixin",

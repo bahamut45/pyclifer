@@ -22,7 +22,7 @@ Extends `click.Option` with `is_global`, `context`, and env-var binding support.
 ## PycliferGroup
 
 Base Click group class used by `app_group` and `group`. Composes
-`HandleResponseMixin` + `GlobalOptionsMixin`.
+`EventsMixin` + `HandleResponseMixin` + `GlobalOptionsMixin`.
 
 ::: pyclifer.PycliferGroup
 
@@ -31,7 +31,8 @@ Base Click group class used by `app_group` and `group`. Composes
 ## CustomConfigOption
 
 Extends click-extra's config option with multi-location Linux config file search
-(`/etc/<app>/`, `~/.config/<app>/`, etc.).
+(`/etc/<app>/`, `~/.config/<app>/`, etc.). It also emits the `config.loaded` event on its group
+once the configuration is resolved (see [Lifecycle events](../how-to/lifecycle-events.md)).
 
 ::: pyclifer.CustomConfigOption
 
