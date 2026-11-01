@@ -188,7 +188,7 @@ class BaseRenderer:
         if not fields:
             return response.to_json()
 
-        results = response.data.get("results", [])
+        results = self._results_of(response)
         serialized = [self._serialize_result(r, fields) for r in results]
         return {
             "success": response.success,
@@ -228,7 +228,7 @@ class BaseRenderer:
         fields_dict: dict[str, CliTableColumn] = {
             col: CliTableColumn(header=col.replace("_", " ").title()) for col in cols
         }
-        results = response.data.get("results", [])
+        results = self._results_of(response)
         rows = [self._result_to_row(r, cols) for r in results]
         row_styles = [self._row_style(r) for r in results]
         title = self.rich_title or response.message or None
@@ -278,6 +278,27 @@ class BaseRenderer:
         grid.add_column()
         return grid
 
+    @staticmethod
+    def _results_of(response: Response) -> list:
+        """Return response.data["results"], or an empty list when the key is absent.
+
+        Args:
+            response: The command response carrying the results.
+
+        Returns:
+            The list of OperationResult objects.
+
+        Raises:
+            ValueError: When response.data is not a dict, so no results can be read from it.
+        """
+        if not isinstance(response.data, dict):
+            raise ValueError(
+                "Response.data must be a dict with a 'results' key to be rendered by "
+                f"BaseRenderer, got {type(response.data).__name__}. "
+                "Wrap the list: data={'results': [...]}."
+            )
+        return response.data.get("results", [])
+
     def _first_result(self, response: Response, console: Console) -> OperationResult | None:
         """Return the first successful result, printing an error panel when absent.
 
@@ -289,7 +310,7 @@ class BaseRenderer:
             The first OperationResult, or None when results are empty or the first
             result is a failure.
         """
-        results = response.data.get("results", [])
+        results = self._results_of(response)
         if not results or not results[0].success:
             console.print(Panel(response.message, title=self.rich_title or None))
             return None

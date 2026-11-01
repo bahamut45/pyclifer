@@ -711,6 +711,10 @@ myapp list-articles -p 2 -l 25
 }
 ```
 
+When a renderer builds the output (`BaseRenderer`, so every `BaseInterface.respond()` answer), `data`
+must be a dict with a `results` key, as in the example above. A bare list raises a `ValueError` that says so
+instead of failing deep inside the renderer.
+
 When `total` is unknown (`total=None`), it is serialized as `null`. The `table`, `rich`, and
 `text` formats are unaffected — `PaginatedResponse` behaves identically to `Response` for
 those formats.

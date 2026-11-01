@@ -659,7 +659,19 @@ déclare (`_declares_argument`). Demander `is_global=True` à une classe qui ne 
 explicite à l'appel de `option()`, au lieu d'une perte silencieuse de la propagation. Quatre tests
 (`TestOptionWithExternalClass`) ; `docs/api/decorators.md` décrit `cls=`.
 
-## Item 24+ : Autres défauts trouvés
+## ✅ Item 24 : Défaut — message d'erreur obscur quand `Response.data` est une liste
+
+Trouvé à l'item 6. Une commande qui renvoie `PaginatedResponse(data=[{...}])` (ou `Response`) avec un renderer plantait en
+format table avec `AttributeError: 'list' object has no attribute 'get'`, venu de `BaseRenderer.table`. JSON, YAML,
+raw et rich acceptaient la liste quand aucun renderer ne lisait `data["results"]`, donc interdire la liste dans
+`Response` aurait cassé des usages qui fonctionnent. La doc montre `data={"results": results}`.
+
+**Décision de l'utilisateur.** Une erreur explicite, un framework ne doit pas laisser fuiter une `AttributeError`.
+`BaseRenderer._results_of` remplace les trois lectures de `response.data.get("results", [])` (`serialize`, `table`,
+`_first_result`) et lève `ValueError` : « Response.data must be a dict with a 'results' key ... got list. Wrap the
+list: data={'results': [...]} ». Six tests (`tests/core/output/test_renderer.py`), une phrase dans la doc.
+
+## Item 25+ : Autres défauts trouvés
 
 Un item par défaut mesuré aux items 5 et 6.
 
