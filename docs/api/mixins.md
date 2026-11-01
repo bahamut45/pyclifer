@@ -36,7 +36,9 @@ Propagates options from a parent group to all child commands and subgroups at re
 - Options marked `context=True` (non-global) with `show_in_subcommand_help=True` are injected
   as display-only copies into subcommand help under a dedicated *Context Options* panel.
   These copies have `expose_value=False` and `required=False` so they never interfere with
-  subcommand argument parsing or callbacks.
+  subcommand argument parsing or callbacks. They reach commands at any depth, whatever the order
+  in which groups and commands are registered. The panel title is drawn by the Rich help; with
+  `use_rich_help=False` the option is listed with the other options of the command.
 
 ::: pyclifer.GlobalOptionsMixin
 

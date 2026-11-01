@@ -374,7 +374,8 @@ class TestContextOptionsPanel:
         result = invoke(tree.cli, ["leaf1", "--help"])
 
         assert "--env" in result.output
-        assert "Context Options" in result.output
+        if use_rich_help:  # the panel title is drawn by the Rich help only
+            assert "Context Options" in result.output
 
     def test_a_first_level_command_shows_it_under_the_configured_panel(self, use_rich_help):
         tree = _tree(use_rich_help, "top_down", context_options_panel="Shared Options")
@@ -382,8 +383,27 @@ class TestContextOptionsPanel:
         result = invoke(tree.cli, ["leaf1", "--help"])
 
         assert "--env" in result.output
-        assert "Shared Options" in result.output
-        assert "Context Options" not in result.output
+        if use_rich_help:  # the panel title is drawn by the Rich help only
+            assert "Shared Options" in result.output
+            assert "Context Options" not in result.output
+
+
+@pytest.mark.parametrize("use_rich_help", HELP_PATHS, ids=["rich", "plain"])
+@pytest.mark.parametrize("order", ORDERS)
+class TestContextOptionsAtEveryDepth:
+    """The context option and its panel are in the help of a command at any depth, in any order."""
+
+    @pytest.mark.parametrize("depth", LEAF_PATHS)
+    def test_the_option_is_listed_under_the_configured_panel(self, use_rich_help, order, depth):
+        tree = _tree(use_rich_help, order, context_options_panel="Shared Options")
+
+        result = invoke(tree.cli, [*LEAF_PATHS[depth], "--help"])
+
+        assert result.exit_code == 0, result.output
+        assert "--env" in result.output
+        if use_rich_help:  # the panel title is drawn by the Rich help only
+            assert "Shared Options" in result.output
+            assert "Context Options" not in result.output
 
 
 @pytest.mark.parametrize("use_rich_help", HELP_PATHS, ids=["rich", "plain"])

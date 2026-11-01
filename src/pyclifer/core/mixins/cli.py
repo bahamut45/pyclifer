@@ -47,7 +47,8 @@ class GlobalOptionsMixin:
 
         Returns:
             A shallow copy with expose_value=False, required=False,
-            context=False, and panel set to panel_name.
+            context=False, and panel set to panel_name. It is marked with
+            context_display_copy so that a group holding it can hand it on.
         """
         display = copy.copy(opt)
         display.expose_value = False
@@ -55,6 +56,7 @@ class GlobalOptionsMixin:
         if hasattr(display, "context"):
             display.context = False
         display.panel = panel_name
+        display.context_display_copy = True
         return display
 
     @staticmethod
@@ -156,5 +158,12 @@ class GlobalOptionsMixin:
         if context_options:
             panel_name = getattr(self, "_context_options_panel", CONTEXT_OPTIONS_PANEL)
             self._propagate_context_options(cmd, context_options, panel_name)
+
+        # 4. A group attached to its parent before being filled holds display copies, not the
+        # real options (those have context=False): hand them on, under the panel they carry,
+        # to the commands added to it afterwards.
+        for param in getattr(self, "params", []):
+            if getattr(param, "context_display_copy", False):
+                self._propagate_context_options(cmd, [param], param.panel)
 
         super().add_command(cmd, name, **kwargs)  # type: ignore

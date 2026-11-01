@@ -470,9 +470,24 @@ contexte) est appelé aussi après l'ajout d'une option globale, seulement quand
 Click pure, sans ces listes, n'est pas touchée. Cinq tests unitaires (`tests/core/mixins/test_cli.py`) et huit cas
 d'intégration ; neutraliser l'appel fait échouer exactement le cas mesuré. `mixins/cli.py` à 100 % de branches.
 
-## Item 15 : Défaut — option de contexte absente de l'aide des commandes profondes
+## ✅ Item 15 : Défaut — option de contexte absente de l'aide des commandes profondes
 
-À faire.
+Trouvé à l'item 5. Mesuré sur les trois ordres d'enregistrement, Rich et plain : l'option `context=True` et son panneau
+manquent dans l'aide d'une commande de profondeur 2 ou 3 quand son groupe avait déjà été rattaché au parent
+(« décorateur » et « de haut en bas ») ; elle est présente quand tout est rattaché de bas en haut, et à la profondeur 1.
+`docs/api/mixins.md` promet ces copies dans l'aide « des sous-commandes ».
+
+**Cause.** `add_command` ne propage que les options qui ont `context=True`. La copie d'affichage reçue par un groupe
+a `context=False` (pour ne jamais être analysée ni passée à un callback), donc ce groupe ne la retransmettait pas aux
+commandes ajoutées après coup. S'y ajoutait le nom du panneau : un groupe créé par `group()` n'a pas de
+`_context_options_panel`, il aurait retransmis le panneau par défaut au lieu de celui de l'application.
+
+**Correctif.** La copie est marquée (`context_display_copy`) ; `add_command` retransmet les copies que le groupe porte,
+sous le panneau qu'elles portent déjà. Les copies restent non exposées, non requises, et ne sont pas des options de
+contexte réelles. Cinq tests unitaires et dix-huit cas d'intégration (trois profondeurs, trois ordres, deux
+chemins) ; le nom du panneau n'est affirmé que sur le chemin Rich, car l'aide plain de cloup n'a pas de titre de
+panneau (l'option y figure dans la liste des options) : mesuré, ajusté aussi dans les tests de l'item 5.
+Neutraliser la retransmission, ou la remplacer par le panneau par défaut, fait échouer les tests.
 
 ## Item 16 : Défaut — `use_rich_help=False` non appliqué aux sous-groupes et sous-commandes
 

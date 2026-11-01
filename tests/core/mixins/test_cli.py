@@ -398,3 +398,87 @@ class TestGlobalOptionsInHelpText:
         group.add_command(plain)
 
         assert [p.name for p in plain.params] == ["region"]
+
+
+# ---------------------------------------------------------------------------
+# Integration — context options reach commands added after their group was attached
+# ---------------------------------------------------------------------------
+
+
+class TestContextOptionsInDeepHelpText:
+    """A context option is listed in the help of a command whatever the order of registration.
+
+    The copy a group received is display-only and has context=False, so the group did not hand
+    it on to the commands added to it afterwards.
+    """
+
+    @staticmethod
+    def _root(panel: str = CONTEXT_OPTIONS_PANEL) -> _Group:
+        root = _Group(name="myapp", params=[_make_context_opt("--host", help="Array hostname.")])
+        root._context_options_panel = panel
+        return root
+
+    def test_command_added_to_a_group_attached_before(self):
+        root = self._root()
+        inner = _Group(name="inner")
+        root.add_command(inner)
+
+        @inner.command("status")
+        def status_cmd():
+            """Show status."""
+
+        result = invoke(root, ["inner", "status", "--help"])
+
+        assert result.exit_code == 0
+        assert "--host" in result.output
+
+    def test_command_two_groups_down_added_after_both_were_attached(self):
+        root = self._root()
+        inner, deepest = _Group(name="inner"), _Group(name="deepest")
+        root.add_command(inner)
+        inner.add_command(deepest)
+
+        @deepest.command("status")
+        def status_cmd():
+            """Show status."""
+
+        result = invoke(root, ["inner", "deepest", "status", "--help"])
+
+        assert result.exit_code == 0
+        assert "--host" in result.output
+
+    def test_the_panel_of_the_root_is_kept_in_the_groups_below(self):
+        root = self._root(panel="Shared Options")
+        inner = _Group(name="inner")  # no panel of its own: it must not fall back to the default
+        root.add_command(inner)
+
+        @inner.command("status")
+        def status_cmd():
+            """Show status."""
+
+        (copy,) = [p for p in status_cmd.params if p.name == "host"]
+
+        assert copy.panel == "Shared Options"
+
+    def test_an_option_the_command_already_has_is_not_added_twice(self):
+        root = self._root()
+        inner = _Group(name="inner")
+        root.add_command(inner)
+
+        @inner.command("status")
+        def status_cmd():
+            """Show status."""
+
+        inner.add_command(status_cmd, name="status-again")  # same command, second name
+
+        assert [p.name for p in status_cmd.params].count("host") == 1
+
+    def test_the_copy_is_still_not_a_real_context_option(self):
+        """The copies stay display-only: only the root group builds the context from options."""
+        root = self._root()
+        inner = _Group(name="inner")
+        root.add_command(inner)
+
+        (copy,) = [p for p in inner.params if p.name == "host"]
+
+        assert (copy.context, copy.expose_value, copy.required) == (False, False, False)
