@@ -5,7 +5,7 @@ from typing import Any
 
 import click_extra
 
-from pyclifer.core.events import EVENTS
+from pyclifer.core.events import EVENTS, Event
 
 EventHandler = Callable[[click_extra.Context], Any]
 """A function called with the Click context when its event is emitted."""
@@ -32,7 +32,7 @@ class EventsMixin:
         """Attach a handler to an event, or return a decorator when handler is omitted.
 
         Args:
-            event: The event name, one of the names in EVENTS.
+            event: An Event object, or the plain name of a framework event.
             handler: The function to call when the event is emitted.
 
         Returns:
@@ -40,11 +40,14 @@ class EventsMixin:
             decorated function and returns it unchanged.
 
         Raises:
-            ValueError: When event is not a known event name.
+            ValueError: When event is a plain string that is not a framework event.
         """
-        if event not in EVENTS:
+        if not isinstance(event, Event) and event not in EVENTS:
             valid = ", ".join(sorted(EVENTS))
-            raise ValueError(f"Unknown event '{event}'. Valid events: {valid}")
+            raise ValueError(
+                f"Unknown event '{event}'. Valid events: {valid}. "
+                f"To define your own, use Event('{event}')."
+            )
 
         def register(function: EventHandler) -> EventHandler:
             """Add the function to the handlers of the event."""

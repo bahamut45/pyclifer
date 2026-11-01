@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import click_extra
 import pytest
 
-from pyclifer.core.events import CONFIG_LOADED
+from pyclifer.core.events import CONFIG_LOADED, Event
 from pyclifer.core.mixins.events import EventsMixin
 
 
@@ -84,3 +84,48 @@ class TestEventsMixin:
         first.on(CONFIG_LOADED, lambda _ctx: "only-first")
 
         assert second.emit(CONFIG_LOADED, click_extra.Context(second)) == []
+
+    def test_on_accepts_a_custom_event_without_prior_registration(self):
+        group = _Group(name="cli")
+        ctx = click_extra.Context(group)
+        ready = Event("myplugin.ready")
+        handler = MagicMock(return_value="done")
+
+        group.on(ready, handler)
+
+        assert group.emit(ready, ctx) == ["done"]
+
+    def test_on_works_as_a_decorator_for_a_custom_event(self):
+        group = _Group(name="cli")
+        ctx = click_extra.Context(group)
+        ready = Event("myplugin.ready")
+
+        @group.on(ready)
+        def handler(_ctx):
+            return "decorated"
+
+        assert group.emit(ready, ctx) == ["decorated"]
+
+    def test_custom_and_framework_events_keep_separate_handlers(self):
+        group = _Group(name="cli")
+        ctx = click_extra.Context(group)
+        ready = Event("myplugin.ready")
+        group.on(ready, lambda _ctx: "plugin")
+        group.on(CONFIG_LOADED, lambda _ctx: "framework")
+
+        assert group.emit(CONFIG_LOADED, ctx) == ["framework"]
+        assert group.emit(ready, ctx) == ["plugin"]
+
+    def test_the_framework_event_name_is_still_accepted_as_a_plain_string(self):
+        group = _Group(name="cli")
+        ctx = click_extra.Context(group)
+
+        group.on("config.loaded", lambda _ctx: "plain")
+
+        assert group.emit(CONFIG_LOADED, ctx) == ["plain"]
+
+    def test_the_error_for_an_unknown_plain_name_suggests_declaring_an_event(self):
+        group = _Group(name="cli")
+
+        with pytest.raises(ValueError, match=r"Event\('typo'\)"):
+            group.on("typo", lambda _ctx: None)

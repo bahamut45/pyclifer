@@ -50,6 +50,7 @@ from .core.decorators import (
     pagination_options,
     returns_response,
 )
+from .core.events import Event
 from .core.interfaces import BaseInterface
 from .core.log import (
     PYCLIFER_LOG_LEVELS,
@@ -147,6 +148,7 @@ __all__ = [
     "CustomConfigOption",
     "PycliferGroup",
     "PycliferOption",
+    "Event",
     "EventsMixin",
     "GlobalOptionsMixin",
     "HandleResponseMixin",

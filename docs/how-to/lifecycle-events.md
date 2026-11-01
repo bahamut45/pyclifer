@@ -39,13 +39,15 @@ context, so `ctx.command_path` is the name of your CLI.
 
 - Handlers run in the order they were attached, and each group keeps its own handlers.
 - An exception raised by a handler is never swallowed: it propagates.
-- An unknown event name raises `ValueError` as soon as you attach the handler, and the message lists
-  the valid names, so a typo never goes unnoticed.
+- A plain string that is not a framework event raises `ValueError` as soon as you attach the handler,
+  and the message lists the valid names, so a typo never goes unnoticed.
 
 ```python
 @app_group(on={"config.laoded": [check_config]})  # ValueError: Unknown event 'config.laoded'...
 def cli(): ...
 ```
+
+To use an event of your own, create an [`Event`](#define-your-own-events) instead of a string.
 
 ## Available events
 
@@ -81,6 +83,50 @@ When the event is emitted:
 
 The last row comes from the order of processing: `--config` is handled before `--help`, so the
 configuration is already resolved when the help is shown.
+
+## Define your own events
+
+A plugin, or your application, can expose its own extension points. Create an `Event` once, in a
+module that others can import, and emit it where it belongs:
+
+```python
+# myplugin/events.py
+from pyclifer import Event
+
+READY = Event("myplugin.ready")
+```
+
+```python
+# in a command of the app, or of a plugin
+import click
+
+from myplugin.events import READY
+
+
+@cli.command()
+@click.pass_context
+def run(ctx):
+    """Do the work, then tell the handlers."""
+    ctx.find_root().command.emit(READY, ctx)
+```
+
+Anyone can then attach a handler, with the same `on=` argument or `on()` method as for the framework
+events:
+
+```python
+from myplugin.events import READY
+
+
+@app_group(on={READY: [my_handler]})
+def cli(): ...
+```
+
+- An `Event` needs no registration, so the order in which plugins are loaded does not matter.
+- `Event` is a string: `READY == "myplugin.ready"`. Only an `Event` object is accepted for your own
+  names; a plain string must be a framework event. A typo in the name of an imported `Event` becomes
+  an import error.
+- Handlers belong to a group, so a handler attached to one group is not called for another.
+- `emit()` returns the values the handlers returned, in the order they ran.
 
 ## Report an error from a handler
 

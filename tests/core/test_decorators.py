@@ -1367,3 +1367,35 @@ class TestGroupDecoratorEvents:
             @app_group(on={"typo": [lambda ctx: None]})
             def app():
                 """App"""
+
+    def test_on_accepts_a_custom_event_as_key(self):
+        from pyclifer.core.events import Event
+
+        ready = Event("myplugin.ready")
+
+        @app_group(on={ready: [lambda ctx: "plugin"]})
+        def app():
+            """App"""
+
+        assert app.emit(ready, click.Context(app)) == ["plugin"]
+
+    def test_a_command_can_emit_a_custom_event_on_the_root_group(self):
+        from pyclifer.core.events import Event
+
+        ready = Event("myplugin.ready")
+        seen = []
+
+        @app_group(on={ready: [lambda ctx: seen.append(ctx.command_path)]})
+        def app():
+            """App"""
+
+        @app.command()
+        @click.pass_context
+        def run(ctx):
+            """Run"""
+            ctx.find_root().command.emit(ready, ctx)
+
+        result = invoke(app, ["run"])
+
+        assert result.exit_code == 0
+        assert seen == ["app run"]

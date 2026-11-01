@@ -1,6 +1,7 @@
 """Tests for the public API exposed by the pyclifer package."""
 
 import pyclifer
+from pyclifer.core.events import Event
 from pyclifer.core.mixins.events import EventsMixin
 
 
@@ -12,3 +13,9 @@ class TestPublicApi:
 
     def test_events_mixin_is_listed_in_all(self):
         assert "EventsMixin" in pyclifer.__all__
+
+    def test_event_is_exported(self):
+        assert pyclifer.Event is Event
+
+    def test_event_is_listed_in_all(self):
+        assert "Event" in pyclifer.__all__

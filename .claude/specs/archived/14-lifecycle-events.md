@@ -65,8 +65,9 @@ l'arbre de commandes (`list_commands` puis `get_command`). Deux conséquences po
 `core/events.py` contient les noms d'événements en constantes `UPPER_SNAKE` (`CONFIG_LOADED =
 "config.loaded"`) et `EVENTS: frozenset[str]`. Une enum n'est pas utilisée : `StrEnum` n'existe qu'à
 partir de Python 3.11 et le projet supporte 3.10. Les utilisateurs écrivent la chaîne.
-Un nom inconnu lève `ValueError` à l'inscription, en listant les noms valides (une faute de frappe ne
-doit jamais être silencieuse). Chaque spec consommatrice ajoute ses noms à `EVENTS`.
+Une **chaîne simple** inconnue lève `ValueError` à l'inscription, en listant les noms valides (une faute
+de frappe ne doit jamais être silencieuse). Chaque spec consommatrice ajoute ses noms à `EVENTS`.
+Les événements définis par l'utilisateur passent par la classe `Event` (décision 6).
 
 ### Décision 2 — `EventsMixin`, par groupe
 
@@ -111,6 +112,31 @@ elle remonte jusqu'à `HandleResponseMixin.parse_args`, qui reconnaît la même 
 plus (pas de doublon). Sur un appel nu, click-extra l'avale puis Click lève l'erreur d'aide : `parse_args`
 trouve alors une erreur en attente qui n'est pas celle qu'il attrape. En format structuré, il répond avec
 l'erreur du handler (et sort) ; en format texte, il affiche le message du handler puis laisse l'aide.
+
+### Décision 6 — Événements définis par l'utilisateur : la classe `Event`
+
+Un système de plugins (spec 06) où seul le framework peut définir des événements empêcherait les
+plugins de se parler : un plugin qui expose un point d'extension doit pouvoir l'émettre, et un autre
+doit pouvoir s'y brancher. `core/events.py` définit donc `class Event(str)` :
+
+```python
+class Event(str):
+    """A named lifecycle event. Create your own with Event("myplugin.ready")."""
+
+CONFIG_LOADED = Event("config.loaded")
+```
+
+- `Event` hérite de `str` : `CONFIG_LOADED == "config.loaded"`, même hachage, donc tout le code écrit
+  avec des chaînes (dict `on=`, `EVENTS`, tests, doc) reste valable. Mesuré sur un script jetable :
+  égalité, appartenance à un `frozenset`, recherche dans un dict par chaîne ou par `Event`.
+- `on()` accepte un objet `Event` **quel qu'il soit**, sans enregistrement préalable : l'ordre de
+  chargement des plugins n'a aucune importance. Une chaîne simple reste limitée aux événements du
+  framework (`EVENTS`). La faute de frappe sur un événement personnalisé devient une erreur d'import.
+- Un plugin définit `READY = Event("myplugin.ready")` dans son module, l'émet avec `emit(READY, ctx)`,
+  et les autres l'importent. Les handlers restent **par groupe** (pas de registre global).
+- `emit()` ne valide pas le nom (inchangé) : il appelle les handlers inscrits sous ce nom.
+- `Event` est exporté par `pyclifer/__init__.py`. Les specs 09, 05 et 06 déclarent leurs événements
+  comme des `Event`.
 
 ---
 
@@ -228,6 +254,22 @@ Couverture de branches à 100 % sur les modules touchés.
   `::: pyclifer.EventsMixin` fonctionne dans `mkdocs`.
 - `mkdocs.yml` : ajouter la page au `nav` dans le même commit.
 - `mkdocs build --strict`.
+
+## ✅ Item 7 : Événements définis par l'utilisateur (`Event`)
+
+Tests d'abord :
+
+- `tests/core/test_events.py` : `CONFIG_LOADED` est une instance d'`Event` et égale à `"config.loaded"` ;
+  un `Event` personnalisé n'est pas dans `EVENTS` ; une chaîne simple n'est pas une instance d'`Event` ;
+- `tests/core/mixins/test_events.py` : `on(Event("x.y"), handler)` puis `emit` appelle le handler sans
+  enregistrement préalable ; la forme décorateur fonctionne ; une chaîne simple inconnue lève toujours
+  `ValueError` (le message suggère `Event(...)`) ; la chaîne `"config.loaded"` reste acceptée ;
+- `tests/core/test_decorators.py` : `@app_group(on={Event("x.y"): [h]})` attache le handler ; un plugin
+  peut émettre depuis une commande avec `ctx.find_root().command.emit(EVENT, ctx)` ;
+- `tests/test_init.py` : `Event` est exporté et listé dans `__all__`.
+
+Puis `Event` dans `core/events.py`, la condition de `on()`, l'export, et la documentation (section
+« Define your own events » du guide, `Event` dans `docs/api/mixins.md`). Vérification complète à la fin.
 
 Commit unique par item (format de `.claude/CLAUDE.md`), spec incluse avec le `✅` sur l'item. Fusion
 dans `main` après validation de l'utilisateur.

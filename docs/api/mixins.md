@@ -6,10 +6,19 @@ for advanced subclassing.
 ## EventsMixin
 
 Lets a group attach handlers to named lifecycle events with `on()` and call them with `emit()`.
-Handlers run in registration order, an unknown event name raises `ValueError`, and an exception
-raised by a handler propagates. See the [Lifecycle events](../how-to/lifecycle-events.md) guide.
+Handlers run in registration order, a plain string that is not a framework event raises
+`ValueError`, and an exception raised by a handler propagates. See the
+[Lifecycle events](../how-to/lifecycle-events.md) guide.
 
 ::: pyclifer.EventsMixin
+
+### Event
+
+A named lifecycle event. It is a string, so it compares equal to its name. The framework defines its
+own events; plugins and applications create theirs with `Event("myplugin.ready")`, which needs no
+registration.
+
+::: pyclifer.Event
 
 ---
 

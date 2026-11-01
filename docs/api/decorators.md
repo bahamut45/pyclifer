@@ -23,8 +23,9 @@ Key parameters:
 - `use_rich_help` — set to `False` to disable rich-click rendering and use plain Click help.
   Defaults to `True`.
 - `on` — mapping of lifecycle event names to lists of handler functions, for example
-  `on={"config.loaded": [check_config]}`. An unknown event name raises `ValueError` at decoration
-  time. See the [Lifecycle events](../how-to/lifecycle-events.md) guide. `group` accepts it too.
+  `on={"config.loaded": [check_config]}`. Keys are framework event names or `Event` objects; a plain
+  string that is not a framework event raises `ValueError` at decoration time. See the
+  [Lifecycle events](../how-to/lifecycle-events.md) guide. `group` accepts it too.
 
 ::: pyclifer.app_group
 
