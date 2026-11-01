@@ -116,7 +116,7 @@ Test d'abord (`tests/core/test_events.py`) :
 
 Puis `core/events.py`. Branche : `feat/lifecycle-events-registry`.
 
-## Item 2 : `EventsMixin`
+## ✅ Item 2 : `EventsMixin`
 
 Tests d'abord (`tests/core/mixins/test_events.py`, groupe minimal `_Group(EventsMixin, click_extra.Group)`) :
 
