@@ -77,16 +77,14 @@ class GroupDecorator:
 
     def _setup_logging(self) -> None:
         """Configure the logging system based on the group config."""
-        if self.config.use_rich_logging:
-            from .log.config import configure_rich_logging
+        from .log.config import configure_rich_logging
 
-            # noinspection PyArgumentEqualDefault
-            configure_rich_logging(
-                use_rich=True,
-                rich_tracebacks=True,
-                enable_secrets_filter=self.config.enable_secrets_filter,
-                sensitive_fields=self.config.sensitive_fields or None,
-            )
+        configure_rich_logging(
+            use_rich=self.config.use_rich_logging,
+            rich_tracebacks=True,
+            enable_secrets_filter=self.config.enable_secrets_filter,
+            sensitive_fields=self.config.sensitive_fields or None,
+        )
 
     def _apply_rich_help(self, f: Callable) -> Callable:
         """Apply rich-click help formatting if enabled."""
@@ -133,6 +131,7 @@ class GroupDecorator:
             f = verbosity_option(
                 default=self.config.verbosity_default_level,
                 show_envvar=self.config.show_envvar,
+                use_rich=self.config.use_rich_logging,
                 enable_secrets_filter=self.config.enable_secrets_filter,
                 sensitive_fields=self.config.sensitive_fields or None,
             )(f)
@@ -790,8 +789,9 @@ def verbosity_option(
         *param_decls: Parameter declarations (default: '--verbosity', '-v').
         is_global: If True, the option is propagated to all subcommands.
         show_envvar: Show environment variables in the help output.
-        **kwargs: Additional arguments passed to the option, including enable_secrets_filter
-            and sensitive_fields, which the option keeps when it rebuilds the console handler.
+        **kwargs: Additional arguments passed to the option, including use_rich,
+            enable_secrets_filter and sensitive_fields, which the option keeps when it rebuilds
+            the console handler.
 
     Returns:
         The decorated function.

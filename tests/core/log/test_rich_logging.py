@@ -102,9 +102,9 @@ class TestLoggingConfiguration:
 
     @patch("pyclifer.core.log.config.basicConfig")
     def test_configure_rich_logging_use_rich_false(self, mock_extra_config):
-        """use_rich=False skips all Rich handler setup."""
+        """use_rich=False installs the standard console handler and no Rich one."""
         configure_rich_logging(use_rich=False, force_reconfigure=True)
-        mock_extra_config.assert_not_called()
+        mock_extra_config.assert_called_once_with(force=True)
 
     def test_configure_rich_logging_shared_handler_already_present(self):
         """If shared_handler is already in root_logger, addHandler is skipped."""
@@ -600,7 +600,10 @@ class TestPycliferVerbosityOption:
                 option.set_level(mock_ctx, Mock(), "DEBUG")
 
         mock_configure.assert_called_with(
-            enable_secrets_filter=False, sensitive_fields=["mycode"], force_reconfigure=True
+            use_rich=True,
+            enable_secrets_filter=False,
+            sensitive_fields=["mycode"],
+            force_reconfigure=True,
         )
 
     @patch("pyclifer.core.log.config.configure_rich_logging")
@@ -618,7 +621,7 @@ class TestPycliferVerbosityOption:
                 verbosity_option.set_level(mock_ctx, Mock(), "DEBUG")
 
         mock_configure.assert_called_with(
-            enable_secrets_filter=True, sensitive_fields=None, force_reconfigure=True
+            use_rich=True, enable_secrets_filter=True, sensitive_fields=None, force_reconfigure=True
         )
 
     @staticmethod
@@ -718,7 +721,7 @@ class TestPycliferVerbosityOption:
                 verbosity_option.set_level(mock_ctx, mock_param, "DEBUG")
 
         mock_configure.assert_called_once_with(
-            enable_secrets_filter=True, sensitive_fields=None, force_reconfigure=True
+            use_rich=True, enable_secrets_filter=True, sensitive_fields=None, force_reconfigure=True
         )
 
         mock_logger1.setLevel.assert_called_once_with(PYCLIFER_LOG_LEVELS["DEBUG"])
@@ -850,3 +853,85 @@ class TestLoggingIntegration:
 
         secrets_filters = [f for f in handler.filters if isinstance(f, SecretsMasker)]
         assert len(secrets_filters) == 1
+
+
+class TestPlainConsoleLogging:
+    """configure_rich_logging(use_rich=False) installs click-extra's standard console handler."""
+
+    @pytest.fixture(autouse=True)
+    def clean_root_logger(self):
+        """Start from a root logger with no handler and give the original ones back."""
+        root = logging.getLogger()
+        original = list(root.handlers)
+        root.handlers.clear()
+        yield root
+        for handler in root.handlers:
+            if handler not in original:
+                handler.close()
+        root.handlers[:] = original
+
+    @staticmethod
+    def _console_handlers(root):
+        """The handlers writing to a stream, files left out."""
+        return [
+            h
+            for h in root.handlers
+            if isinstance(h, logging.StreamHandler)
+            and not isinstance(h, logging.FileHandler)
+            and not type(h).__module__.startswith("_pytest")
+        ]
+
+    def test_a_standard_stream_handler_replaces_the_rich_one(self, clean_root_logger):
+        from pyclifer.core.log import configure_rich_logging
+
+        configure_rich_logging(use_rich=False, force_reconfigure=True)
+
+        handlers = self._console_handlers(clean_root_logger)
+        assert len(handlers) == 1
+        assert not isinstance(handlers[0], RichExtraStreamHandler)
+
+    def test_the_secrets_filter_is_on_by_default(self, clean_root_logger):
+        from pyclifer.core.log import configure_rich_logging
+
+        configure_rich_logging(use_rich=False, force_reconfigure=True)
+
+        (handler,) = self._console_handlers(clean_root_logger)
+        assert [type(f) for f in handler.filters] == [SecretsMasker]
+
+    def test_the_secrets_filter_can_be_turned_off(self, clean_root_logger):
+        from pyclifer.core.log import configure_rich_logging
+
+        configure_rich_logging(use_rich=False, enable_secrets_filter=False, force_reconfigure=True)
+
+        (handler,) = self._console_handlers(clean_root_logger)
+        assert handler.filters == []
+
+    def test_sensitive_fields_reach_the_filter(self, clean_root_logger):
+        from pyclifer.core.log import configure_rich_logging
+
+        configure_rich_logging(use_rich=False, sensitive_fields=["mycode"], force_reconfigure=True)
+
+        (handler,) = self._console_handlers(clean_root_logger)
+        assert handler.filters[0].redact({"mycode": "mc-777"}) == {"mycode": "*CENSORED*"}
+
+    def test_a_file_handler_survives_the_reconfiguration(self, clean_root_logger, tmp_path):
+        from logging.handlers import TimedRotatingFileHandler
+
+        from pyclifer.core.log import configure_rich_logging
+
+        file_handler = TimedRotatingFileHandler(tmp_path / "keep.log")
+        clean_root_logger.addHandler(file_handler)
+
+        configure_rich_logging(use_rich=False, force_reconfigure=True)
+
+        assert file_handler in clean_root_logger.handlers
+
+    def test_without_force_an_existing_console_handler_is_left_alone(self, clean_root_logger):
+        from pyclifer.core.log import configure_rich_logging
+
+        configure_rich_logging(use_rich=False, force_reconfigure=True)
+        (first,) = self._console_handlers(clean_root_logger)
+
+        configure_rich_logging(use_rich=False, enable_secrets_filter=False)
+
+        assert self._console_handlers(clean_root_logger) == [first]

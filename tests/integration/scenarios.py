@@ -22,8 +22,7 @@ COVERED: dict[str, str] = {
     "GroupConfig.exit_codes_class": f"{_MATRIX}::TestFieldEffects",
     "GroupConfig.unhandled_exception_log_level": f"{_MATRIX}::TestFieldEffects",
     "GroupConfig.rich_help_config": f"{_MATRIX}::TestFieldEffects",
-    # Effect observed on the real log output (item 4). use_rich_logging has a defect recorded
-    # as a strict xfail: the setting is lost at run time.
+    # Effect observed on the real log output (items 4 and 11).
     "GroupConfig.use_rich_logging": f"{_OPTIONS}::TestRichLogging",
     "GroupConfig.enable_secrets_filter": f"{_OPTIONS}::TestSecretsFiltering",
     "GroupConfig.sensitive_fields": f"{_OPTIONS}::TestSecretsFiltering",

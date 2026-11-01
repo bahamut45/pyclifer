@@ -122,13 +122,6 @@ class TestRichLogging:
 
         assert "WARNING-LINE" in _logged(result)
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "Measured at item 10: use_rich_logging=False is lost at run time, the verbosity option "
-            "rebuilds the Rich handler. Fixed by a later item."
-        ),
-    )
     def test_false_does_not_install_the_rich_handler(self):
         logging.getLogger().handlers.clear()
 
@@ -136,6 +129,35 @@ class TestRichLogging:
 
         handlers = logging.getLogger().handlers
         assert not any(isinstance(handler, RichExtraStreamHandler) for handler in handlers)
+
+    def test_false_writes_plain_lines_without_a_timestamp(self):
+        result = invoke(_app(use_rich_logging=False), ["hello"])
+
+        assert "warning: WARNING-LINE" in result.stderr
+        assert "[" not in result.stderr.split("WARNING-LINE")[0]
+
+    @pytest.mark.parametrize("level", ["DEBUG", "ERROR"])
+    def test_false_still_follows_the_verbosity_level(self, level):
+        result = invoke(_app(use_rich_logging=False), ["--verbosity", level, "hello"])
+
+        assert ("DEBUG-LINE" in _logged(result)) == (level == "DEBUG")
+        assert ("WARNING-LINE" in _logged(result)) == (level == "DEBUG")
+
+    def test_false_still_masks_secrets(self, tmp_path):
+        console, _ = _log_with_secrets(
+            tmp_path, use_rich_logging=False, sensitive_fields=["mycode"]
+        )
+
+        assert "hunter2" not in console
+        assert "mc-777" not in console
+        assert "bob" in console
+
+    def test_false_still_writes_the_log_file(self, tmp_path):
+        log_file = tmp_path / "app.log"
+
+        invoke(_app(use_rich_logging=False), ["--log-file", str(log_file), "hello"])
+
+        assert "WARNING-LINE" in log_file.read_text()
 
 
 def _rotating_handlers() -> list[logging.handlers.TimedRotatingFileHandler]:

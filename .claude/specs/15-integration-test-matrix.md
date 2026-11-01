@@ -320,13 +320,28 @@ Vérifié de bout en bout, un processus par configuration, console et fichier : 
 `mycode` visible), filtre désactivé (tout visible), champ personnalisé (les deux masqués, la valeur ordinaire
 reste visible). Les deux `xfail` de secrets de l'item 4 ont été retirés.
 
-## Item 11 : Défaut — `use_rich_logging=False` perdu à l'exécution
+## ✅ Item 11 : Défaut — `use_rich_logging=False` perdu à l'exécution
 
-Trouvé en corrigeant l'item 10, même cause : `set_level` reconstruit un gestionnaire Rich quoi que dise la
-configuration. Mesuré : après la décoration il n'y a aucun gestionnaire, après l'exécution il y a un
-`RichExtraStreamHandler` et la sortie est formatée par Rich. Test à faire « passer » : le `xfail`
-`test_false_does_not_install_the_rich_handler`. **Décision à prendre avant de corriger** : sans Rich, à quoi
-ressemble la journalisation de la console ? Il faut un gestionnaire simple qui respecte `--verbosity`.
+Trouvé en corrigeant l'item 10, même cause : `set_level` reconstruisait un gestionnaire Rich quoi que dise la
+configuration. Mesuré avant : aucun gestionnaire après la décoration, un `RichExtraStreamHandler` après
+l'exécution, sortie formatée par Rich.
+
+**Décision proposée à l'utilisateur et appliquée** : sans Rich, la console utilise la journalisation standard de
+click-extra (`basicConfig(force=True)`, un `StreamHandler` simple, lignes `niveau: message` sans horodatage), avec
+le même masquage des secrets, le même respect de `--verbosity` et la même préservation du fichier de log.
+
+Correctif : `configure_rich_logging(use_rich=False)` installe ce gestionnaire (`_configure_plain_logging`) au lieu de
+ne rien faire ; `GroupDecorator._setup_logging` l'appelle toujours, avec `use_rich` ; `PycliferVerbosityOption`
+retient `use_rich` et le repasse à chaque reconfiguration. Le gestionnaire installé par pyclifer porte une marque
+(`_pyclifer_console`), ce qui rend fiable le test « déjà configuré » et la pose du niveau (le type de classe ne
+l'est pas : le gestionnaire de click-extra est une sous-classe de `StreamHandler`, ce que ma première mesure,
+qui ne lisait que le nom de la classe, avait masqué).
+
+Deux tests existants figeaient l'ancien comportement (« `use_rich_logging=False` n'appelle pas la configuration »,
+« `basicConfig` n'est pas appelé ») : leur contrat change volontairement et ils sont mis à jour. Douze tests
+ajoutés (six unitaires du gestionnaire simple, deux du décorateur, cinq d'intégration : pas de gestionnaire
+Rich, lignes simples, niveaux, secrets masqués, fichier de log). Contrôle de bout en bout, un processus par mode.
+Documenté dans `docs/logging.md`.
 
 ## Item 12 : Amélioration — masquer aussi le texte libre (option `mask_free_text`)
 

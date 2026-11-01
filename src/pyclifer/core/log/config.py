@@ -9,6 +9,7 @@ from click_extra import Choice, Context, Parameter, ParameterSource, get_current
 from click_extra.logging import VerbosityOption as BaseVerbosityOption
 from click_extra.logging import basicConfig
 
+from .filters import SecretsMasker
 from .formatters import RichExtraFormatter
 from .handlers import RichExtraStreamHandler
 from .levels import PYCLIFER_LOG_LEVELS, SupportsTraceLogger, add_trace_method
@@ -56,6 +57,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         # Rebuild the console handler with the application's own settings: calling this with
         # no arguments would put back the defaults chosen at declaration time.
         configure_rich_logging(
+            use_rich=self.use_rich,
             enable_secrets_filter=self.enable_secrets_filter,
             sensitive_fields=self.sensitive_fields,
             force_reconfigure=True,
@@ -64,7 +66,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         # Restrict stream handlers so the console output respects its explicit verbosity
         root_logger = logging.getLogger()
         for h in root_logger.handlers:
-            if isinstance(h, RichExtraStreamHandler):
+            if _is_console_handler(h):
                 h.setLevel(verb_level_int)
 
         ctx.call_on_close(self.reset_loggers)
@@ -76,6 +78,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         type=Choice(PYCLIFER_LOG_LEVELS, case_sensitive=False),  # noqa: B008
         help="Either TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL.",
         is_global: bool = False,
+        use_rich: bool = True,
         enable_secrets_filter: bool = True,
         sensitive_fields: list[str] | None = None,
         **kwargs,
@@ -87,6 +90,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
             type: Choice type with PYCLIFER_LOG_LEVELS.
             help: Help message.
             is_global: If True, this option will be propagated to subcommands.
+            use_rich: Rebuild a Rich console handler, or a plain one when False.
             enable_secrets_filter: Mask secrets in the console handler it rebuilds.
             sensitive_fields: Field names to mask on top of the defaults.
             **kwargs: Additional keyword arguments.
@@ -95,6 +99,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
             param_decls = ("--verbosity",)
 
         self.is_global = is_global
+        self.use_rich = use_rich
         self.enable_secrets_filter = enable_secrets_filter
         self.sensitive_fields = sensitive_fields
         kwargs.setdefault("show_default", True)
@@ -123,13 +128,10 @@ def configure_rich_logging(
                           Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
         force_reconfigure: Force reconfiguration even if already configured.
     """
-    # Check if Rich configuration is already active
+    # Check if the console is already configured, with Rich or without
     if not force_reconfigure:
         root_logger = logging.getLogger()
-        has_rich_handler = any(
-            hasattr(handler, "_rich_handler") for handler in root_logger.handlers
-        )
-        if has_rich_handler:
+        if any(_is_console_handler(handler) for handler in root_logger.handlers):
             return  # Already configured, do nothing
 
     if use_rich and rich_tracebacks:
@@ -172,7 +174,42 @@ def configure_rich_logging(
             if h not in root_logger.handlers:  # pragma: no branch
                 root_logger.addHandler(h)
 
+    else:
+        _configure_plain_logging(enable_secrets_filter, sensitive_fields)
+
     add_trace_method(logging.Logger)
+
+
+def _is_console_handler(handler: logging.Handler) -> bool:
+    """Tell whether a handler is the console handler pyclifer installed, Rich or plain."""
+    return hasattr(handler, "_rich_handler") or getattr(handler, "_pyclifer_console", False)
+
+
+def _configure_plain_logging(
+    enable_secrets_filter: bool, sensitive_fields: list[str] | None
+) -> None:
+    """Install click-extra's standard console handler, with the same secrets filter as Rich.
+
+    Args:
+        enable_secrets_filter: Add the SecretsMasker filter to the console handler.
+        sensitive_fields: Field names to mask on top of the defaults.
+    """
+    root_logger = logging.getLogger()
+    # basicConfig(force=True) removes every handler: keep the file handlers.
+    file_handlers = [h for h in root_logger.handlers if isinstance(h, TimedRotatingFileHandler)]
+
+    basicConfig(force=True)
+
+    # basicConfig just removed every handler and created the console one: the file handlers
+    # are put back below, so what is on the root logger now is the console handler.
+    for handler in root_logger.handlers:
+        handler._pyclifer_console = True  # type: ignore[attr-defined]
+        if enable_secrets_filter:
+            handler.addFilter(SecretsMasker(sensitive_fields=sensitive_fields))
+
+    for handler in file_handlers:
+        if handler not in root_logger.handlers:  # pragma: no branch
+            root_logger.addHandler(handler)
 
 
 def _preconfigure_click_extra_logger(handler: logging.Handler):

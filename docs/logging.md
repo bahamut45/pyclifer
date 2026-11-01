@@ -290,6 +290,16 @@ def simple_cli():
     pass
 ```
 
+With `use_rich_logging=False` the console uses click-extra's standard handler: one line per record,
+written as `level: message` (lowercase level, no timestamp).
+
+```text
+warning: Disk usage is above 90%
+```
+
+Everything else behaves as with Rich: `--verbosity` sets the level, `enable_secrets_filter` and
+`sensitive_fields` mask secrets, and `--log-file` writes the rotating file.
+
 ### Rich Markup in Log Messages
 
 ```python

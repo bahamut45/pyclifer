@@ -30,8 +30,8 @@ from pyclifer.testing import invoke
 class TestGroupDecoratorSetupLogging:
     """Tests for _setup_logging behavior ."""
 
-    def test_use_rich_logging_false_skips_configure(self):
-        """use_rich_logging=False must not call configure_rich_logging."""
+    def test_use_rich_logging_false_configures_plain_logging(self):
+        """use_rich_logging=False still configures the console, without Rich."""
         with patch("pyclifer.core.log.config.configure_rich_logging") as mock_cfg:
 
             @app_group(use_rich_logging=False)
@@ -39,7 +39,17 @@ class TestGroupDecoratorSetupLogging:
             def app(ctx):
                 """App"""
 
-            mock_cfg.assert_not_called()
+            assert mock_cfg.call_args.kwargs["use_rich"] is False
+
+    def test_use_rich_logging_true_configures_rich_logging(self):
+        with patch("pyclifer.core.log.config.configure_rich_logging") as mock_cfg:
+
+            @app_group(use_rich_logging=True)
+            @click.pass_context
+            def app(ctx):
+                """App"""
+
+            assert mock_cfg.call_args.kwargs["use_rich"] is True
 
 
 # ---------------------------------------------------------------------------
