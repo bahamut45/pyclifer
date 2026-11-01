@@ -41,8 +41,21 @@ l'arbre de commandes (`list_commands` puis `get_command`). Deux conséquences po
 
 - `config.loaded` doit être émis **après** `load_conf`, quand `ctx.meta[CONF_SOURCE]` et
   `ctx.meta[CONF_FULL]` sont renseignés (voir la docstring de `load_conf`).
-- `load_conf` peut être visité plus d'une fois pour un même appel (garde `_PRELOADED` de click-extra,
-  deux appels observés dans un essai). L'émission doit donc être **unique par contexte racine**.
+- `load_conf` est visité **une seule fois** par exécution dans une application pyclifer ordinaire
+  (mesuré sur 8 scénarios : sous-commande, sous-groupe, `--help`, appel nu, avec ou sans fichier).
+  Il peut l'être **deux fois pour la même option** dans un seul cas : un appel sans aucun argument dont
+  le fichier de config, trouvé automatiquement, contient `_default_subcommands`. La seconde visite est
+  alors un no-op de click-extra (garde `_PRELOADED`), mais notre émission, placée après `super().load_conf()`,
+  se déclencherait deux fois. Le double appel vu dans un premier prototype était un autre phénomène :
+  une commande construite avec `click_extra.command` embarque **sa propre** `ConfigOption`, d'où une
+  visite pour `cli` et une pour `cli hello` (deux options, deux contextes).
+- **Limite connue (mesurée à l'item 4).** Dans ce cas d'appel nu, la première visite est entourée d'un
+  `try/except ClickException` côté click-extra (`_resolve_subcommands_eagerly`). Une `ClickException`
+  levée par un handler y est avalée : click-extra conclut qu'il n'y a rien à injecter, **n'effectue pas
+  de seconde visite** et affiche l'aide (code 2) sans le message d'erreur. Sur tous les autres
+  chemins (sous-commande explicite, `--help`, appel nu sans `_default_subcommands`), l'erreur remonte
+  normalement. Cette spec ne contourne pas ce cas : un handler de `config.loaded` ne doit pas compter sur
+  une `ClickException` pour un appel nu avec `_default_subcommands` ; la documentation le dit (item 6).
 
 ---
 
@@ -80,7 +93,13 @@ L'API objet (`cli.on(...)`) reste disponible pour les plugins.
 `CustomConfigOption.load_conf` appelle `super().load_conf(...)`, puis émet `config.loaded` sur
 `ctx.command` si c'est un `EventsMixin`. Règles :
 
-- émis une seule fois par contexte (drapeau dans `ctx.meta`) ;
+- émis une seule fois par contexte : `ctx.meta["pyclifer.events.config_loaded"]` contient l'ensemble des
+  `command_path` déjà émis (`ctx.meta` est partagé dans toute la hiérarchie de contextes, le chemin
+  distingue donc les groupes). Le chemin est ajouté **après** l'émission réussie, pour qu'une
+  émission interrompue par une exception ne soit pas enregistrée comme faite ;
+- non émis pour une option qui n'appartient pas à un `EventsMixin` (cas d'une commande `click_extra.command`
+  autonome portant sa propre `ConfigOption`) ;
+- aucune dépendance à la constante privée `_PRELOADED` de click-extra (rejeté : elle peut changer) ;
 - émis que le fichier existe ou non (`ctx.meta[CONF_SOURCE]` dit lequel) ;
 - **non émis** si `ctx.resilient_parsing` (aide, complétion), comme click-extra ne lit pas le fichier
   dans ce cas.
@@ -151,18 +170,26 @@ un nom inconnu dans `on=` lève `ValueError` à la décoration ; sans `on`, aucu
 Bases : `PycliferExtraGroup(EventsMixin, HandleResponseMixin, GlobalOptionsMixin, click_extra.Group)`
 et `PycliferRichGroup(EventsMixin, HandleResponseMixin, GlobalOptionsMixin, RichGroup)`.
 
-## Item 4 : Émission de `config.loaded`
+## ✅ Item 4 : Émission de `config.loaded`
 
 Tests d'abord (`tests/core/options/test_custom_config_option.py`, application réelle via `invoke`) :
 
 - fichier de config présent : le handler est appelé une fois, avec `ctx.meta[CONF_SOURCE]` renseigné ;
-- aucun fichier ou `--no-config` : le handler est appelé quand même, une fois ;
-- un appel qui visite `load_conf` plusieurs fois n'émet qu'une fois (cas `_PRELOADED`) ;
+- aucun fichier trouvé : le handler est appelé quand même, une fois (`app_group` n'expose pas
+  `--no-config`, il n'est donc pas testé) ;
+- appel **nu** dont le fichier de config (découvert via `XDG_CONFIG_HOME`) contient `_default_subcommands` :
+  `load_conf` est visité deux fois pour la même option, le handler n'est appelé qu'une fois ;
+- un handler qui lève une `ClickException` sur un appel normal (`hello`) : code de sortie 2 et message sur
+  stderr. Le cas de l'appel nu n'est pas testé : voir « Limite connue » dans le constat préalable ;
+- une sous-commande construite avec `click_extra.command` (donc avec sa propre `ConfigOption`) n'émet rien
+  et n'empêche pas l'émission de la racine ;
 - `--help` (`resilient_parsing`) : pas d'émission ;
 - sans handler inscrit, aucun effet de bord.
 
-Premier travail de l'item : **reproduire le double appel de `load_conf`** observé dans un essai
-(commande exécutée avec `--config`), pour fixer le drapeau d'unicité sur un fait et non sur une supposition.
+Le double appel est déjà mesuré (voir « Constat préalable ») : le test de l'appel nu avec
+`_default_subcommands` est le premier à écrire, et il doit échouer avec deux émissions avant l'ajout du
+marqueur. Pour le construire : `XDG_CONFIG_HOME` pointé vers un dossier temporaire, fichier
+`<dossier>/<nom-de-l-app>/config.toml` contenant `[<app>]` et `_default_subcommands = ["<commande>"]`.
 
 ## Item 5 : Vérification complète
 

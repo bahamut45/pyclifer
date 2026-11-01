@@ -3,9 +3,14 @@
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import click_extra
 import pytest
+from click_extra.config import ConfigOption
+from click_extra.context import CONF_SOURCE
 
 from pyclifer.core.classes import CustomConfigOption
+from pyclifer.core.decorators import app_group
+from pyclifer.testing import invoke
 
 
 def patch_option_formats(option, formats_dict=None):
@@ -465,3 +470,119 @@ class TestCustomConfigOptionForTox:
         test_path = Path("/etc/test-cli")
         assert isinstance(test_path, Path)
         assert str(test_path) == "/etc/test-cli"
+
+
+class TestCustomConfigOptionConfigLoadedEvent:
+    """CustomConfigOption emits config.loaded once the configuration is resolved."""
+
+    @pytest.fixture
+    def xdg_home(self, tmp_path, monkeypatch):
+        """Point the user config directory to an empty temporary folder."""
+        home = tmp_path / "xdg"
+        home.mkdir()
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(home))
+        return home
+
+    @staticmethod
+    def _write_user_config(xdg_home: Path, content: str) -> None:
+        """Write the config file the app named cli discovers on its own."""
+        app_dir = xdg_home / "cli"
+        app_dir.mkdir()
+        (app_dir / "config.toml").write_text(content)
+
+    @staticmethod
+    def _make_app(handler):
+        """Build an app named cli with one command and a config.loaded handler."""
+
+        @app_group(on={"config.loaded": [handler]})
+        def cli():
+            """App"""
+
+        @cli.command()
+        def hello():
+            """Hello"""
+            click_extra.echo("hello")
+
+        return cli
+
+    def test_bare_call_with_default_subcommands_emits_once(self, xdg_home):
+        """A bare call visits load_conf twice for the same option, the handler runs once."""
+        self._write_user_config(xdg_home, '[cli]\n_default_subcommands = ["hello"]\n')
+        seen = []
+
+        result = invoke(self._make_app(lambda ctx: seen.append(ctx.command_path)), [])
+
+        assert result.exit_code == 0
+        assert "hello" in result.output
+        assert seen == ["cli"]
+
+    def test_explicit_config_file_emits_once_with_the_source_available(self, tmp_path):
+        config = tmp_path / "explicit.toml"
+        config.write_text("[cli]\n")
+        sources = []
+
+        result = invoke(
+            self._make_app(lambda ctx: sources.append(ctx.meta.get(CONF_SOURCE))),
+            ["--config", str(config), "hello"],
+        )
+
+        assert result.exit_code == 0
+        assert sources == [config]
+
+    def test_emits_even_when_no_config_file_exists(self, xdg_home):
+        seen = []
+
+        result = invoke(self._make_app(lambda ctx: seen.append(ctx.command_path)), ["hello"])
+
+        assert result.exit_code == 0
+        assert seen == ["cli"]
+
+    def test_does_not_emit_while_rendering_a_subcommand_help(self, xdg_home):
+        seen = []
+
+        cli = self._make_app(lambda ctx: seen.append(ctx.command_path))
+
+        result = invoke(cli, ["hello", "--help"])
+
+        assert result.exit_code == 0
+        assert seen == []
+
+    def test_handler_click_exception_is_reported_on_a_normal_call(self, xdg_home):
+        """A ClickException raised by a handler ends the call with the usual usage error."""
+
+        def failing(ctx):
+            raise click_extra.UsageError("handler refused the configuration")
+
+        result = invoke(self._make_app(failing), ["hello"])
+
+        assert result.exit_code == 2
+        assert "handler refused the configuration" in result.stderr
+
+    def test_standalone_command_with_its_own_config_option_emits_nothing(self, tmp_path):
+        """A click_extra command carries its own ConfigOption, which must not emit on its own."""
+        config = tmp_path / "explicit.toml"
+        config.write_text("[cli]\n")
+        seen = []
+        cli = self._make_app(lambda ctx: seen.append(ctx.command_path))
+
+        @click_extra.command()
+        def standalone():
+            """Standalone"""
+            click_extra.echo("standalone")
+
+        cli.add_command(standalone)
+
+        result = invoke(cli, ["--config", str(config), "standalone"])
+
+        assert result.exit_code == 0
+        assert seen == ["cli"]
+
+    def test_non_emitting_command_is_left_alone(self):
+        """A command that is not an EventsMixin is not asked to emit anything."""
+        option = CustomConfigOption()
+        ctx = click_extra.Context(click_extra.Command("plain"))
+
+        with patch.object(ConfigOption, "load_conf") as parent_load_conf:
+            option.load_conf(ctx, option, "ignored")
+
+        parent_load_conf.assert_called_once_with(ctx, option, "ignored")

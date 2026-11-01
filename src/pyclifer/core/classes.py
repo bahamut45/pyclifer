@@ -16,6 +16,7 @@ from click_extra.config import ConfigOption
 from extra_platforms import is_linux
 from rich_click import RichGroup, RichHelpConfiguration
 
+from .events import CONFIG_LOADED
 from .mixins import EventsMixin, GlobalOptionsMixin, HandleResponseMixin, StoreInMetaMixin
 from .mixins.events import EventHandler
 from .output.exit_codes import ExitCode
@@ -95,6 +96,10 @@ class PycliferRichGroup(EventsMixin, HandleResponseMixin, GlobalOptionsMixin, Ri
 PycliferGroup = PycliferExtraGroup
 
 
+_CONFIG_LOADED_EMITTED = "pyclifer.events.config_loaded"
+"""ctx.meta key holding the command paths for which config.loaded was already emitted."""
+
+
 class CustomConfigOption(StoreInMetaMixin, ConfigOption):
     """Custom ConfigOption to add support for /etc/<cli_name> on Linux systems.
 
@@ -113,6 +118,27 @@ class CustomConfigOption(StoreInMetaMixin, ConfigOption):
         """
         self.is_global = is_global
         super().__init__(*args, **kwargs)
+
+    def load_conf(
+        self, ctx: click_extra.Context, param: click_extra.Parameter, path_pattern: Any
+    ) -> None:
+        """Load the configuration, then emit config.loaded on the owning group.
+
+        Args:
+            ctx: The context of the group that owns this option.
+            param: The parameter being processed.
+            path_pattern: The configuration path pattern, or the no-config sentinel.
+        """
+        super().load_conf(ctx, param, path_pattern)
+        if ctx.resilient_parsing or not isinstance(ctx.command, EventsMixin):
+            return
+        # A bare call can visit this option twice (click-extra preloads it to read
+        # default subcommands), so each command path is emitted only once.
+        emitted = ctx.meta.setdefault(_CONFIG_LOADED_EMITTED, set())
+        if ctx.command_path in emitted:
+            return
+        ctx.command.emit(CONFIG_LOADED, ctx)
+        emitted.add(ctx.command_path)
 
     def get_default(self, ctx, call=True):
         """Override get_default to fix rich-click help rendering.
