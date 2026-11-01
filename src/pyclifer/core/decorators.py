@@ -153,6 +153,10 @@ class GroupDecorator:
         else:
             self.click_kwargs["cls"] = PycliferExtraGroup
             group_decorator = click_extra.group
+            # click_extra.group adds its own default options (--config, --verbosity, ...) on
+            # top of the ones pyclifer injects, which duplicates them. use_rich_help only
+            # changes the help rendering, so the options must match the Rich group's.
+            self.click_kwargs.setdefault("params", [])
 
         if self.config.name:
             self.click_kwargs["name"] = self.config.name

@@ -21,7 +21,9 @@ Key parameters:
 - `rich_help_config` — `RichHelpConfiguration` instance (or dict) forwarded to rich-click.
   Lets you customise colours, column widths, and panel styles in `--help` output.
 - `use_rich_help` — set to `False` to disable rich-click rendering and use plain Click help.
-  Defaults to `True`.
+  Defaults to `True`. It only changes how the help is drawn: the group exposes the same options
+  either way, and click-extra's own default options (`--color`, `--theme`, `--show-params`, ...) are
+  not added. Pass `params=[...]` to add options of your own.
 - `on` — mapping of lifecycle event names to lists of handler functions, for example
   `on={"config.loaded": [check_config]}`. Keys are framework event names or `Event` objects; a plain
   string that is not a framework event raises `ValueError` at decoration time. See the

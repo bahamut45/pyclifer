@@ -1399,3 +1399,61 @@ class TestGroupDecoratorEvents:
 
         assert result.exit_code == 0
         assert seen == ["app run"]
+
+
+# ---------------------------------------------------------------------------
+# GroupDecorator — use_rich_help only changes the help rendering
+# ---------------------------------------------------------------------------
+
+
+class TestPlainHelpGroupOptions:
+    """use_rich_help=False must expose the same options as the Rich group."""
+
+    @staticmethod
+    def _option_names(use_rich_help):
+        @app_group(use_rich_help=use_rich_help)
+        def app():
+            """App"""
+
+        return [param.name for param in app.params]
+
+    def test_app_group_has_the_same_options_with_or_without_rich_help(self):
+        assert sorted(self._option_names(False)) == sorted(self._option_names(True))
+
+    def test_app_group_without_rich_help_has_no_duplicate_option(self):
+        names = self._option_names(False)
+
+        assert len(names) == len(set(names))
+
+    def test_subgroup_without_rich_help_has_no_option_of_its_own(self):
+        from pyclifer.core.decorators import group
+
+        @group(use_rich_help=False)
+        def sub():
+            """Sub"""
+
+        assert sub.params == []
+
+    def test_app_group_without_rich_help_runs_a_command(self):
+        @app_group(use_rich_help=False)
+        def app():
+            """App"""
+
+        @app.command()
+        def hello():
+            """Hello"""
+            click.echo("hello")
+
+        result = invoke(app, ["hello"])
+
+        assert result.exit_code == 0
+        assert "hello" in result.output
+
+    def test_an_explicit_params_argument_is_kept(self):
+        extra = click.Option(["--extra"])
+
+        @app_group(use_rich_help=False, params=[extra], add_config_option=False)
+        def app():
+            """App"""
+
+        assert extra in app.params

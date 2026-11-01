@@ -83,11 +83,16 @@ l'événement `commands.collect` (commandes connues seulement à l'exécution, p
    (`RichGroup.add_command() got an unexpected keyword argument 'section'`). Seul le chemin
    `use_rich_help=False` (groupe cloup) accepte `section`. Mettre `LazyGroup` avant `RichGroup` dans les bases
    (item 5) apporte le support des sections au chemin Rich ; à vérifier par un test à l'item 5.
-6. **Le chemin `use_rich_help=False` est cassé une seconde fois (hors périmètre de cette spec).** Une
-   fois le défaut de l'item 1 levé, l'invocation échoue avec `RuntimeError: More than one ConfigOption
-   parameters found on command: [<ConfigOption config>, <CustomConfigOption config>]` : `click_extra.group`
-   ajoute son option de config et pyclifer ajoute `CustomConfigOption`. Le défaut préexiste (il était
-   masqué par le `TypeError`) et touche tout groupe non Rich ; il fera l'objet d'un traitement séparé.
+6. **Le chemin `use_rich_help=False` dupliquait les options (corrigé sur la branche de l'item 1).** Une
+   fois le défaut de l'item 1 levé, l'invocation échouait avec `RuntimeError: More than one ConfigOption
+   parameters found on command`. Cause mesurée : `click_extra.group` ajoute ses 20 options par défaut
+   (`default_params` : `--config`, `--verbosity`, `--color`, `--theme`, `--show-params`...) par-dessus celles
+   de pyclifer, d'où 25 options dont des doublons, contre 5 sur le chemin Rich ; un sous-groupe non Rich en
+   recevait aussi 20. Correctif : `params=[]` par défaut sur ce chemin (un `params=` explicite est conservé),
+   de sorte que `use_rich_help` ne change que le rendu de l'aide. **Changement de comportement** : un
+   utilisateur du chemin non Rich perd les options de click-extra qu'il n'a pas demandées (`--color`,
+   `--theme`, `--table-format`, `--show-params`...). Avec la config par défaut de `app_group`, ce chemin
+   était de toute façon inutilisable.
 
 Non testé à ce jour : `strict=True` sur la config, groupes paresseux imbriqués, `--params`, complétion.
 Ils sont des cas de test explicites des items 2 et 3.
