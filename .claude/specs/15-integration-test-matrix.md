@@ -168,7 +168,8 @@ répond en JSON, tandis qu'une commande normale et une commande en échec répon
 (« No dataset available. »). Avec l'option présente, la commande en échec répond bien en JSON ou YAML
 (`success: false`, `error_code: 1`). Un format par défaut invalide (`"bogus"`) est rejeté avec l'option
 (code 2) et ignoré en silence sans elle. Cas concernés : option absente, `handle_response` actif, format json
-ou yaml, soit 4 configurations ; ils sont marqués `xfail(strict=True)` (8 résultats : 2 tests chacun).
+ou yaml, soit 4 configurations, marquées `xfail(strict=True)` à l'item 3 (8 résultats : 2 tests chacun) puis
+corrigées à l'item 7.
 
 **Non observé** : l'effet de `use_rich_logging`, `enable_secrets_filter` et `sensitive_fields` (masquage des
 secrets, gestionnaire Rich). Ces champs sont construits et lancés sans erreur seulement, et déclarés comme tels
@@ -194,13 +195,30 @@ Les invariants de la décision 5, sur les chemins Rich et non Rich.
 Chaque symbole de `pyclifer.__all__` est importable et utilisable dans une application minimale (les types
 Click réexportés, le journaliseur, les classes de réponse et de rendu).
 
-## Item 7 : Défaut — `output_format_default` ignoré sans `--output-format`
+## ✅ Item 7 : Défaut — `output_format_default` ignoré sans `--output-format`
 
-Trouvé à l'item 3 (voir son rapport). Tests en échec : les 8 `xfail(strict=True)` de la matrice, qui doivent
-« passer » visiblement une fois corrigé, ce qui oblige à retirer les marqueurs. Décision à prendre avec
-l'utilisateur avant de corriger : sans l'option, `output_format_default` doit-il fixer le format pour toute
-l'application (hypothèse la plus cohérente avec la réponse déjà donnée aux erreurs d'usage), et que fait
-un format invalide ?
+Décision de l'utilisateur : `output_format_default` **conditionne toute l'application**. Une application
+déclarée en json ne répond jamais dans un autre format de son propre chef : résultats, échecs et erreurs
+d'usage. L'option `--output-format`, quand elle est exposée, surcharge le défaut pour l'appel.
+
+Correctif (tests d'abord : les 8 `xfail` de la matrice ont été retirés pour devenir 8 échecs réels, puis
+5 tests unitaires et 4 tests de `formats.py` ont été ajoutés) :
+
+- `core/output/formats.py` : `OUTPUT_FORMATS`, liste unique des formats (l'option `--output-format` en
+  dérive) et `validate_output_format` ;
+- `GroupDecorator` : `output_format_default` est validé au début de `__call__` (une valeur inconnue lève
+  `ValueError` à la décoration, comme `exit_codes_class`) et posé dans `ctx.meta["pyclifer.output_format"]`
+  à la racine quand rien d'autre ne l'a posé. Un sous-groupe créé par `group()` ne le remplace pas ;
+- documentation : `docs/output-formatting.md` (« The default format is the contract of the application »)
+  et la docstring d'`app_group`.
+
+**Défaut trouvé en chemin, non corrigé (item 5).** Une commande définie avec `@sub.command()` sur un
+sous-groupe créé par `group()`, **avant** que ce sous-groupe soit rattaché à l'application, n'imprime rien
+quand elle retourne une `Response`, même si l'application a `handle_response=True` (sortie vide, code 0).
+Mesuré identique avant et après ce correctif. Cause lue dans le code : `HandleResponseMixin.command()` marque
+la commande « décidée » (désactivée) parce que le sous-groupe n'a pas encore reçu le réglage, puis
+`_apply_handle_response_to_group` saute les commandes « décidées ». Cela contredit « `handle_response=True`
+enveloppe aussi les sous-groupes imbriqués » du `CLAUDE.md`. Ordre inverse (rattacher puis définir) : correct.
 
 ## Item 7+ : Autres défauts trouvés
 

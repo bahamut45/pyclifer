@@ -24,10 +24,6 @@ AUTOMATIC_OFF = {
     "add_output_format_option": False,
 }
 FORMATS = ("json", "yaml", "table", "rich", "raw", "text")
-KNOWN_DEFECT = (
-    "Measured at item 3: output_format_default is ignored when add_output_format_option is False, "
-    "although an unknown command is answered in that format. Fixed by a later item."
-)
 # The logger that reports an unhandled exception raised by a command.
 _UNHANDLED_EXCEPTION_LOGGER = "pyclifer.core.decorators"
 
@@ -78,15 +74,6 @@ def _single_fields() -> list[dict]:
     ]
 
 
-def _loses_the_default_format(config: dict) -> bool:
-    """Whether the config hits the defect measured at item 3."""
-    return (
-        not config.get("add_output_format_option", True)
-        and config.get("handle_response", True)
-        and config.get("output_format_default") in ("json", "yaml")
-    )
-
-
 def _case_id(config: dict) -> str:
     """Readable pytest id built from the config."""
     parts = []
@@ -108,17 +95,13 @@ def _case_id(config: dict) -> str:
     return "-".join(parts)
 
 
-def _params(cases, *, known_defect=False, only=None):
-    """Turn configs into pytest params, marking the known defect and filtering when asked."""
-    params = []
-    for config in cases:
-        if only is not None and not only(config):
-            continue
-        marks = []
-        if known_defect and _loses_the_default_format(config):
-            marks.append(pytest.mark.xfail(strict=True, reason=KNOWN_DEFECT))
-        params.append(pytest.param(config, id=_case_id(config), marks=marks))
-    return params
+def _params(cases, *, only=None):
+    """Turn configs into pytest params, keeping the ones that pass the filter."""
+    return [
+        pytest.param(config, id=_case_id(config))
+        for config in cases
+        if only is None or only(config)
+    ]
 
 
 def _answers_failures_in_a_structured_format(config: dict) -> bool:
@@ -179,7 +162,7 @@ class _Matrix:
 class TestMainAxes(_Matrix):
     """Full product of use_rich_help, automatic options, output format, response handling, timer."""
 
-    @pytest.mark.parametrize("config", _params(_main_axes(), known_defect=True))
+    @pytest.mark.parametrize("config", _params(_main_axes()))
     def test_application_is_healthy(self, config):
         self._check_healthy(config)
 
@@ -197,7 +180,7 @@ class TestMainAxes(_Matrix):
 
     @pytest.mark.parametrize(
         "config",
-        _params(_main_axes(), known_defect=True, only=_answers_failures_in_a_structured_format),
+        _params(_main_axes(), only=_answers_failures_in_a_structured_format),
     )
     def test_failing_command_answers_in_the_default_structured_format(self, config):
         self._check_failing_command_answer(config)

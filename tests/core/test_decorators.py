@@ -17,6 +17,7 @@ from pyclifer.core.decorators import (
     pagination_options,
     verbosity_option,
 )
+from pyclifer.core.output import Response
 from pyclifer.core.output.exit_codes import ExitCode
 from pyclifer.testing import invoke
 
@@ -1457,3 +1458,78 @@ class TestPlainHelpGroupOptions:
             """App"""
 
         assert extra in app.params
+
+
+# ---------------------------------------------------------------------------
+# GroupDecorator — output_format_default is the contract of the whole application
+# ---------------------------------------------------------------------------
+
+
+class TestOutputFormatDefaultContract:
+    """An application declared in json never answers in another format on its own."""
+
+    @staticmethod
+    def _app(**config):
+        @app_group(**config)
+        def app():
+            """App"""
+
+        @app.command()
+        def hello():
+            """Hello"""
+            return Response(success=True, message="hello")
+
+        @app.command()
+        def boom():
+            """Fail"""
+            raise RuntimeError("kaboom")
+
+        return app
+
+    @pytest.mark.parametrize("output_format", ["json", "yaml"])
+    def test_default_format_applies_without_the_output_format_option(self, output_format):
+        app = self._app(output_format_default=output_format, add_output_format_option=False)
+
+        result = invoke(app, ["hello"])
+
+        parsed = result.json if output_format == "json" else result.yaml
+        assert parsed["success"] is True
+
+    @pytest.mark.parametrize("output_format", ["json", "yaml"])
+    def test_a_failing_command_answers_in_the_default_format_without_the_option(
+        self, output_format
+    ):
+        app = self._app(output_format_default=output_format, add_output_format_option=False)
+
+        result = invoke(app, ["boom"])
+
+        parsed = result.json if output_format == "json" else result.yaml
+        assert parsed["success"] is False
+
+    def test_the_option_still_overrides_the_default_when_it_is_exposed(self):
+        app = self._app(output_format_default="json")
+
+        result = invoke(app, ["--output-format", "yaml", "hello"])
+
+        assert result.yaml["success"] is True
+
+    def test_a_sub_group_does_not_apply_the_default_of_its_own(self):
+        from pyclifer.core.decorators import group
+
+        @group()
+        def sub():
+            """Sub"""
+
+        app = self._app(output_format_default="json", add_output_format_option=False)
+        app.add_command(sub)
+
+        @sub.command()
+        def leaf():
+            """Leaf"""
+            return Response(success=True, message="leaf")
+
+        assert invoke(app, ["sub", "leaf"]).json["success"] is True
+
+    def test_an_unknown_default_format_is_rejected_at_decoration(self):
+        with pytest.raises(ValueError, match="output_format_default.*'xml'"):
+            self._app(output_format_default="xml")

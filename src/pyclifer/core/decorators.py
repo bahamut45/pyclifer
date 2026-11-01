@@ -24,6 +24,7 @@ from .classes import (
 )
 from .log.config import PycliferVerbosityOption, create_log_file_callback
 from .output.exit_codes import ExitCode, validate_exit_codes_class
+from .output.formats import OUTPUT_FORMATS, validate_output_format
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 _log = logging.getLogger(__name__)
@@ -58,6 +59,7 @@ class GroupDecorator:
 
     def __call__(self, f: Callable) -> Any:
         """Apply the configuration and create the Click group."""
+        validate_output_format(self.config.output_format_default, "output_format_default")
         self._setup_logging()
 
         f = self._apply_rich_help(f)
@@ -187,6 +189,7 @@ class GroupDecorator:
         original_make_context = f.make_context
         level = self.config.unhandled_exception_log_level
         exit_codes_cls = self.config.exit_codes_class
+        output_format_default = self.config.output_format_default
 
         @functools.wraps(original_make_context)
         def custom_make_context(
@@ -250,6 +253,9 @@ class GroupDecorator:
             if parent is None:
                 ctx.meta.setdefault("pyclifer.unhandled_exception_log_level", level)
                 ctx.meta.setdefault("pyclifer.exit_codes_class", exit_codes_cls)
+                # The default format is the contract of the whole application. The option
+                # overrides it when exposed; without it, nothing else would set the format.
+                ctx.meta.setdefault("pyclifer.output_format", output_format_default)
 
             # Concern 5 — context_factory: build ctx.obj from context=True param values.
             # Skip during resilient_parsing (help mode) — required params are None
@@ -493,8 +499,9 @@ def app_group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group
     - `handle_response` (bool): intercept and print `Response` objects automatically.
     - `timer` (bool): inject `--time/--no-time`. Prints elapsed time in rich/table/raw;
       injects `execution_time` and `execution_time_str` into `Response.data` in json/yaml.
-    - `output_format_default` (str): default for `--output-format`
-      (json, yaml, table, rich, raw, text).
+    - `output_format_default` (str): the format the whole application answers in
+      (json, yaml, table, rich, raw, text). It is the default of `--output-format`, and the
+      fixed format when the option is not exposed. Any other value raises ValueError.
 
     Args:
         **kwargs: GroupConfig fields or Click group arguments.
@@ -946,7 +953,7 @@ def output_format_option(
 
     kwargs.setdefault(
         "type",
-        click_extra.Choice(["json", "yaml", "table", "rich", "raw", "text"], case_sensitive=False),
+        click_extra.Choice(list(OUTPUT_FORMATS), case_sensitive=False),
     )
     kwargs.setdefault("help", "Specify the output format for the command.")
 

@@ -24,6 +24,24 @@ globally to all subcommands. The selected format is stored in `ctx.meta['pyclife
 and read automatically by `BaseContext` — you do not need to declare an `output_format` parameter
 in your functions.
 
+### The default format is the contract of the application
+
+`output_format_default` sets the format the whole application answers in: normal results, failures
+and usage errors alike. Declare it once and the application never answers in another format on its own.
+
+```python
+@app_group(output_format_default="json", add_output_format_option=False)
+def cli():
+    """Always answers in JSON."""
+```
+
+- With `--output-format` exposed (the default for `@app_group`), the option overrides the default
+  for that call: `myapp -o yaml hello`.
+- With `add_output_format_option=False`, nobody can change the format: every answer uses
+  `output_format_default`.
+- A value that is not one of `json`, `yaml`, `table`, `rich`, `raw`, `text` raises `ValueError` when
+  the group is declared, so a typo is caught at start-up.
+
 ## Automatic Response Dispatch
 
 pyclifer provides three complementary mechanisms to print a `Response` automatically when a command
@@ -101,7 +119,8 @@ def hello(ctx):
 ### Output Format Resolution
 
 All three mechanisms read the format from `ctx.meta['pyclifer.output_format']`, set by
-`--output-format`. Explicit values (command-line or environment variable) always take precedence.
+`--output-format`, or by `output_format_default` when the option is not exposed. Explicit values
+(command-line or environment variable) always take precedence.
 
 ```bash
 myapp --output-format json hello --name Alice   # JSON output
