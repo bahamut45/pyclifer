@@ -107,7 +107,7 @@ L'API objet (`cli.on(...)`) reste disponible pour les plugins.
 
 ---
 
-## Item 1 : Constantes d'événements et validation des noms
+## ✅ Item 1 : Constantes d'événements et validation des noms
 
 Test d'abord (`tests/core/test_events.py`) :
 
