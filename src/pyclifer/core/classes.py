@@ -1,5 +1,6 @@
 """Custom Click classes for pyclifer."""
 
+import copy
 import logging
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
@@ -178,6 +179,40 @@ class CustomConfigOption(StoreInMetaMixin, ConfigOption):
                 continue
         if not found:
             raise FileNotFoundError(f"No file found matching {pattern}")
+
+    def read_and_parse_conf(self, pattern: str) -> tuple[Path | URL | None, dict[str, Any] | None]:
+        """Read every matching file and deep-merge them, the last one winning.
+
+        Sub-patterns are read in order, from the lowest to the highest priority
+        (system before user), and the files of one directory are read in
+        alphabetical order. Each file overrides the keys of the previous ones.
+
+        Args:
+            pattern: Pipe-separated glob patterns, or a single pattern or URL.
+
+        Returns:
+            The location of the highest priority file and the merged configuration.
+
+        Raises:
+            FileNotFoundError: When no file matches the pattern.
+        """
+        # Deferred import: keeps deepmerge off the startup path of every CLI.
+        from deepmerge import always_merger
+
+        layers = []
+        for sub_pattern in pattern.split("|"):
+            try:
+                layers.extend(self.read_and_parse_all_conf(sub_pattern))
+            except FileNotFoundError:
+                # This location holds no file; the next one may still match.
+                continue
+        if not layers:
+            # Nothing parseable: let click-extra raise or report blank files itself.
+            return super().read_and_parse_conf(pattern)
+        merged: dict[str, Any] = {}
+        for _location, conf in layers:
+            merged = always_merger.merge(merged, copy.deepcopy(conf))
+        return layers[-1][0], merged
 
     def _get_extension_pattern(self) -> str:
         """Build a file extension pattern from supported formats.

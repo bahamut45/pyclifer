@@ -47,11 +47,34 @@ myapp --config "~/.config/myapp/dev-*.yaml"
 
 ## Configuration Search Order
 
+Without `--config`, pyclifer reads every file it finds and merges them. From the lowest to the
+highest priority:
+
 1. **System-wide** (Linux only): `/etc/<cli_name>/*.{toml,yaml,json}`
 2. **User-specific**: `~/.config/<cli_name>/*.{toml,yaml,json}`
-3. **Explicitly provided**: Any path passed via `--config`
 
 Files found later override values from earlier files, so users can override system defaults.
+Within one directory, files are read in alphabetical order, so `production.toml` overrides
+`base.toml`.
+
+The merge is deep: tables (including the section of a sub-command) are merged key by key, and
+lists are concatenated. A key defined only in the system file is kept when the user file does not
+define it.
+
+```toml
+# /etc/myapp/config.toml
+[myapp.connect]
+timeout = 60
+database-url = "postgres://prod-server/myapp"
+
+# ~/.config/myapp/config.toml
+[myapp.connect]
+timeout = 10
+```
+
+`myapp connect` then runs with `timeout = 10` (user) and the system `database-url`.
+
+An explicit path passed via `--config` replaces this automatic search: only that file is read.
 
 ## Environment Variables
 

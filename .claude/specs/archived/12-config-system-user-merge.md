@@ -52,19 +52,21 @@ sont perdues (`only_system=none`). `cascade` ne donne donc pas le comportement v
 
 `CustomConfigOption.read_and_parse_conf(pattern)` :
 
-1. appelle `self.read_and_parse_all_conf(pattern)` : fichiers parsés dans l'ordre de découverte,
-   priorité la plus haute en premier (la surcharge `search_and_read_file` de la spec 11 garantit
-   que cet ordre est celui des sous-motifs) ;
-2. fusionne les couches de la plus basse à la plus haute priorité ;
-3. renvoie `(location_de_la_couche_prioritaire, conf_fusionnée)` — la même forme qu'avant, donc
+1. découpe le motif sur `|` et appelle `self.read_and_parse_all_conf(sous_motif)` pour chaque
+   sous-motif, dans l'ordre (un sous-motif sans fichier est ignoré) ;
+2. fusionne toutes les couches **dans l'ordre de lecture, la dernière gagnant** : système, puis
+   utilisateur ; dans un même dossier, ordre alphabétique (`base.toml` puis `production.toml`),
+   ce qui correspond à la section « Multiple Configuration Files » de la doc ;
+3. renvoie `(location_de_la_dernière_couche, conf_fusionnée)` — la même forme qu'avant, donc
    aucun changement pour le reste de click-extra ;
-4. sans couche (aucun fichier, ou fichiers vides), délègue à `super().read_and_parse_conf` pour
-   conserver ses erreurs (`FileNotFoundError`, fichier vide).
+4. sans couche (aucun fichier, ou fichiers vides), délègue à `super().read_and_parse_conf` : la
+   découverte automatique ignore les fichiers vides et renvoie `(None, None)`.
 
-### Décision 4 — `default_pattern()` met la plus haute priorité en premier
+### Décision 4 — `default_pattern()` inchangé
 
-`default_pattern()` produit `~/.config/<cli>/*.ext|/etc/<cli>/*.ext` (utilisateur avant système).
-La docstring documente que l'ordre des sous-motifs est l'ordre de priorité décroissante.
+`default_pattern()` produit déjà `/etc/<cli>/*.ext|~/.config/<cli>/*.ext`, soit l'ordre de
+priorité croissante. Il n'est pas modifié (le plan initial prévoyait de l'inverser avec « la
+première couche gagne » ; l'ordre « la dernière gagne » est plus simple et cohérent avec la doc).
 
 ### Décision 5 — `--config` explicite inchangé
 
@@ -89,93 +91,60 @@ verra ses valeurs désormais appliquées. À signaler dans le changelog et la no
 | Fichier                                           | Changement                                                  |
 |---------------------------------------------------|-------------------------------------------------------------|
 | `pyproject.toml`                                  | ajouter `deepmerge>=1.0.1`                                  |
-| `src/pyclifer/core/classes.py`                    | `read_and_parse_conf` ; ordre de `default_pattern`          |
+| `src/pyclifer/core/classes.py`                    | surcharge de `read_and_parse_conf`                          |
 | `tests/core/options/test_custom_config_option.py` | remplacer le test de priorité, ajouter les tests de fusion  |
 | `docs/configuration.md`                           | section « Configuration Search Order » et exemples          |
-| `docs/api/classes.md`                             | docstring de `CustomConfigOption` (rendue par mkdocstrings) |
 
 ---
 
-## Tâche 1 : Branche
+## ✅ Tâche 1 : Branche
 
-- [ ] `git checkout -b feat/config-system-user-merge`
+- [x] `git checkout -b feat/config-system-user-merge`
 
-## Tâche 2 : Tests (rouge)
+## ✅ Tâche 2 : Tests (rouge)
 
 **Fichier :** `tests/core/options/test_custom_config_option.py`
 
-- [ ] **Étape 1 :** remplacer `test_etc_takes_priority_over_user_config` par
+- [x] **Étape 1 :** remplacer `test_etc_takes_priority_over_user_config` par
   `test_user_overrides_system_on_conflict` : `/etc` fixe `source = 'system'`, l'utilisateur
   `source = 'user'` → `source == 'user'`.
-- [ ] **Étape 2 :** ajouter
-  - `test_keys_from_both_files_are_merged` : une clé propre à chaque fichier est présente
-    dans le résultat.
-  - `test_nested_tables_are_deep_merged` : `[app.hello]` définit `a` côté système et `b` côté
-    utilisateur → `a` et `b` présents, pas seulement la table utilisateur.
-  - `test_returns_highest_priority_location` : le chemin renvoyé est celui du fichier utilisateur.
-  - `test_single_file_is_returned_unchanged` : un seul fichier → contenu inchangé.
-  - `test_no_file_raises_file_not_found` : `pytest.raises(FileNotFoundError, match="No file found")`.
-  - `test_empty_files_delegate_to_parent` : fichiers vides → comportement du parent (couvre la
-    branche de délégation).
-  - `test_default_pattern_lists_user_before_system` : l'ordre des sous-motifs.
-- [ ] **Étape 3 :** `python -m pytest tests/core/options/ -v` → les nouveaux tests échouent.
+- [x] **Étape 2 :** ajouter
+  - `test_keys_from_both_files_are_merged`, `test_nested_tables_are_deep_merged` (section de
+    sous-commande fusionnée clé par clé),
+  - `test_returns_highest_priority_location` (le fichier utilisateur),
+  - `test_single_file_is_returned_unchanged`,
+  - `test_later_file_in_a_directory_overrides_earlier_one` (`base.toml` / `production.toml`),
+  - `test_no_file_raises_file_not_found`,
+  - `test_blank_files_are_ignored` (la découverte automatique renvoie `(None, None)`).
+- [x] **Étape 3 :** `python -m pytest tests/core/options/ -v` → les nouveaux tests échouent.
 
-## Tâche 3 : Implémentation (vert)
+## ✅ Tâche 3 : Implémentation (vert)
 
 **Fichier :** `src/pyclifer/core/classes.py`
 
-- [ ] **Étape 1 : `default_pattern`** : `"|".join(reversed(all_patterns))` en mettant à jour la
-  docstring (« highest priority first »).
-- [ ] **Étape 2 : surcharge**
+- [x] **Étape 1 : surcharge** (voir `CustomConfigOption.read_and_parse_conf`) : boucle sur les
+  sous-motifs, `read_and_parse_all_conf` par sous-motif, fusion `deepmerge.always_merger` sur des
+  copies profondes, renvoi de `(layers[-1][0], merged)`, délégation à `super()` sans couche.
+  Importer `copy` et différer l'import de `deepmerge` (démarrage de la CLI).
+- [x] **Étape 2 : dépendance** : `deepmerge>=1.0.1` dans `pyproject.toml`, puis `uv sync`.
+- [x] **Étape 3 :** `python -m pytest tests/ -v` → tout passe, couverture de branches à 100 %.
 
-```python
-    def read_and_parse_conf(
-        self, pattern: str
-    ) -> tuple[Path | URL | None, dict[str, Any] | None]:
-        """Read every matching file and deep-merge them, highest priority winning.
+## ✅ Tâche 4 : Vérification de bout en bout
 
-        Files are discovered in sub-pattern order (user before system), so the first
-        layer has the highest priority. Layers are merged from lowest to highest priority.
-
-        Args:
-            pattern: Pipe-separated glob patterns, or a single pattern or URL.
-
-        Returns:
-            The location of the highest priority file and the merged configuration.
-
-        Raises:
-            FileNotFoundError: When no file matches the pattern.
-        """
-        # Deferred import: keeps deepmerge off the startup path of every CLI.
-        from deepmerge import always_merger
-
-        layers = list(self.read_and_parse_all_conf(pattern))
-        if not layers:
-            return super().read_and_parse_conf(pattern)
-        merged: dict[str, Any] = {}
-        for _location, conf in reversed(layers):
-            merged = always_merger.merge(merged, conf)
-        return layers[0][0], merged
-```
-
-- [ ] **Étape 3 :** `python -m pytest tests/ -v` → tout passe, couverture de branches à 100 %.
-
-## Tâche 4 : Vérification de bout en bout
-
-- [ ] Rejouer l'Annexe. Résultat attendu : A défauts ; B système ; C utilisateur ;
+- [x] Rejouer l'Annexe. Résultat attendu : A défauts ; B système ; C utilisateur ;
   **D `source=user only_system=yes only_user=yes`** ; E explicite.
 
-Vérifié sur un prototype jetable (click-extra 9.5.1) : D donne exactement
+Vérifié sur le code réel (click-extra 9.5.1) : D donne exactement
 `source=user only_system=yes only_user=yes`.
 
-## Tâche 5 : Documentation
+## ✅ Tâche 5 : Documentation
 
-- [ ] `docs/configuration.md` : réécrire « Configuration Search Order » (priorité décroissante
+- [x] `docs/configuration.md` : réécrire « Configuration Search Order » (priorité décroissante
   `--config` > utilisateur > système, fusion profonde, listes concaténées) et ajouter l'exemple
   `timeout` / `database-url` du cas d'usage.
-- [ ] `mkdocs build --strict`.
+- [x] `mkdocs build --strict`.
 
-## Tâche 6 : Lint, tox et commit
+## ✅ Tâche 6 : Lint, tox et commit
 
 ```bash
 ruff check src/ tests/ && ruff format src/ tests/
