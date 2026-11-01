@@ -134,6 +134,17 @@ myapp --verbosity DEBUG command
 MYAPP_VERBOSITY=TRACE myapp command
 ```
 
+The level goes both ways. The default is `WARNING` (change it with `verbosity_default_level`), and a
+level you choose replaces it, whether it is more or less verbose:
+
+```bash
+myapp --verbosity DEBUG command    # warnings, plus info and debug messages
+myapp --verbosity ERROR command    # only errors and critical messages
+myapp command --verbosity ERROR    # the option is accepted after the subcommand too
+```
+
+If you give two levels on the same command line, the most verbose one wins.
+
 ### File Logging
 
 ```python

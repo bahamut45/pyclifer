@@ -91,17 +91,26 @@ class TestVerbosityOption:
 
         assert "DEBUG-LINE" in _logged(result)
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "Measured at item 4: --verbosity ERROR keeps showing warnings, while plain click-extra "
-            "and verbosity_default_level='ERROR' hide them. Fixed by a later item."
-        ),
-    )
-    def test_a_stricter_level_than_the_default_hides_warnings(self):
-        result = invoke(_app(), ["--verbosity", "ERROR", "hello"])
+    @pytest.mark.parametrize("level", ["ERROR", "CRITICAL"])
+    def test_a_stricter_level_than_the_default_hides_warnings(self, level):
+        result = invoke(_app(), ["--verbosity", level, "hello"])
 
         assert "WARNING-LINE" not in _logged(result)
+
+    def test_a_stricter_level_after_the_subcommand_hides_warnings(self):
+        result = invoke(_app(), ["hello", "--verbosity", "ERROR"])
+
+        assert _logged(result) == {"ERROR-LINE"}
+
+    def test_a_stricter_level_from_the_environment_hides_warnings(self):
+        result = invoke(_app(), ["hello"], env={"CLI_VERBOSITY": "ERROR"})
+
+        assert "WARNING-LINE" not in _logged(result)
+
+    def test_an_error_default_is_kept_when_nothing_is_chosen(self):
+        result = invoke(_app(verbosity_default_level="ERROR"), ["hello"])
+
+        assert _logged(result) == {"ERROR-LINE"}
 
 
 class TestRichLogging:

@@ -5,7 +5,7 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import Any
 
-from click_extra import Choice, Context, Parameter, get_current_context
+from click_extra import Choice, Context, Parameter, ParameterSource, get_current_context
 from click_extra.logging import VerbosityOption as BaseVerbosityOption
 from click_extra.logging import basicConfig
 
@@ -23,16 +23,21 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         Override the parent method to use PYCLIFER_LOG_LEVELS instead of LOG_LEVELS
         to support our custom TRACE level.
         """
-        # Skip setting the level if another option has already set it or is at an equal
-        # or lower level.
+        # A value nobody typed (the default every copy of a global option carries) is not a
+        # choice: it never overrides a level already set, and a level the user did choose
+        # replaces one that only came from a default.
+        from_default = ctx.get_parameter_source(param.name) is ParameterSource.DEFAULT
         current_level = ctx.meta.get("click_extra.verbosity_level")
         if current_level:
-            levels = tuple(PYCLIFER_LOG_LEVELS)
-            current_level_index = levels.index(current_level)
-            new_level_index = levels.index(value)
-            if new_level_index <= current_level_index:
+            if from_default:
                 return
+            # Between two chosen levels, skip the new one if it is not more verbose.
+            if not ctx.meta.get("pyclifer.verbosity_from_default", False):
+                levels = tuple(PYCLIFER_LOG_LEVELS)
+                if levels.index(value) <= levels.index(current_level):
+                    return
 
+        ctx.meta["pyclifer.verbosity_from_default"] = from_default
         ctx.meta["click_extra.verbosity_level"] = value
         ctx.meta["click_extra.verbosity"] = value
 

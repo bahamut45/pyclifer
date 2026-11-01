@@ -205,10 +205,10 @@ qu'une fois. Ce n'est pas un défaut.
 
 **Défauts trouvés (4), chacun en `xfail(strict=True)`, aucun corrigé à cet item** :
 
-1. **`--verbosity ERROR` n'a aucun effet.** Les avertissements restent affichés, alors que click-extra seul et
+1. **`--verbosity ERROR` n'a aucun effet** (corrigé à l'item 8). Les avertissements restent affichés, alors que click-extra seul et
    `verbosity_default_level="ERROR"` les masquent. Le niveau passé en ligne de commande ne peut pas être plus strict
    que le défaut. La logique `set_level` de pyclifer ignore un niveau « moins verbeux » que celui déjà posé.
-2. **`show_envvar=False` n'a aucun effet.** `GroupConfig.show_envvar` n'est lu nulle part dans le code et n'est
+2. **`show_envvar=False` n'a aucun effet** (corrigé à l'item 9). `GroupConfig.show_envvar` n'est lu nulle part dans le code et n'est
    pas documenté.
 3. **`enable_secrets_filter=False` n'a aucun effet.** Le masquage reste actif.
 4. **`sensitive_fields` n'a aucun effet.** Un champ personnalisé n'est pas masqué, alors que la documentation
@@ -262,12 +262,28 @@ sous-arbre ; la vérification est stricte (`is True`) pour ne pas confondre avec
 autre lecture de `GroupConfig.handle_response` dans le dépôt ni dans les templates du scaffolding.
 L'item 5 couvre les deux ordres sur les chemins Rich et non Rich.
 
-## Item 8 : Défaut — `--verbosity` ne peut pas être plus strict que le défaut
+## ✅ Item 8 : Défaut — `--verbosity` ne pouvait pas être plus strict que le défaut
 
-Trouvé à l'item 4. Les cas à faire « passer » : le `xfail` `test_a_stricter_level_than_the_default_hides_warnings`.
-Décision à prendre : l'option de la ligne de commande doit pouvoir **monter et descendre** le niveau. La règle
-« le plus verbeux gagne » est utile entre plusieurs options (`--verbosity`, `-v`, `--debug`), mais le défaut ne
-doit pas compter comme un choix déjà fait.
+Décision de l'utilisateur : les niveaux de log doivent être respectés dans les deux sens.
+
+**Cause, tracée appel par appel.** `--verbosity ERROR hello` provoque trois appels à `set_level` : la racine reçoit
+`ERROR`, la pré-analyse reçoit `ERROR` (sans effet), puis la **sous-commande**, qui porte une copie de l'option
+globale, reçoit sa valeur **par défaut** `WARNING`. La règle « le plus verbeux gagne » (`ERROR` est à l'indice 1,
+`WARNING` à l'indice 2) laissait ce défaut écraser le choix de l'utilisateur. Un défaut était traité comme un choix.
+
+**Correctif.** `set_level` lit la source du paramètre (`ParameterSource.DEFAULT` ou non) : une valeur par défaut ne
+remplace jamais un niveau déjà posé, et un niveau choisi (ligne de commande, environnement, fichier de config)
+remplace un niveau qui ne venait que d'un défaut. Entre deux niveaux choisis, la règle d'origine est conservée :
+le plus verbeux gagne (mesuré dans les deux ordres). `ctx.meta["pyclifer.verbosity_from_default"]` retient
+l'origine du niveau courant.
+
+**Une erreur d'analyse corrigée en route.** J'avais d'abord écrit que `hello --verbosity ERROR` (option après la
+sous-commande) échouait aussi : le test, écrit avant le code, passait déjà, donc c'était faux. Seuls le placement
+avant la sous-commande et la variable d'environnement étaient touchés.
+
+Neuf configurations vérifiées de bout en bout, un processus chacune (défaut, ERROR, CRITICAL, DEBUG, avant et après
+la sous-commande, environnement, `verbosity_default_level` ERROR et DEBUG). Cinq tests unitaires de la règle et
+quatre tests d'intégration. Documenté dans `docs/logging.md`.
 
 ## ✅ Item 9 : Défaut — `show_envvar` sans effet
 
@@ -312,7 +328,19 @@ configuration. Mesuré : après la décoration il n'y a aucun gestionnaire, apr�
 `test_false_does_not_install_the_rich_handler`. **Décision à prendre avant de corriger** : sans Rich, à quoi
 ressemble la journalisation de la console ? Il faut un gestionnaire simple qui respecte `--verbosity`.
 
-## Item 12+ : Autres défauts trouvés
+## Item 12 : Amélioration — masquer aussi le texte libre (option `mask_free_text`)
+
+Proposition issue de l'item 10, **pas encore décidée**. Aujourd'hui le filtre masque la valeur d'une **clé**
+(dict, tuple nommé, attribut du record) et laisse passer une chaîne comme `"password=hunter2"`. Un motif
+`clé=valeur`, `clé: valeur`, JSON, requête d'URL ou en-tête (`Authorization: Bearer`) a été essayé sur des
+lignes réalistes : il masque ces formes, mais pas « the password is hunter2 » (aucun séparateur), et il masque
+à tort `max_tokens=100` et `token: expired`. Ces faux positifs déroutent l'utilisateur, d'où la proposition :
+une option **`mask_free_text`, à `False` par défaut** (aucune régression, activée en connaissance de cause),
+les limites écrites dans la doc et les faux positifs épinglés par des tests. La règle de correspondance
+(nom qui contient le champ) reste la même qu'avec les clés. Le filtre doit alors formater le message avant de
+le masquer (`record.msg` formaté, `record.args` vidé).
+
+## Item 13+ : Autres défauts trouvés
 
 Un item par défaut mesuré aux items 5 et 6.
 

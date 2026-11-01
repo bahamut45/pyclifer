@@ -5,6 +5,7 @@ import sys
 from unittest.mock import Mock, PropertyMock, patch
 
 import pytest
+from click_extra import ParameterSource
 
 from pyclifer.core.log import (
     PYCLIFER_LOG_LEVELS,
@@ -619,6 +620,66 @@ class TestPycliferVerbosityOption:
         mock_configure.assert_called_with(
             enable_secrets_filter=True, sensitive_fields=None, force_reconfigure=True
         )
+
+    @staticmethod
+    def _set_level(option, meta, value, source):
+        """Call set_level with a context whose parameter was filled from the given source."""
+        mock_ctx = Mock()
+        mock_ctx.meta = meta
+        mock_ctx.get_parameter_source.return_value = source
+        with (
+            patch("pyclifer.core.log.config.configure_rich_logging"),
+            patch.object(
+                type(option), "all_loggers", new_callable=PropertyMock
+            ) as mock_all_loggers,
+        ):
+            mock_all_loggers.return_value = iter([])
+            with patch.object(option, "reset_loggers"):
+                option.set_level(mock_ctx, Mock(), value)
+        return meta
+
+    def test_a_default_value_never_overrides_a_level_already_chosen(self, verbosity_option):
+        """The default a sub-command's copy of the option carries is not a choice."""
+        meta = self._set_level(
+            verbosity_option,
+            {"click_extra.verbosity_level": "ERROR"},
+            "WARNING",
+            ParameterSource.DEFAULT,
+        )
+
+        assert meta["click_extra.verbosity_level"] == "ERROR"
+
+    def test_a_chosen_level_overrides_a_level_that_came_from_a_default(self, verbosity_option):
+        """A stricter level typed by the user replaces the default set earlier."""
+        meta = {"click_extra.verbosity_level": "WARNING", "pyclifer.verbosity_from_default": True}
+
+        self._set_level(verbosity_option, meta, "ERROR", ParameterSource.COMMANDLINE)
+
+        assert meta["click_extra.verbosity_level"] == "ERROR"
+
+    def test_a_chosen_level_from_the_environment_counts_as_a_choice(self, verbosity_option):
+        meta = {"click_extra.verbosity_level": "WARNING", "pyclifer.verbosity_from_default": True}
+
+        self._set_level(verbosity_option, meta, "CRITICAL", ParameterSource.ENVIRONMENT)
+
+        assert meta["click_extra.verbosity_level"] == "CRITICAL"
+
+    def test_two_chosen_levels_keep_the_most_verbose(self, verbosity_option):
+        """Several options can each set a level: the most verbose one still wins."""
+        meta = {"click_extra.verbosity_level": "DEBUG"}
+
+        self._set_level(verbosity_option, meta, "ERROR", ParameterSource.COMMANDLINE)
+
+        assert meta["click_extra.verbosity_level"] == "DEBUG"
+
+    def test_the_first_level_is_recorded_with_where_it_came_from(self, verbosity_option):
+        from_default = self._set_level(
+            {}.copy() or verbosity_option, {}, "WARNING", ParameterSource.DEFAULT
+        )
+        from_user = self._set_level(verbosity_option, {}, "ERROR", ParameterSource.COMMANDLINE)
+
+        assert from_default["pyclifer.verbosity_from_default"] is True
+        assert from_user["pyclifer.verbosity_from_default"] is False
 
     @patch("pyclifer.core.log.config.configure_rich_logging")
     def test_set_level_more_verbose_overrides_current_level(self, mock_configure, verbosity_option):
