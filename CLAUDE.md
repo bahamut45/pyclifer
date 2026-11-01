@@ -210,6 +210,18 @@ Managed with `bumpversion`. Version is synced across `pyproject.toml`, `README.m
 `src/pyclifer/__init__.py`. Commits follow conventional commits with emoji prefixes
 (e.g., `✨ feat`, `🐛 fix`, `♻️ refactor`).
 
+### Documentation review before a bump
+
+Before running `bumpversion` (or when the user announces a release), run the `doc-review`
+skill and report its findings **before** bumping. The bump commit tags the release and
+regenerates `CHANGELOG.md`, so documentation fixes must land first.
+
+- `doc-review` is a read-only audit: list the inconsistencies found, fix nothing until the
+  user agrees, and put the fixes on a dedicated branch with their own commit.
+- Do not bump while documentation findings are still open, unless the user explicitly says so.
+- graphify does not track documentation (only code is refreshed by its commit hook), so never
+  use the knowledge graph as evidence that the docs are up to date.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
