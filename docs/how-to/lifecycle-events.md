@@ -125,6 +125,8 @@ def cli(): ...
 - `Event` is a string: `READY == "myplugin.ready"`. Only an `Event` object is accepted for your own
   names, by `on()` as well as by `emit()`; a plain string must be a framework event. A typo in the
   name of an imported `Event` becomes an import error.
+- Prefix the name with your plugin, as in `myplugin.ready`. Because an `Event` is a string, an
+  `Event("config.loaded")` is equal to the framework event and would share its handlers.
 - Handlers belong to a group, so a handler attached to one group is not called for another.
 - `emit()` returns the values the handlers returned, in the order they ran.
 
@@ -141,7 +143,9 @@ def check_config(ctx) -> None:
         raise click_extra.UsageError("No configuration found, run `myapp config init`.")
 ```
 
-The message is printed once and the exit code is 2. The same holds for a bare call: click-extra
+The message is printed once and the exit code is 2. Prefer `UsageError`: a plain `ClickException`
+exits with code 1 on a normal call, but with code 2 on a bare call, where the help screen sets the
+exit code. The same holds for a bare call: click-extra
 swallows errors raised while it reads the configuration for default subcommands, so pyclifer keeps
 the error and reports it before the help screen.
 
