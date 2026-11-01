@@ -364,9 +364,9 @@ niveau de la console** (`--verbosity ERROR`) oblige le fichier à masquer lui-m�
 
 **Limites mesurées, documentées dans `docs/logging.md`.** « the password is hunter2 » n'est pas trouvé (aucun nom à
 côté) ; les faux positifs ci-dessus ; **les traces d'exception ne sont pas analysées** (le secret d'un message
-d'exception apparaît dans la console et le fichier, avec les deux gestionnaires). Corriger ce dernier point oblige à
-formater la trace avant le gestionnaire, ce qui ferait perdre le rendu Rich des traces : arbitrage laissé à
-l'utilisateur.
+d'exception apparaît dans la console et le fichier, avec les deux gestionnaires). Corriger ce dernier point en
+formatant la trace avant le gestionnaire ferait perdre le rendu Rich des traces (mesuré à l'item 13) : le correctif
+retenu masque à la source et le garde, voir l'item 13.
 
 **Défaut de mon code de production trouvé en chemin.** `_configure_plain_logging` marquait et filtrait *tous* les
 gestionnaires de la racine après `basicConfig`, en supposant que celui-ci avait tout effacé. Un test existant simule
@@ -379,7 +379,48 @@ configurée dès qu'un gestionnaire de pyclifer existe : dans un même processus
 application déclarée n'est pas appliquée. Sans effet pour une application en ligne de commande (un processus, une
 application), mais cela oblige les tests d'intégration à repartir d'une racine vide, ce que fait le fixture.
 
-## Item 13+ : Autres défauts trouvés
+## ✅ Item 13 : Défaut — les traces d'exception échappaient à `mask_free_text`
+
+Issu de l'item 12. Le secret d'un message d'exception (`ConnectionError("GET /x?api_key=abc failed")`) apparaissait
+dans la console et le fichier, avec `mask_free_text=True`, en mode Rich comme en mode simple.
+
+**Mesure d'abord (un processus par cas).** Trois approches comparées sur un même scénario :
+- *Actuel* : fuite du message de l'exception dans les deux modes (`hunter2`, `abc123`, `URLKEY999`) ; la variable
+  locale nommée comme un secret ne fuit pas (`show_locals=False`).
+- *B, masquer le texte formaté de la trace* : plus de fuite, mais le panneau Rich (`╭─ Traceback ─╮`) est remplacé par
+  le texte brut `Traceback (most recent call last):`. La perte de rendu annoncée à l'item 12 est **confirmée**.
+- *C, masquer à la source* : remplacer l'exception de `exc_info` par une copie dont `__str__` renvoie le texte masqué.
+  Plus de fuite et le panneau Rich est **conservé** ; la sortie simple est identique à l'actuelle.
+
+**Cas voisins mesurés avec C** : constructeur atypique avec `__str__` propre, `OSError` (qui devient
+`PermissionError`), `KeyError` (qui affiche le `repr`), chaînage explicite (`from`) et implicite : tous masqués.
+`ExceptionGroup` : les sous-exceptions fuyaient avec la copie simple, d'où un traitement récursif de `exceptions`.
+**Lignes de source : elles fuient dans les deux modes** (Python 3.13 les affiche en simple ; en Rich elles ne
+paraissaient pas parce que le panneau étroit les tronquait, avec `COLUMNS=250` elles sont là). Un secret écrit en
+littéral dans la ligne qui lève l'exception ne peut pas être masqué sans réécrire la source : limite documentée.
+
+**Ce que fait le code.** `SecretsMasker._mask_exception` (actif avec `mask_free_text` seulement) remplace
+`record.exc_info` par une copie masquée. La copie est une instance d'une sous-classe du type d'origine, de même nom et
+même module, dont `str()` est le texte masqué ; elle reprend le traceback, le `__dict__`, la cause, le contexte,
+l'indicateur `__suppress_context__`, les sous-exceptions d'un groupe et les notes (`__notes__`), tous masqués. Une
+chaîne qui boucle est coupée par une table des copies. Le texte déjà mis en cache dans `record.exc_text` par un autre
+gestionnaire est masqué aussi, parce que le formateur le réutiliserait. Une exception qui ne peut pas être copiée est
+remplacée par une `RuntimeError` portant le texte masqué, jamais laissée telle quelle. L'exception de l'utilisateur
+n'est pas modifiée.
+
+**Défauts de mon propre code trouvés par le contrôle par mutation.** Neutraliser `__traceback__` de la copie n'était
+détecté par aucun test : le traceback de la **cause** disparaissait de l'affichage. Neutraliser la restauration de
+`__suppress_context__` non plus : affecter `__cause__` force l'indicateur à `True`, ce qui cache le contexte implicite
+d'une exception. Deux tests ajoutés, vérifiés sur le texte réellement imprimé.
+
+**Non couvert, non mesuré.** `args` de la copie n'est pas masqué : un `repr(exception)` pris par un gestionnaire
+personnalisé montrerait la valeur (ni Rich ni le module `traceback` n'utilisent `repr`). Tests des `skipif`
+(`ExceptionGroup`, notes) exécutés sous Python 3.13 seulement jusqu'au passage de `tox`.
+
+Vingt-trois tests ajoutés à `tests/core/log/test_rich_logging.py` (21 unitaires, 2 de bout en bout, Rich et simple),
+couverture de branches de `filters.py` à 100 %. Documenté dans `docs/logging.md`.
+
+## Item 14+ : Autres défauts trouvés
 
 Un item par défaut mesuré aux items 5 et 6.
 

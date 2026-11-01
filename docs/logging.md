@@ -250,9 +250,25 @@ Know its limits before turning it on:
 - **A secret with no name next to it is not found.** `"the password is hunter2"` is logged as is.
 - **It can mask too much.** The rule is the same as for keys: a name that *contains* a sensitive
   field matches, whatever its value means. `max_tokens=100` and `token: expired` are masked.
-- **Exception tracebacks are not scanned.** A secret inside the text of an exception still appears in
-  the traceback that `log.exception` prints and writes.
+- **The source lines of a traceback are not scanned.** A traceback shows the line of code that
+  raised, so a secret written as a literal in that line (`raise Error("token=abc")`) still appears.
+  Build the message from a variable instead.
 - **`enable_secrets_filter=False` turns it off too.**
+
+The text of the exceptions you log is masked as well, in the console (Rich or plain) and in the log
+file. This covers the message of the exception, its cause and context, the exceptions of an
+`ExceptionGroup` and its notes. The Rich traceback keeps its rendering:
+
+```python
+try:
+    client.get("https://api.example.com/?api_key=abc123")
+except ConnectionError:
+    log.exception("call failed")
+# ConnectionError: GET https://api.example.com/?api_key=*CENSORED* failed
+```
+
+The exception that you catch is never modified: the handlers receive a masked copy with the same type,
+the same name and the same traceback.
 
 ### Preserved Functionality
 

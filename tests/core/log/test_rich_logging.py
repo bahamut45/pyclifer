@@ -1052,3 +1052,285 @@ class TestSecretsMaskerFreeText:
         SecretsMasker(mask_free_text=True).filter(record)
 
         assert record.getMessage() == "password=*CENSORED*"
+
+
+_LEAKED = "tok-9f3a7c"  # the value that must never reach the output
+
+
+def _exc_info_of(exception: BaseException):
+    """Raise and catch an exception, then return its exc_info like logging records it."""
+    try:
+        raise exception
+    except BaseException:
+        return sys.exc_info()
+
+
+def _record_with(exception: BaseException) -> logging.LogRecord:
+    """A log record carrying the exception, as log.exception() builds it."""
+    return logging.LogRecord("t", logging.ERROR, "", 0, "call failed", (), _exc_info_of(exception))
+
+
+def _filtered(exception: BaseException, **options) -> logging.LogRecord:
+    """The record, once the masker has seen it."""
+    record = _record_with(exception)
+    SecretsMasker(mask_free_text=True, **options).filter(record)
+    return record
+
+
+class TestSecretsMaskerExceptions:
+    """With mask_free_text, the message of an exception is masked in the traceback too."""
+
+    def test_the_message_of_the_exception_is_masked(self):
+        record = _filtered(ValueError(f"login failed token={_LEAKED}"))
+
+        assert str(record.exc_info[1]) == "login failed token=*CENSORED*"
+
+    def test_the_traceback_text_no_longer_holds_the_secret(self):
+        import traceback
+
+        record = _filtered(ValueError(f"login failed token={_LEAKED}"))
+
+        assert _LEAKED not in "".join(traceback.format_exception(*record.exc_info))
+
+    def test_exceptions_are_left_alone_by_default(self):
+        record = _record_with(ValueError(f"token={_LEAKED}"))
+
+        SecretsMasker().filter(record)
+
+        assert _LEAKED in str(record.exc_info[1])
+
+    def test_the_type_name_and_module_are_kept(self):
+        record = _filtered(ValueError(f"token={_LEAKED}"))
+
+        exc_type, exc_value, _ = record.exc_info
+        assert (exc_type.__name__, exc_type.__module__) == ("ValueError", "builtins")
+        assert isinstance(exc_value, ValueError)
+
+    def test_the_traceback_object_is_kept(self):
+        original = _exc_info_of(ValueError(f"token={_LEAKED}"))
+        record = logging.LogRecord("t", logging.ERROR, "", 0, "x", (), original)
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert record.exc_info[2] is original[2]
+
+    def test_the_original_exception_is_not_modified(self):
+        original = ValueError(f"token={_LEAKED}")
+
+        _filtered(original)
+
+        assert str(original) == f"token={_LEAKED}"
+
+    @pytest.mark.parametrize(
+        "exception",
+        [
+            OSError(13, f"denied token={_LEAKED}", "/tmp/x"),
+            KeyError(f"token={_LEAKED}"),
+        ],
+        ids=["oserror", "keyerror"],
+    )
+    def test_exceptions_that_format_their_arguments_are_masked(self, exception):
+        record = _filtered(exception)
+
+        assert _LEAKED not in str(record.exc_info[1])
+
+    def test_an_exception_with_its_own_constructor_and_str_is_masked(self):
+        class ApiError(Exception):
+            def __init__(self, code, url):
+                super().__init__(f"code {code}")
+                self.code, self.url = code, url
+
+            def __str__(self):
+                return f"ApiError {self.code} {self.url}"
+
+        record = _filtered(ApiError(7, f"https://h/?token={_LEAKED}"))
+
+        assert str(record.exc_info[1]) == "ApiError 7 https://h/?token=*CENSORED*"
+        assert record.exc_info[1].code == 7
+
+    def test_the_cause_is_masked(self):
+        try:
+            try:
+                raise ValueError(f"inner token={_LEAKED}")
+            except ValueError as inner:
+                raise RuntimeError("outer") from inner
+        except RuntimeError as outer:
+            record = logging.LogRecord("t", 40, "", 0, "x", (), sys.exc_info())
+            assert outer is record.exc_info[1]
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert str(record.exc_info[1]) == "outer"
+        assert str(record.exc_info[1].__cause__) == "inner token=*CENSORED*"
+
+    def test_the_context_is_masked(self):
+        try:
+            try:
+                raise ValueError(f"inner token={_LEAKED}")
+            except ValueError:
+                raise RuntimeError("outer")  # noqa: B904 - the implicit context is the point
+        except RuntimeError:
+            record = logging.LogRecord("t", 40, "", 0, "x", (), sys.exc_info())
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert str(record.exc_info[1].__context__) == "inner token=*CENSORED*"
+
+    def test_the_traceback_of_the_cause_is_kept(self):
+        import traceback
+
+        def fail_inside_the_cause():
+            raise ValueError(f"inner token={_LEAKED}")
+
+        try:
+            try:
+                fail_inside_the_cause()
+            except ValueError as inner:
+                raise RuntimeError("outer") from inner
+        except RuntimeError:
+            record = logging.LogRecord("t", 40, "", 0, "x", (), sys.exc_info())
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        text = "".join(traceback.format_exception(*record.exc_info))
+        assert "in fail_inside_the_cause" in text
+
+    def test_a_chain_that_loops_back_does_not_loop_forever(self):
+        first, second = ValueError(f"a token={_LEAKED}"), ValueError("b")
+        first.__cause__, second.__cause__ = second, first
+
+        record = _filtered(first)
+
+        assert record.exc_info[1].__cause__.__cause__ is record.exc_info[1]
+
+    def test_an_implicit_context_is_still_shown(self):
+        """Setting the cause of the copy hides the context unless the flag is given back."""
+        import traceback
+
+        try:
+            try:
+                raise ValueError(f"inner token={_LEAKED}")
+            except ValueError:
+                raise RuntimeError("outer")  # noqa: B904 - the implicit context is the point
+        except RuntimeError:
+            record = logging.LogRecord("t", 40, "", 0, "x", (), sys.exc_info())
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        text = "".join(traceback.format_exception(*record.exc_info))
+        assert "During handling of the above exception" in text
+        assert "inner token=*CENSORED*" in text
+
+    def test_the_suppress_context_flag_is_kept(self):
+        try:
+            try:
+                raise ValueError("inner")
+            except ValueError:
+                raise RuntimeError("outer") from None
+        except RuntimeError:
+            record = logging.LogRecord("t", 40, "", 0, "x", (), sys.exc_info())
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert record.exc_info[1].__suppress_context__ is True
+
+    @pytest.mark.skipif(sys.version_info < (3, 11), reason="ExceptionGroup is 3.11+")
+    def test_the_exceptions_of_a_group_are_masked(self):
+        group = ExceptionGroup("batch", [ValueError(f"one token={_LEAKED}"), KeyError("two")])  # noqa: F821
+
+        record = _filtered(group)
+
+        assert isinstance(record.exc_info[1], ExceptionGroup)  # noqa: F821
+        first, second = record.exc_info[1].exceptions
+        assert str(first) == "one token=*CENSORED*"
+        assert isinstance(second, KeyError)
+
+    @pytest.mark.skipif(sys.version_info < (3, 11), reason="notes are 3.11+")
+    def test_the_notes_of_an_exception_are_masked(self):
+        exception = ValueError("failed")
+        exception.add_note(f"retry with token={_LEAKED}")
+
+        record = _filtered(exception)
+
+        assert record.exc_info[1].__notes__ == ["retry with token=*CENSORED*"]
+
+    def test_a_text_cached_by_another_handler_is_masked(self):
+        record = _record_with(ValueError("failed"))
+        record.exc_text = f"ValueError: token={_LEAKED}"
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert record.exc_text == "ValueError: token=*CENSORED*"
+
+    def test_a_record_without_exception_is_untouched(self):
+        record = logging.LogRecord("t", logging.INFO, "", 0, "hello", (), None)
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert (record.exc_info, record.exc_text) == (None, None)
+
+    def test_an_exception_that_cannot_be_copied_is_replaced_by_its_masked_text(self):
+        """The filter must never let the secret through, nor break the logging."""
+
+        class Hostile(Exception):
+            def __new__(cls, *args):
+                if args:
+                    raise TypeError("cannot copy")
+                return super().__new__(cls)
+
+        exception = Exception.__new__(Hostile)
+        exception.args = (f"token={_LEAKED}",)
+
+        record = _filtered(exception)
+
+        assert str(record.exc_info[1]) == "token=*CENSORED*"
+        assert record.exc_info[2] is not None
+
+    def test_a_masked_record_is_not_masked_again(self):
+        record = _record_with(ValueError(f"token={_LEAKED}"))
+        masker = SecretsMasker(mask_free_text=True)
+        masker.filter(record)
+        once = record.exc_info[1]
+
+        masker.filter(record)
+
+        assert record.exc_info[1] is once
+
+
+class TestExceptionMaskingEndToEnd:
+    """What a handler really writes for log.exception(), Rich and plain."""
+
+    @staticmethod
+    def _log_exception(handler: logging.Handler) -> None:
+        logger = logging.getLogger("pyclifer.test.exception_masking")
+        logger.handlers[:] = [handler]
+        logger.propagate = False
+        logger.setLevel(logging.DEBUG)
+        try:
+            raise ConnectionError(f"GET /x failed token={_LEAKED}")
+        except ConnectionError:
+            logger.exception("call failed")
+
+    def test_rich_masks_the_message_and_keeps_its_traceback_panel(self, capsys):
+        handler = RichExtraStreamHandler(mask_free_text=True)  # writes to the captured stderr
+
+        self._log_exception(handler)
+
+        output = capsys.readouterr().err
+        assert _LEAKED not in output
+        assert "token=*CENSORED*" in output
+        assert "Traceback" in output
+        assert "╭" in output  # the Rich panel, not the plain "Traceback (most recent call last)"
+
+    def test_plain_masks_the_message_of_the_exception(self):
+        from io import StringIO
+
+        stream = StringIO()
+        handler = logging.StreamHandler(stream)
+        handler.addFilter(SecretsMasker(mask_free_text=True))
+        handler.setFormatter(logging.Formatter("%(message)s"))
+
+        self._log_exception(handler)
+
+        output = stream.getvalue()
+        assert "ConnectionError: GET /x failed token=*CENSORED*" in output
