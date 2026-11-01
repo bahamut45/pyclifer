@@ -18,6 +18,10 @@ Key parameters:
   Set to any string to customise the heading.
 - `auto_envvar_prefix` — uppercase prefix for automatic environment variable binding.
   With `auto_envvar_prefix="MYAPP"`, `--database-url` reads `MYAPP_DATABASE_URL`.
+- `show_envvar` — `True` by default. Set it to `False` to stop the help from listing the environment
+  variables of the automatic options (`--output-format`, `--config`, `--verbosity`, `--log-file`,
+  `--time`). The variables still work. Options you declare with `@option` keep their own
+  `show_envvar` argument.
 - `rich_help_config` — `RichHelpConfiguration` instance (or dict) forwarded to rich-click.
   Lets you customise colours, column widths, and panel styles in `--help` output.
 - `use_rich_help` — set to `False` to disable rich-click rendering and use plain Click help.

@@ -269,11 +269,14 @@ Décision à prendre : l'option de la ligne de commande doit pouvoir **monter et
 « le plus verbeux gagne » est utile entre plusieurs options (`--verbosity`, `-v`, `--debug`), mais le défaut ne
 doit pas compter comme un choix déjà fait.
 
-## Item 9 : Défaut — `show_envvar` sans effet
+## ✅ Item 9 : Défaut — `show_envvar` sans effet
 
-Trouvé à l'item 4. Décision à prendre : que commande le champ ? Option de moindre surprise : il fixe le
-`show_envvar` de toutes les options automatiques ; les options de l'utilisateur gardent leur propre argument.
-L'alternative est de supprimer le champ, ce qui est un changement d'API.
+Trouvé à l'item 4 : `GroupConfig.show_envvar` n'était lu nulle part. Décision de l'utilisateur : le champ fixe
+`show_envvar` de **toutes les options automatiques** ; les options déclarées avec `@option` gardent leur propre
+argument. Correctif : `GroupDecorator._apply_automatic_options` le transmet à `--output-format`, `--config`,
+`--verbosity`, `--log-file` et `--time`. Tests : chacune des quatre variables est affichée par défaut et masquée
+avec `show_envvar=False`, et l'aide ne contient plus aucun « env var » avec `timer=True`. Documenté dans
+`docs/api/decorators.md`.
 
 ## ✅ Item 10 : Défaut — `enable_secrets_filter` et `sensitive_fields` perdus à l'exécution
 

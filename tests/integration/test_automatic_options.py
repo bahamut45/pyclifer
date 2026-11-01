@@ -262,15 +262,18 @@ class TestEnvironmentVariables:
 
         assert result.yaml["success"] is True
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "Measured at item 4: GroupConfig.show_envvar is never read, so the help always shows "
-            "the variables. Fixed by a later item."
-        ),
-    )
-    def test_show_envvar_false_hides_the_variables(self):
-        assert "CLI_VERBOSITY" not in invoke(_app(show_envvar=False), ["--help"]).output
+    ENV_VARS = ("CLI_OUTPUT_FORMAT", "CLI_CONFIG", "CLI_VERBOSITY", "CLI_LOG_FILE")
+
+    @pytest.mark.parametrize("env_var", ENV_VARS)
+    def test_the_help_shows_every_variable_by_default(self, env_var):
+        assert env_var in invoke(_app(), ["--help"]).output.replace("\n", "")
+
+    @pytest.mark.parametrize("env_var", ENV_VARS)
+    def test_show_envvar_false_hides_the_variables(self, env_var):
+        assert env_var not in invoke(_app(show_envvar=False), ["--help"]).output.replace("\n", "")
+
+    def test_show_envvar_false_leaves_no_variable_in_the_help_at_all(self):
+        assert "env var" not in invoke(_app(show_envvar=False, timer=True), ["--help"]).output
 
 
 def _log_with_secrets(tmp_path, **config):

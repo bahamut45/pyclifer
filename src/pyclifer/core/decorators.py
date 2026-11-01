@@ -115,19 +115,24 @@ class GroupDecorator:
     def _apply_automatic_options(self, f: Callable) -> Callable:
         """Inject options like --config, --verbosity, etc., based on the config."""
         if self.config.timer:
-            f = click_extra.option("--time/--no-time", cls=PycliferTimerOption)(f)
+            f = click_extra.option(
+                "--time/--no-time", cls=PycliferTimerOption, show_envvar=self.config.show_envvar
+            )(f)
 
         if self.config.add_output_format_option:
             f = output_format_option(
-                default_output_format=self.config.output_format_default, is_global=True
+                default_output_format=self.config.output_format_default,
+                is_global=True,
+                show_envvar=self.config.show_envvar,
             )(f)
 
         if self.config.add_config_option:
-            f = config_option()(f)
+            f = config_option(show_envvar=self.config.show_envvar)(f)
 
         if self.config.add_verbosity_option:
             f = verbosity_option(
                 default=self.config.verbosity_default_level,
+                show_envvar=self.config.show_envvar,
                 enable_secrets_filter=self.config.enable_secrets_filter,
                 sensitive_fields=self.config.sensitive_fields or None,
             )(f)
@@ -138,6 +143,7 @@ class GroupDecorator:
                 when=self.config.log_file_rotation_when,
                 interval=self.config.log_file_rotation_interval,
                 backup_count=self.config.log_file_rotation_backup_count,
+                show_envvar=self.config.show_envvar,
                 enable_secrets_filter=self.config.enable_secrets_filter,
                 sensitive_fields=self.config.sensitive_fields or None,
             )(f)
