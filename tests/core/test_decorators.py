@@ -668,10 +668,10 @@ class TestAppGroupContextFactory:
         captured: list = []
         original_init = GroupDecorator.__init__
 
-        def patched_init(self, config, click_kwargs):
+        def patched_init(self, config, click_kwargs, *args, **kwargs):
             """Record the config and call original."""
             captured.append(config)
-            original_init(self, config, click_kwargs)
+            original_init(self, config, click_kwargs, *args, **kwargs)
 
         with patch.object(GroupDecorator, "__init__", patched_init):
             app_group(

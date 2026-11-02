@@ -58,17 +58,32 @@ def _get_root_context() -> click_extra.Context | None:
 class GroupDecorator:
     """Decorator class applying GroupConfig and Click logic to a group."""
 
-    def __init__(self, config: GroupConfig, click_kwargs: dict[str, Any]):
-        """Initialize the decorator with explicit config and pass-through click arguments."""
+    def __init__(
+        self,
+        config: GroupConfig,
+        click_kwargs: dict[str, Any],
+        configures_logging: bool = False,
+    ):
+        """Initialize the decorator with explicit config and pass-through click arguments.
+
+        Args:
+            config: The configuration of the group.
+            click_kwargs: Arguments forwarded to Click.
+            configures_logging: True for the base of an application, the only group that sets the
+                logging up. A subgroup must not, since its defaults are not those of the
+                application and the order in which the groups are declared is free.
+        """
         self.config = config
         self.click_kwargs = click_kwargs
+        self.configures_logging = configures_logging
 
     def __call__(self, f: Callable) -> Any:
         """Apply the configuration and create the Click group."""
         # The --output-format option accepts any casing, so the default does too.
         self.config.output_format_default = self.config.output_format_default.lower()
         validate_output_format(self.config.output_format_default, "output_format_default")
-        self._setup_logging()
+        if self.configures_logging:
+            self._setup_logging()
 
         f = self._apply_rich_help(f)
         self._configure_context()
@@ -587,7 +602,7 @@ def app_group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group
         **config_kwargs,
     )
 
-    return GroupDecorator(config, click_kwargs)
+    return GroupDecorator(config, click_kwargs, configures_logging=True)
 
 
 def group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group]:

@@ -13,8 +13,9 @@ import click_extra
 import pytest
 from click.testing import CliRunner
 
-from pyclifer import app_group, get_logger, option
+from pyclifer import app_group, get_logger, group, option
 from pyclifer.core import decorators
+from pyclifer.core.log.config import _is_console_handler
 from pyclifer.core.log.handlers import RichExtraStreamHandler
 from pyclifer.core.output import Response
 from pyclifer.testing import invoke
@@ -546,6 +547,65 @@ class TestReplaceRootHandlers:
 
         assert foreign not in logging.getLogger().handlers
         assert "probe message" not in foreign.stream.getvalue()
+
+
+class TestOnlyTheAppGroupConfiguresLogging:
+    """A subgroup never sets the logging up: the app_group does, whatever the declaration order."""
+
+    @staticmethod
+    def _console_handlers():
+        return [h for h in logging.getLogger().handlers if _is_console_handler(h)]
+
+    def test_a_lone_group_installs_no_console_handler(self):
+        @group()
+        def sub():
+            """Sub."""
+
+        assert self._console_handlers() == []
+
+    @pytest.mark.parametrize("subgroup_first", [True, False])
+    def test_the_app_group_settings_apply_whatever_the_declaration_order(self, subgroup_first):
+        def declare_subgroup():
+            @group()
+            def sub():
+                """Sub."""
+
+            @sub.command()
+            def leaf():
+                """Log a message."""
+                get_logger("probe").warning("login password=hunter2 for bob")
+                return Response(success=True, message="ok")
+
+            return sub
+
+        def declare_app():
+            @app_group(
+                output_format_default="json",
+                use_rich_logging=False,
+                mask_free_text=True,
+                add_verbosity_option=False,
+            )
+            def cli():
+                """Test application."""
+
+            return cli
+
+        if subgroup_first:
+            sub = declare_subgroup()
+            cli = declare_app()
+        else:
+            cli = declare_app()
+            sub = declare_subgroup()
+        cli.add_command(sub)
+
+        consoles = self._console_handlers()
+        assert len(consoles) == 1
+        assert not isinstance(consoles[0], RichExtraStreamHandler)
+
+        result = invoke(cli, ["sub", "leaf"])
+
+        assert "bob" in result.stderr
+        assert "hunter2" not in result.stderr
 
 
 def _plain_command(factory, args):

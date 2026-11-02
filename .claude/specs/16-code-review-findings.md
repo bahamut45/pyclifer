@@ -18,7 +18,7 @@ préfixer le titre de l'item par ✅ quand il est fait, archiver la spec quand t
 | 5 | 5 et 6 | variable d'environnement : chaîne dans l'aide, nom par contexte | ✅ fait |
 | 6 | 7, 8 | docstring `log_file_option`, imports locaux redondants | ✅ fait |
 | 7 | 9 | `GroupConfig.replace_root_handlers` (décidé, faux par défaut) | ✅ fait |
-| 8 | 10 | `@group()` ne configure plus le logging (option A, décidé) | à faire |
+| 8 | 10 | `@group()` ne configure plus le logging (option A, décidé) | ✅ fait |
 | après | spec 17 | initialiser à l'exécution (option B) : comparaison d'abord, après les specs 09 et 10 | brouillon |
 
 Non retenu : item 11. Hors branche : item 12. Rejouer la suite d'intégration entière et tox 3.10 à 3.13 avant la validation
@@ -220,7 +220,7 @@ deux fois avec le défaut ; l'option sert à ce cas.
 dans les deux modes (Rich et plain), et disparaît avec `replace_root_handlers=True`. Le nouveau champ exige une entrée
 dans `scenarios.py` (garde de l'inventaire), la doc de `GroupConfig` (`docs/api/classes.md`) et `docs/logging.md`.
 
-## Décidé — Item 10 : le premier groupe déclaré décide de la config de la console (finding 2)
+## ✅ Décidé — Item 10 : le premier groupe déclaré décide de la config de la console (finding 2)
 
 **Reproduit.** Un `@group()` déclaré avant l'`@app_group(use_rich_logging=False, sensitive_fields=["tok"], mask_free_text=True,
 add_verbosity_option=False)` : la console reste en Rich, sans masquage (`main` donne le même résultat). Avec l'option

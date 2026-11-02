@@ -55,6 +55,10 @@ Key parameters:
 Creates a subgroup that inherits global options from its parent. Its `handle_response` is `None`
 by default: it follows the application once attached. `handle_response=False` protects its commands.
 
+A subgroup never sets the logging up: only `@app_group` does, so the groups can be declared in any
+order (`cli.py` imports its subgroups before it writes `@app_group()`). A `@group()` used without an
+`@app_group` has no logging configured.
+
 ::: pyclifer.group
 
 ---
