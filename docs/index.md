@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
 - **Automatic help**: Generated from docstrings with environment variable display
 - **Rich logging**: Colored output with Rich formatting and enhanced tracebacks
-- **Advanced verbosity**: Built-in `-v`, `-vv`, `-vvv` with custom TRACE level
+- **Advanced verbosity**: Built-in `--verbosity` / `-v LEVEL` with a custom TRACE level
 - **Security filtering**: Automatic masking of sensitive data in logs
 - **File logging**: Time-based rotating log files via `--log-file`
 - **Version option**: Automatic `--version` support

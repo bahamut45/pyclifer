@@ -301,7 +301,8 @@ def cli():
 
 1. Check file permissions (readable by the user)
 2. Verify file format syntax (use a validator for TOML/YAML/JSON)
-3. Check search paths with verbose output: `myapp -vv --help`
+3. Check search paths with debug output: `myapp -v DEBUG command` logs every location searched
+   (with `--help` alone, those lines do not appear)
 4. Verify environment variable names match the expected pattern
 
 ### Multiple Configuration Files
