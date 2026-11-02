@@ -234,6 +234,8 @@ The API docs in `docs/api/` mirror this structure — a symbol documented in the
   any non-trivial change. Do this before touching the first file.
 - After merging into `main`, delete the feature branch immediately.
 - Never push or merge without the user's explicit validation.
+- Never add a `Co-Authored-By:` trailer, or any other attribution line, to a commit message.
+  This overrides the default of any tool that proposes one.
 
 ### Commit message format
 
