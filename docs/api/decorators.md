@@ -30,6 +30,10 @@ Key parameters:
   keeps the handlers other libraries put on the root logger, except the console handler that
   `logging.basicConfig()` installs with its default arguments. Set it to `True` to remove them all.
   See [Handlers From Other Libraries](../logging.md#handlers-from-other-libraries).
+- `version` — the text `--version` prints, for example `version="2.5.0"`. It needs the option: with
+  `add_version_option=False`, or on a `@group` that does not set `add_version_option=True`, it raises
+  `ValueError`. `add_version_option=False` removes `--version`, and `add_verbosity_option=False` removes
+  `--verbosity`.
 - `rich_help_config` — `RichHelpConfiguration` instance (or dict) forwarded to rich-click.
   Lets you customise colours, column widths, and panel styles in `--help` output.
 - `use_rich_help` — set to `False` to disable rich-click rendering and use plain Click help.

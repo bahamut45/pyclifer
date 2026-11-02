@@ -13,6 +13,7 @@ from pyclifer.core.decorators import (
     GroupDecorator,
     app_group,
     config_option,
+    group,
     log_file_option,
     option,
     output_filter_option,
@@ -121,6 +122,24 @@ class TestGroupDecoratorVersionKwarg:
 
         result = invoke(app, ["--version"])
         assert "2.5.0" in result.output
+
+    def test_version_without_the_version_option_is_an_explicit_error_on_an_app_group(self):
+        """version= has nowhere to go without the option: say so, not a Click TypeError."""
+        with pytest.raises(ValueError, match="version.*add_version_option=True"):
+            app_group(add_version_option=False, version="2.5.0")(lambda: None)
+
+    def test_version_on_a_group_is_an_explicit_error(self):
+        """A subgroup has no version option unless asked for, so version= alone is refused."""
+        with pytest.raises(ValueError, match="version.*add_version_option=True"):
+            group(version="2.5.0")(lambda: None)
+
+    def test_version_on_a_group_that_asks_for_the_option_works(self):
+        @group(add_version_option=True, version="2.5.0")
+        def sub():
+            """Sub"""
+
+        assert sub.params
+        assert any("--version" in p.opts for p in sub.params)
 
 
 # ---------------------------------------------------------------------------
