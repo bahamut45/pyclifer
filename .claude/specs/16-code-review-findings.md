@@ -12,7 +12,7 @@ préfixer le titre de l'item par ✅ quand il est fait, archiver la spec quand t
 | Ordre | Item | Quoi | Statut |
 |---|---|---|---|
 | 1 | 1 | `option(cls=...)` : parcourir le MRO pour `is_global` | ✅ fait |
-| 2 | 2 | YAML : représenteurs `dict`, `list`, `tuple` avant `object` | à faire |
+| 2 | 2 | YAML : représenteurs `dict`, `list`, `tuple` avant `object` | ✅ fait |
 | 3 | 3 | regex du texte libre non quadratique | à faire |
 | 4 | 4 | `output_format_default` insensible à la casse | à faire |
 | 5 | 5 et 6 | variable d'environnement : chaîne dans l'aide, nom par contexte | à faire |
@@ -78,7 +78,7 @@ n'utilisaient que `TimerOption` et une classe sans constructeur propre.
 (`TimerOption` en a, et c'est justement le cas qui plantait). Test d'abord : sous-classe avec `**kwargs`, sous-classe
 avec argument en plus, sous-classe de `CustomConfigOption`, et `TimerOption` toujours refusé avec `is_global=True`.
 
-## Item 2 : Régression — le YAML écrit mal les sous-classes de conteneurs (finding 4)
+## ✅ Item 2 : Régression — le YAML écrit mal les sous-classes de conteneurs (finding 4)
 
 **Reproduit** avec `Response(data={...})` contenant `OrderedDict(a=1)`, `defaultdict(int, b=2)`, `Counter("aab")`,
 `namedtuple P(1, 2)`, comparé en JSON et en YAML :
@@ -100,6 +100,8 @@ conteneur d'une sous-classe.
 **Correctif proposé.** Ajouter des représenteurs multiples pour `dict`, `list` et `tuple` (qui couvrent leurs sous-classes)
 avant celui de `object`, pour que YAML suive la structure comme JSON. Test d'abord sur ces quatre types, avec comparaison
 JSON/YAML des valeurs. Le cas des `set` (JSON : chaîne `"{1}"`, YAML : `!!set`) est à trancher dans le même item.
+
+**Fait.** Représenteurs `dict`, `list`, `tuple` dans `core/mixins/output.py`. Décision de l'utilisateur pour les `set` et `frozenset` : laissés tels quels (aucune donnée perdue).
 
 ## Item 3 : Défaut — la regex du texte libre est quadratique (finding 5)
 

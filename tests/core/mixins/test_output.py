@@ -2,6 +2,7 @@
 
 import datetime
 import json
+from collections import Counter, OrderedDict, defaultdict, namedtuple
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,7 +10,7 @@ import yaml
 from rich.panel import Panel
 
 # noinspection PyProtectedMember
-from pyclifer.core.mixins.output import OutputFormatMixin, _ExceptionRenderer
+from pyclifer.core.mixins.output import OutputFormatMixin, _ExceptionRenderer, _FallbackEncoder
 from pyclifer.core.output import Response
 from pyclifer.core.output.renderer import BaseRenderer
 from pyclifer.core.output.responses import OperationResult
@@ -371,6 +372,22 @@ class TestPrintYaml:
             "none": None,
             "text": "é",
         }
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            OrderedDict(a=1),
+            Counter("aab"),
+            defaultdict(int, b=2),
+            namedtuple("P", "x y")(1, 2),
+        ],
+        ids=["ordereddict", "counter", "defaultdict", "namedtuple"],
+    )
+    def test_container_subclasses_are_dumped_like_json(self, value) -> None:
+        content = self._dumped({"value": value})
+        expected = json.loads(json.dumps({"value": value}, cls=_FallbackEncoder))
+        assert "!!python" not in content
+        assert yaml.safe_load(content) == expected
 
 
 # ---------------------------------------------------------------------------

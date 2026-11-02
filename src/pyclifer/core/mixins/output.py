@@ -44,6 +44,21 @@ def _represent_fallback(dumper: yaml.SafeDumper, obj: Any) -> yaml.Node:
     return dumper.represent_data(_FallbackEncoder().default(obj))
 
 
+def _represent_mapping(dumper: yaml.SafeDumper, data: dict) -> yaml.Node:
+    """Represent a dict subclass (OrderedDict, Counter, defaultdict) as a plain mapping."""
+    return dumper.represent_dict(dict(data))
+
+
+def _represent_sequence(dumper: yaml.SafeDumper, data: list | tuple) -> yaml.Node:
+    """Represent a list or tuple subclass (namedtuple included) as a plain sequence."""
+    return dumper.represent_list(list(data))
+
+
+# SafeDumper only knows the exact builtin types. Without these, a subclass reaches the object
+# fallback below, which reads __dict__ and loses the content, while JSON keeps it.
+_FallbackDumper.add_multi_representer(dict, _represent_mapping)
+_FallbackDumper.add_multi_representer(list, _represent_sequence)
+_FallbackDumper.add_multi_representer(tuple, _represent_sequence)
 _FallbackDumper.add_multi_representer(object, _represent_fallback)
 
 
