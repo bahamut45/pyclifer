@@ -1,5 +1,6 @@
 """Output formatting mixin for CLI contexts."""
 
+import enum
 import json
 import traceback
 from typing import Any
@@ -19,14 +20,17 @@ class _FallbackEncoder(json.JSONEncoder):
 
     Resolution order for each value that the default encoder cannot handle:
     1. `to_dict()` — pyclifer / domain objects that expose a serialization method.
-    2. `__dict__` — generic Python instances.
-    3. `str()` — last resort; preserves readability without crashing.
+    2. `Enum` — its value, not the internal attributes of the member.
+    3. `__dict__` — generic Python instances.
+    4. `str()` — last resort; preserves readability without crashing.
     """
 
     def default(self, obj: Any) -> Any:
         """Encode non-serializable objects using available introspection methods."""
         if callable(getattr(obj, "to_dict", None)):
             return obj.to_dict()
+        if isinstance(obj, enum.Enum):
+            return obj.value
         if hasattr(obj, "__dict__"):
             return obj.__dict__
         return str(obj)

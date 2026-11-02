@@ -19,9 +19,10 @@ préfixer le titre de l'item par ✅ quand il est fait, archiver la spec quand t
 | 6 | 7, 8 | docstring `log_file_option`, imports locaux redondants | ✅ fait |
 | 7 | 9 | `GroupConfig.replace_root_handlers` (décidé, faux par défaut) | ✅ fait |
 | 8 | 10 | `@group()` ne configure plus le logging (option A, décidé) | ✅ fait |
+| 9 | 12 | `Enum` : écrite comme sa valeur en JSON et en YAML (décidé) | ✅ fait |
 | après | spec 17 | initialiser à l'exécution (option B) : comparaison d'abord, après les specs 09 et 10 | brouillon |
 
-Non retenu : item 11. Hors branche : item 12. Rejouer la suite d'intégration entière et tox 3.10 à 3.13 avant la validation
+Non retenu : item 11, sauf le cas B (voir l'item). Rejouer la suite d'intégration entière et tox 3.10 à 3.13 avant la validation
 du merge.
 
 ## Méthode
@@ -255,12 +256,14 @@ s'impriment en un seul appel, donc il n'y a pas de sortie tronquée mesurable. (
 l'option de filtre de sortie exprès. Si on veut aller plus loin, imprimer un JSON minimal à la main en dernier recours :
 amélioration, pas défaut.
 
-## Hors branche — Item 12 : le JSON d'une `Enum` expose des attributs internes
+## ✅ Item 12 : le JSON d'une `Enum` expose des attributs internes
 
 Trouvé en testant le finding 4, identique sur `main`. Une valeur `Enum` dans `data` sort en JSON comme
 `{"_value_": 1, "_name_": "RED", "__objclass__": "{'_generate_next_value_': ...", "_sort_order_": 0}`, parce que
 `_FallbackEncoder` lit `__dict__`. La sortie utile serait la valeur (ou le nom). À traiter avec le finding 4 si on
 revoit le repli de `_FallbackEncoder` et de `_FallbackDumper` en même temps.
+
+**Décision de l'utilisateur.** Corrigé sur la branche : une `Enum` sort comme sa valeur, en JSON et en YAML.
 
 ## Vérifié sans problème
 

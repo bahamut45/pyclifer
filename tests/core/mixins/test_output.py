@@ -1,6 +1,7 @@
 """Unit tests for the OutputFormatMixin."""
 
 import datetime
+import enum
 import json
 from collections import Counter, OrderedDict, defaultdict, namedtuple
 from unittest.mock import MagicMock, patch
@@ -388,6 +389,45 @@ class TestPrintYaml:
         expected = json.loads(json.dumps({"value": value}, cls=_FallbackEncoder))
         assert "!!python" not in content
         assert yaml.safe_load(content) == expected
+
+
+class _Color(enum.Enum):
+    RED = 1
+
+
+class _Level(enum.IntEnum):
+    HIGH = 3
+
+
+class _Mode(str, enum.Enum):
+    FAST = "fast"
+
+
+class TestEnumValues:
+    """An Enum in the data is written as its value, in JSON and in YAML."""
+
+    @pytest.mark.parametrize(
+        ("member", "expected"),
+        [(_Color.RED, 1), (_Level.HIGH, 3), (_Mode.FAST, "fast")],
+        ids=["enum", "int-enum", "str-enum"],
+    )
+    def test_json_writes_the_value(self, member, expected) -> None:
+        written = json.loads(json.dumps({"value": member}, cls=_FallbackEncoder))
+
+        assert written == {"value": expected}
+
+    @pytest.mark.parametrize(
+        ("member", "expected"),
+        [(_Color.RED, 1), (_Level.HIGH, 3), (_Mode.FAST, "fast")],
+        ids=["enum", "int-enum", "str-enum"],
+    )
+    def test_yaml_writes_the_value(self, member, expected) -> None:
+        with patch("pyclifer.core.mixins.output.Syntax") as mock_syntax:
+            DummyOutputContext()._print_yaml({"value": member})
+
+        content = mock_syntax.call_args[0][0]
+        assert "!!python" not in content
+        assert yaml.safe_load(content) == {"value": expected}
 
 
 # ---------------------------------------------------------------------------

@@ -283,7 +283,7 @@ YAML output is always readable by a safe parser (`yaml.safe_load`). An object th
 natively, such as an `OperationResult` in `data`, is written through its `to_dict()` or its attributes,
 exactly as the JSON format does, never as a `!!python/object` tag. Subclasses of `dict`, `list` and
 `tuple` (`OrderedDict`, `Counter`, `defaultdict`, named tuples) are written as plain mappings and
-sequences, so JSON and YAML carry the same content.
+sequences, so JSON and YAML carry the same content. An `Enum` member is written as its value.
 
 ## Using BaseRenderer
 
