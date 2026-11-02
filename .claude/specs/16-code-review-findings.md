@@ -22,12 +22,12 @@ de ces essais (11 et 12). `KeyboardInterrupt` a aussi été testé, sans problè
 | 6 | Nom de variable figé sur l'objet d'option partagé | oui | pas figé | **Oui, à grouper avec 11** (même code, item 18) |
 | 9 | Docstring de `log_file_option` : ligne au mauvais endroit | oui | n'existait pas | **Oui**, trivial |
 | 10 | Imports locaux redondants, sans commentaire | oui | à vérifier | **Oui**, trivial (règle du dépôt) |
-| 1 | Les handlers de la racine sont supprimés par la config de logging | oui | en partie | **À discuter** : existe déjà en grande partie sur `main` |
-| 2 | Le premier groupe déclaré décide de la config de la console | oui | oui | **À discuter**, étroit, antérieur à la branche |
+| 1 | Les handlers de la racine sont supprimés par la config de logging | oui | en partie | **Décidé** : option `replace_root_handlers`, faux par défaut |
+| 2 | Le premier groupe déclaré décide de la config de la console | oui | oui | **Décidé** : seul l'`app_group` configure le logging (option A) ; option B dans la spec 17 |
 | 7 | Rendu de repli après sortie partielle ou deuxième échec | oui | non applicable | **Non** (comportement voulu et documenté) |
 | 12 | JSON d'une `Enum` : `__objclass__` et attributs internes | oui | oui | **Hors branche**, à noter seulement |
 
-Ordre proposé : 3, 4, 5 d'abord (elles empêcheraient le merge), puis 8, 11 + 6, 9, 10 (rapides), puis décider de 1 et 2.
+Ordre proposé : 3, 4, 5 d'abord (elles empêcheraient le merge), puis 8, 11 + 6, 9, 10 (rapides), puis 1 et 2 (décidés, voir leurs items).
 
 ---
 
@@ -168,7 +168,7 @@ Confirmé : `core/log/config.py:330` importe `SecretsMasker` en local alors qu'i
 importé en tête de module (ligne 27). Aucun commentaire n'explique un cycle d'imports, que `.claude/CLAUDE.md` exige.
 **Verdict : oui**, mais à vérifier import par import qu'aucun ne casse réellement un cycle avant de les remonter.
 
-## À discuter — Item 9 : les handlers de la racine sont supprimés par la config de logging (finding 1)
+## Décidé — Item 9 : les handlers de la racine sont supprimés par la config de logging (finding 1)
 
 **Reproduit.** Un `StreamHandler` ajouté sur le logger racine avant la déclaration de l'application :
 
@@ -186,7 +186,18 @@ qui intègre pyclifer dans une application qui a déjà ses handlers, mais ce n'
 Pistes : ne retirer que les handlers que pyclifer a créés (il sait déjà les reconnaître, `_is_console_handler`), ou
 documenter. **Hors merge**, à ouvrir en spec séparée si on le garde.
 
-## À discuter — Item 10 : le premier groupe déclaré décide de la config de la console (finding 2)
+**Décision de l'utilisateur.** Une option. Nouveau champ `GroupConfig.replace_root_handlers`, **faux par défaut** :
+pyclifer ne retire que les handlers qu'il a créés (reconnus par `_is_console_handler`) et laisse ceux des autres
+(Sentry, syslog, `caplog`). Vrai redonne le comportement actuel (`basicConfig(force=True)`). Une heuristique par type est
+exclue : le handler de `caplog` est une sous-classe de `StreamHandler`. Un changement de défaut est accepté avant la 1.0.
+Risque connu, non mesuré : si une bibliothèque a appelé `basicConfig()` avant l'application, la console peut s'afficher
+deux fois avec le défaut ; l'option sert à ce cas.
+
+**À faire.** Test d'abord, dans `tests/integration/` : un handler tiers survit à la déclaration et au callback `--verbosity`
+dans les deux modes (Rich et plain), et disparaît avec `replace_root_handlers=True`. Le nouveau champ exige une entrée
+dans `scenarios.py` (garde de l'inventaire), la doc de `GroupConfig` (`docs/api/classes.md`) et `docs/logging.md`.
+
+## Décidé — Item 10 : le premier groupe déclaré décide de la config de la console (finding 2)
 
 **Reproduit.** Un `@group()` déclaré avant l'`@app_group(use_rich_logging=False, sensitive_fields=["tok"], mask_free_text=True,
 add_verbosity_option=False)` : la console reste en Rich, sans masquage (`main` donne le même résultat). Avec l'option
@@ -195,6 +206,20 @@ add_verbosity_option=False)` : la console reste en Rich, sans masquage (`main` d
 **Verdict : à discuter, priorité basse.** Il faut la combinaison sous-groupe déclaré d'abord (l'ordre normal dans le gabarit
 de `pyclifer project`, où `cli.py` importe les apps) **et** `add_verbosity_option=False`. Antérieur à la branche. Piste :
 ne configurer la console que depuis l'`app_group`.
+
+**Décision de l'utilisateur.** Option A : `@group()` ne configure plus le logging, seul l'`app_group` l'initialise. L'ordre
+de déclaration reste libre : `src/pyclifer/cli.py` et le gabarit généré importent les sous-groupes avant d'écrire
+`@app_group()`, donc interdire cet ordre casserait le framework lui-même.
+
+**Mesuré** (prototype jetable, `--verbosity TRACE --config fichier.toml`) : les logs de l'option `--config` (« Load
+configuration matching », parsing TOML, `New defaults`, lignes TRACE) sont identiques avec et sans l'initialisation par les
+sous-groupes, car ils sont émis à l'exécution. Seule perte : un log de niveau module émis entre la déclaration d'un
+sous-groupe et celle de l'`app_group` n'est plus formaté par Rich (sortie brute de Python, WARNING et au-dessus). Autre
+conséquence : un `@group()` utilisé sans `app_group` n'a plus de logging configuré.
+
+**À faire.** Test d'abord : après un `@group()` seul, aucun handler de pyclifer n'est installé ; `group()` déclaré avant
+l'`app_group(use_rich_logging=False, mask_free_text=True, add_verbosity_option=False)` : la console est plain et masque, dans
+les deux ordres de déclaration. Option B (initialiser à l'exécution) : voir la spec 17, sans se l'interdire.
 
 ## Non retenu — Item 11 : rendu de repli (finding 7)
 
