@@ -260,6 +260,10 @@ Managed with `bumpversion`. Version is synced across `pyproject.toml`, `README.m
 `src/pyclifer/__init__.py`. Commits follow conventional commits with emoji prefixes
 (e.g., `✨ feat`, `🐛 fix`, `♻️ refactor`).
 
+Releases are published to PyPI by `.github/workflows/release.yml` through GitHub Actions OIDC
+(trusted publishing), with no API token. This depends on the Trusted Publisher being configured
+on pypi.org for this repository, which the repository files cannot show.
+
 ### Documentation review before a bump
 
 Before running `bumpversion` (or when the user announces a release), run the `doc-review`
