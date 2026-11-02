@@ -2,6 +2,97 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - 2026-11-02
+
+### Bug Fixes
+
+- **response**: Answer Click usage errors in structured formats
+- **events**: Report a handler error swallowed on a bare call
+- **events**: Validate event names in emit
+- **response**: Forward add_command keyword arguments
+- **decorators**: Stop duplicating options without rich help
+- **decorators**: Make output_format_default the contract of the application
+- **response**: Wrap sub-group commands attached after being defined
+- **log**: Honor enable_secrets_filter and sensitive_fields at run time
+- **decorators**: Honor show_envvar on the automatic options
+- **log**: Let --verbosity be stricter than the default
+- **log**: Honor use_rich_logging=False with a standard console handler
+- **log**: Mask secrets in exception tracebacks with mask_free_text
+- **mixins**: List propagated global options in the help of plain commands
+- **mixins**: Hand context options on to commands added after their group
+- **mixins**: Stop passing propagated options to groups that cannot take them
+- **mixins**: Apply use_rich_help=False to the whole application
+- **options**: Read one environment variable for a global option
+- **decorators**: Let Click errors and exits through returns_response
+- **output**: Dump unknown objects as plain YAML
+- **log**: Install trace() when pyclifer is imported
+- **log**: Point TRACE records at the caller
+- **decorators**: Accept click_extra option classes in option()
+- **log**: Count the trace() frame only on Python 3.11+
+- **renderer**: Explain when Response.data is not a dict
+- **decorators**: Answer a rendering failure in the requested format
+- **decorators**: Search the MRO for is_global in option()
+- **output**: Keep container subclasses intact in YAML output
+- **log**: Make the free-text masking regex linear
+- **decorators**: Accept output_format_default in any casing
+- **decorators**: Name global option variables per invocation
+- **output**: Write an Enum as its value in JSON and YAML
+- **decorators**: Keep structured stdout valid when printing fails twice
+- **decorators**: Refuse version= without the version option
+
+### Documentation
+
+- **specs**: Retarget click-extra upgrade spec to 9.x
+- **specs**: Note config priority gap in click-extra upgrade spec
+- **specs**: Add config-system-user-merge spec
+- **classes**: Explain Extra prefix of PycliferExtraGroup
+- **claude**: Require doc-review before a version bump
+- **specs**: Add usage-errors-json-response spec
+- **specs**: Add lifecycle-events spec
+- **specs**: Rework lazy-command-loading spec
+- **specs**: Drop issue placeholder from lifecycle-events
+- **claude**: Require testing behaviour instead of assuming it
+- **specs**: Mark lifecycle-events verification done
+- **events**: Document lifecycle events
+- **events**: Note two measured edge cases
+- **specs**: Add integration-test-matrix spec
+- **testing**: Document the integration suite and archive spec 15
+- **specs**: Add code-review-findings spec
+- **specs**: Record logging decisions and add init-at-runtime draft
+- **specs**: Add the correction plan to the review spec
+- **claude**: Record design principles and working rules in CLAUDE.md
+- **claude**: Note the PyPI trusted publisher prerequisite
+- **specs**: Add the integration-suite replay to the lazy-commands spec
+- **decorators**: Fix the log_file_option docstring order
+- **specs**: Archive the code-review findings spec
+- Fix the findings of the doc-review before 0.9.0
+
+### Features
+
+- **config**: Merge system and user config files, user wins
+- **events**: Add lifecycle event names
+- **events**: Add EventsMixin
+- **events**: Wire on= into groups and decorators
+- **events**: Emit config.loaded after the config resolution
+- **events**: Let users define their own events
+- **response**: Make handle_response tri-state on groups
+- **log**: Add mask_free_text to mask key=value secrets in messages
+- **log**: Add GroupConfig.replace_root_handlers
+
+### Miscellaneous
+
+- **deps**: Refresh uv.lock to latest compatible versions
+- **deps**: Align ruff pre-commit hook with ruff 0.17.3
+
+### Tests
+
+- **integration**: Add feature inventory and exhaustiveness guard
+- **integration**: Add the scenario harness
+- **integration**: Measure GroupConfig across a configuration matrix
+- **integration**: Measure the effect of every automatic option
+- **integration**: Add propagation and parity scenarios (spec 15 item 5)
+- **integration**: Add public API scenarios (spec 15 item 6)
+
 ## [0.8.0] - 2026-08-30
 
 ### Bug Fixes
