@@ -91,6 +91,7 @@ class GroupDecorator:
             enable_secrets_filter=self.config.enable_secrets_filter,
             sensitive_fields=self.config.sensitive_fields or None,
             mask_free_text=self.config.mask_free_text,
+            replace_root_handlers=self.config.replace_root_handlers,
         )
 
     def _apply_rich_help(self, f: Callable) -> Callable:
@@ -140,6 +141,7 @@ class GroupDecorator:
                 enable_secrets_filter=self.config.enable_secrets_filter,
                 sensitive_fields=self.config.sensitive_fields or None,
                 mask_free_text=self.config.mask_free_text,
+                replace_root_handlers=self.config.replace_root_handlers,
             )(f)
 
         if self.config.add_log_file_option:

@@ -607,7 +607,24 @@ class TestPycliferVerbosityOption:
             sensitive_fields=["mycode"],
             mask_free_text=False,
             force_reconfigure=True,
+            replace_root_handlers=False,
         )
+
+    @patch("pyclifer.core.log.config.configure_rich_logging")
+    def test_set_level_forwards_replace_root_handlers(self, mock_configure):
+        """The handler rebuilt on a level change keeps the choice made on the application."""
+        option = PycliferVerbosityOption(replace_root_handlers=True)
+        mock_ctx = Mock()
+        mock_ctx.meta = {}
+
+        with patch.object(
+            type(option), "all_loggers", new_callable=PropertyMock
+        ) as mock_all_loggers:
+            mock_all_loggers.return_value = iter([])
+            with patch.object(option, "reset_loggers"):
+                option.set_level(mock_ctx, Mock(), "DEBUG")
+
+        assert mock_configure.call_args.kwargs["replace_root_handlers"] is True
 
     @patch("pyclifer.core.log.config.configure_rich_logging")
     def test_secrets_settings_default_to_the_filter_with_the_default_fields(
@@ -629,6 +646,7 @@ class TestPycliferVerbosityOption:
             sensitive_fields=None,
             mask_free_text=False,
             force_reconfigure=True,
+            replace_root_handlers=False,
         )
 
     @staticmethod
@@ -733,6 +751,7 @@ class TestPycliferVerbosityOption:
             sensitive_fields=None,
             mask_free_text=False,
             force_reconfigure=True,
+            replace_root_handlers=False,
         )
 
         mock_logger1.setLevel.assert_called_once_with(PYCLIFER_LOG_LEVELS["DEBUG"])

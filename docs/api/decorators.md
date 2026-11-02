@@ -26,6 +26,10 @@ Key parameters:
   `secret`, ...). `enable_secrets_filter=False` turns the filter off.
 - `mask_free_text` — `False` by default. Also masks `key=value` pairs written inside the text of a log
   message and of the exceptions it carries. See [Masking Free Text](../logging.md#masking-free-text) for what it finds and its limits.
+- `replace_root_handlers` — `False` by default. pyclifer then replaces only its own console handler and
+  keeps the handlers other libraries put on the root logger, except the console handler that
+  `logging.basicConfig()` installs with its default arguments. Set it to `True` to remove them all.
+  See [Handlers From Other Libraries](../logging.md#handlers-from-other-libraries).
 - `rich_help_config` — `RichHelpConfiguration` instance (or dict) forwarded to rich-click.
   Lets you customise colours, column widths, and panel styles in `--help` output.
 - `use_rich_help` — set to `False` to disable rich-click rendering and use plain Click help.

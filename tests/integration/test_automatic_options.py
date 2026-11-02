@@ -5,6 +5,7 @@ the global logging state could change the answer. A strict xfail records a defec
 measurement; it must be removed by the item that fixes it.
 """
 
+import io
 import logging
 import logging.handlers
 
@@ -431,6 +432,120 @@ class TestFreeTextMasking:
         console, _ = _log_free_text(tmp_path, mask_free_text=True, add_verbosity_option=False)
 
         assert "hunter2" not in console
+
+
+class _ThirdPartyHandler(logging.StreamHandler):
+    """A handler another library put on the root logger, a StreamHandler subclass like caplog's."""
+
+
+def _declare_after_a_third_party_handler(**config):
+    """Put a foreign handler on the root logger, then declare an application that logs."""
+    foreign = _ThirdPartyHandler(io.StringIO())
+    logging.getLogger().addHandler(foreign)
+
+    @app_group(**{"output_format_default": "json", **config})
+    def cli():
+        """Test application."""
+
+    @cli.command()
+    def hello():
+        """Log a message."""
+        get_logger("probe").warning("probe message")
+        return Response(success=True, message="ok")
+
+    return cli, foreign
+
+
+def _with_format(handler, fmt, datefmt=None):
+    """Give a handler a formatter of its own."""
+    handler.setFormatter(logging.Formatter(fmt, datefmt))
+    return handler
+
+
+class TestReplaceRootHandlers:
+    """pyclifer replaces only its own console handler, unless replace_root_handlers is set."""
+
+    @pytest.mark.parametrize("use_rich_logging", [True, False])
+    def test_a_foreign_handler_survives_the_declaration(self, use_rich_logging):
+        _, foreign = _declare_after_a_third_party_handler(use_rich_logging=use_rich_logging)
+
+        assert foreign in logging.getLogger().handlers
+
+    @pytest.mark.parametrize("use_rich_logging", [True, False])
+    def test_a_foreign_handler_survives_the_verbosity_option_and_keeps_receiving(
+        self, use_rich_logging
+    ):
+        cli, foreign = _declare_after_a_third_party_handler(use_rich_logging=use_rich_logging)
+
+        result = invoke(cli, ["--verbosity", "DEBUG", "hello"])
+
+        assert foreign in logging.getLogger().handlers
+        assert "probe message" in foreign.stream.getvalue()
+        assert result.stderr.count("probe message") == 1
+
+    @pytest.mark.parametrize("use_rich_logging", [True, False])
+    def test_the_console_is_written_once_by_default(self, use_rich_logging):
+        cli, _ = _declare_after_a_third_party_handler(use_rich_logging=use_rich_logging)
+
+        result = invoke(cli, ["hello"])
+
+        assert result.stderr.count("probe message") == 1
+
+    @pytest.mark.parametrize("use_rich_logging", [True, False])
+    def test_the_console_handler_of_logging_basic_config_is_replaced(self, use_rich_logging):
+        """A StreamHandler on stderr, what logging.basicConfig() installs, is a console too.
+
+        Kept, it would write each record a second time, without the secrets filter.
+        """
+        logging.basicConfig(force=True)
+        basic = logging.getLogger().handlers[0]
+
+        cli, _ = _declare_after_a_third_party_handler(use_rich_logging=use_rich_logging)
+        assert basic not in logging.getLogger().handlers
+
+        invoke(cli, ["--verbosity", "DEBUG", "hello"])
+
+        assert basic not in logging.getLogger().handlers
+
+    @pytest.mark.parametrize("use_rich_logging", [True, False])
+    @pytest.mark.parametrize(
+        "make_handler",
+        [
+            lambda: logging.StreamHandler(),
+            lambda: _with_format(logging.StreamHandler(), "%(message)s"),
+            lambda: _with_format(logging.StreamHandler(), logging.BASIC_FORMAT, datefmt="%H:%M"),
+        ],
+        ids=["no-formatter", "own-format", "own-date-format"],
+    )
+    def test_a_stream_handler_written_by_hand_is_kept(self, use_rich_logging, make_handler):
+        """A StreamHandler on stderr that nobody got from basicConfig() is the user's own."""
+        mine = make_handler()
+        logging.getLogger().addHandler(mine)
+
+        _declare_after_a_third_party_handler(use_rich_logging=use_rich_logging)
+
+        assert mine in logging.getLogger().handlers
+
+    @pytest.mark.parametrize("use_rich_logging", [True, False])
+    def test_a_stream_handler_on_another_stream_is_kept(self, use_rich_logging):
+        other = logging.StreamHandler(io.StringIO())
+        logging.getLogger().addHandler(other)
+
+        _declare_after_a_third_party_handler(use_rich_logging=use_rich_logging)
+
+        assert other in logging.getLogger().handlers
+
+    @pytest.mark.parametrize("use_rich_logging", [True, False])
+    def test_replace_root_handlers_removes_the_foreign_handler(self, use_rich_logging):
+        cli, foreign = _declare_after_a_third_party_handler(
+            use_rich_logging=use_rich_logging, replace_root_handlers=True
+        )
+        assert foreign not in logging.getLogger().handlers
+
+        invoke(cli, ["--verbosity", "DEBUG", "hello"])
+
+        assert foreign not in logging.getLogger().handlers
+        assert "probe message" not in foreign.stream.getvalue()
 
 
 def _plain_command(factory, args):

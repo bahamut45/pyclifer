@@ -1,6 +1,7 @@
 """Configuration utilities for pyclifer logging."""
 
 import logging
+import sys
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import Any
@@ -62,6 +63,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
             sensitive_fields=self.sensitive_fields,
             mask_free_text=self.mask_free_text,
             force_reconfigure=True,
+            replace_root_handlers=self.replace_root_handlers,
         )
 
         # Restrict stream handlers so the console output respects its explicit verbosity
@@ -83,6 +85,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         enable_secrets_filter: bool = True,
         sensitive_fields: list[str] | None = None,
         mask_free_text: bool = False,
+        replace_root_handlers: bool = False,
         **kwargs,
     ):
         """Initialize the Pyclif Verbosity Option.
@@ -96,6 +99,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
             enable_secrets_filter: Mask secrets in the console handler it rebuilds.
             sensitive_fields: Field names to mask on top of the defaults.
             mask_free_text: Also mask key=value pairs written inside the text of a message.
+            replace_root_handlers: Also remove the root handlers that pyclifer did not create.
             **kwargs: Additional keyword arguments.
         """
         if not param_decls:
@@ -106,6 +110,7 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         self.enable_secrets_filter = enable_secrets_filter
         self.sensitive_fields = sensitive_fields
         self.mask_free_text = mask_free_text
+        self.replace_root_handlers = replace_root_handlers
         kwargs.setdefault("show_default", True)
         super().__init__(param_decls=param_decls, type=type, help=help, **kwargs)
 
@@ -117,6 +122,7 @@ def configure_rich_logging(
     sensitive_fields: list[str] | None = None,
     mask_free_text: bool = False,
     force_reconfigure: bool = False,
+    replace_root_handlers: bool = False,
 ) -> None:
     """Configure the Rich logging system once and centrally.
 
@@ -133,6 +139,9 @@ def configure_rich_logging(
                           Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
         mask_free_text: Also mask key=value pairs written inside the text of a message.
         force_reconfigure: Force reconfiguration even if already configured.
+        replace_root_handlers: Also remove the handlers of the root logger that pyclifer did not
+            create (Sentry, syslog, pytest's caplog). By default only the console handler of
+            pyclifer is replaced and those are kept.
     """
     # Check if the console is already configured, with Rich or without
     if not force_reconfigure:
@@ -156,9 +165,9 @@ def configure_rich_logging(
         )
         shared_handler.setFormatter(RichExtraFormatter())
 
-        # Save existing file handlers before force configuration wipes them
+        # Save the handlers to keep before force configuration wipes them
         root_logger = logging.getLogger()
-        file_handlers = [h for h in root_logger.handlers if isinstance(h, TimedRotatingFileHandler)]
+        kept_handlers = _handlers_to_keep(replace_root_handlers)
 
         _preconfigure_click_extra_logger(shared_handler)
 
@@ -177,13 +186,15 @@ def configure_rich_logging(
         if shared_handler not in root_logger.handlers:  # pragma: no branch
             root_logger.addHandler(shared_handler)
 
-        # Restore file handlers
-        for h in file_handlers:
+        # Restore the saved handlers
+        for h in kept_handlers:
             if h not in root_logger.handlers:  # pragma: no branch
                 root_logger.addHandler(h)
 
     else:
-        _configure_plain_logging(enable_secrets_filter, sensitive_fields, mask_free_text)
+        _configure_plain_logging(
+            enable_secrets_filter, sensitive_fields, mask_free_text, replace_root_handlers
+        )
 
 
 def _is_console_handler(handler: logging.Handler) -> bool:
@@ -191,8 +202,58 @@ def _is_console_handler(handler: logging.Handler) -> bool:
     return hasattr(handler, "_rich_handler") or getattr(handler, "_pyclifer_console", False)
 
 
+def _handlers_to_keep(replace_root_handlers: bool) -> list[logging.Handler]:
+    """List the handlers of the root logger that survive a reconfiguration of the console.
+
+    File handlers always survive. The console handlers never do, since they are the ones being
+    replaced: the one pyclifer installed, the one click-extra lends to the root logger for the
+    length of a run, and the plain StreamHandler on stderr that logging.basicConfig() installs,
+    which would write every record a second time and without the secrets filter. Any other
+    handler survives unless replace_root_handlers is set. The last one is recognised by its exact
+    type, not with isinstance, because pytest's caplog handler is a StreamHandler subclass too.
+
+    Args:
+        replace_root_handlers: If True, only the file handlers survive.
+
+    Returns:
+        The handlers to put back on the root logger once the console is configured.
+    """
+    return [
+        h
+        for h in logging.getLogger().handlers
+        if isinstance(h, TimedRotatingFileHandler)
+        or (
+            not replace_root_handlers
+            and not _is_console_handler(h)
+            and type(h).__module__ != "click_extra.logging"
+            and not _is_basic_config_console(h)
+        )
+    ]
+
+
+def _is_basic_config_console(handler: logging.Handler) -> bool:
+    """Tell whether a handler is the console one logging.basicConfig() installs by default.
+
+    It is a plain StreamHandler on stderr with the standard Formatter, the basic format, no date
+    format and no filter. A StreamHandler a user wrote by hand differs on at least the formatter,
+    which basicConfig always sets, so it is kept.
+    """
+    formatter = handler.formatter
+    return (
+        type(handler) is logging.StreamHandler
+        and handler.stream in (sys.stderr, sys.__stderr__)
+        and type(formatter) is logging.Formatter
+        and formatter._fmt == logging.BASIC_FORMAT
+        and formatter.datefmt is None
+        and not handler.filters
+    )
+
+
 def _configure_plain_logging(
-    enable_secrets_filter: bool, sensitive_fields: list[str] | None, mask_free_text: bool
+    enable_secrets_filter: bool,
+    sensitive_fields: list[str] | None,
+    mask_free_text: bool,
+    replace_root_handlers: bool,
 ) -> None:
     """Install click-extra's standard console handler, with the same secrets filter as Rich.
 
@@ -200,11 +261,12 @@ def _configure_plain_logging(
         enable_secrets_filter: Add the SecretsMasker filter to the console handler.
         sensitive_fields: Field names to mask on top of the defaults.
         mask_free_text: Also mask key=value pairs written inside the text of a message.
+        replace_root_handlers: Also remove the handlers that pyclifer did not create.
     """
     root_logger = logging.getLogger()
     existing = list(root_logger.handlers)
-    # basicConfig(force=True) removes every handler: keep the file handlers.
-    file_handlers = [h for h in existing if isinstance(h, TimedRotatingFileHandler)]
+    # basicConfig(force=True) removes every handler: keep the ones that must survive.
+    kept_handlers = _handlers_to_keep(replace_root_handlers)
 
     basicConfig(force=True)
 
@@ -218,7 +280,7 @@ def _configure_plain_logging(
                 SecretsMasker(sensitive_fields=sensitive_fields, mask_free_text=mask_free_text)
             )
 
-    for handler in file_handlers:
+    for handler in kept_handlers:
         if handler not in root_logger.handlers:  # pragma: no branch
             root_logger.addHandler(handler)
 

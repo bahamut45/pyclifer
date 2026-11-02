@@ -17,7 +17,7 @@ préfixer le titre de l'item par ✅ quand il est fait, archiver la spec quand t
 | 4 | 4 | `output_format_default` insensible à la casse | ✅ fait |
 | 5 | 5 et 6 | variable d'environnement : chaîne dans l'aide, nom par contexte | ✅ fait |
 | 6 | 7, 8 | docstring `log_file_option`, imports locaux redondants | ✅ fait |
-| 7 | 9 | `GroupConfig.replace_root_handlers` (décidé, faux par défaut) | à faire |
+| 7 | 9 | `GroupConfig.replace_root_handlers` (décidé, faux par défaut) | ✅ fait |
 | 8 | 10 | `@group()` ne configure plus le logging (option A, décidé) | à faire |
 | après | spec 17 | initialiser à l'exécution (option B) : comparaison d'abord, après les specs 09 et 10 | brouillon |
 
@@ -191,7 +191,7 @@ Confirmé : `core/log/config.py:330` importe `SecretsMasker` en local alors qu'i
 importé en tête de module (ligne 27). Aucun commentaire n'explique un cycle d'imports, que `.claude/CLAUDE.md` exige.
 **Verdict : oui**, mais à vérifier import par import qu'aucun ne casse réellement un cycle avant de les remonter.
 
-## Décidé — Item 9 : les handlers de la racine sont supprimés par la config de logging (finding 1)
+## ✅ Décidé — Item 9 : les handlers de la racine sont supprimés par la config de logging (finding 1)
 
 **Reproduit.** Un `StreamHandler` ajouté sur le logger racine avant la déclaration de l'application :
 

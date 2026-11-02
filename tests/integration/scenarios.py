@@ -29,6 +29,7 @@ COVERED: dict[str, str] = {
     "GroupConfig.enable_secrets_filter": f"{_OPTIONS}::TestSecretsFiltering",
     "GroupConfig.sensitive_fields": f"{_OPTIONS}::TestSecretsFiltering",
     "GroupConfig.mask_free_text": f"{_OPTIONS}::TestFreeTextMasking",
+    "GroupConfig.replace_root_handlers": f"{_OPTIONS}::TestReplaceRootHandlers",
     "GroupConfig.add_config_option": f"{_OPTIONS}::TestConfigOption",
     "GroupConfig.add_verbosity_option": f"{_OPTIONS}::TestVerbosityOption",
     "GroupConfig.verbosity_default_level": f"{_OPTIONS}::TestVerbosityOption",

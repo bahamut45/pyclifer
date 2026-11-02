@@ -403,6 +403,9 @@ class GroupConfig:
     sensitive_fields: list[str] = field(default_factory=list)
     # Also mask key=value pairs written inside the text of a log message (off by default).
     mask_free_text: bool = False
+    # Also remove the root handlers pyclifer did not create (Sentry, syslog, caplog) when it
+    # configures the console. Off by default: only its own console handler is replaced.
+    replace_root_handlers: bool = False
 
     # Context construction
     context_factory: Callable[..., Any] | None = None

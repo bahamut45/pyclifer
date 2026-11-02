@@ -274,6 +274,26 @@ except ConnectionError:
 The exception that you catch is never modified: the handlers receive a masked copy with the same type,
 the same name and the same traceback.
 
+### Handlers From Other Libraries
+
+When pyclifer sets up the console, it replaces only its own console handler. A handler that another
+library put on the root logger (Sentry, syslog, pytest's `caplog`) is kept and keeps receiving the
+records, also after `--verbosity` rebuilds the console. File handlers are kept as well.
+
+```python
+@app_group(replace_root_handlers=True)
+def cli():
+    """Removes every handler of the root logger when it sets up the console."""
+```
+
+The console handler that `logging.basicConfig()` installs with its default arguments (a plain
+`StreamHandler` on `stderr` with the standard format) is replaced like pyclifer's own: kept, it would
+write every record a second time, without the secrets filter. A `StreamHandler` you wrote yourself
+is never taken for it, since it does not carry that formatter. A handler from
+`logging.basicConfig(format=...)` is kept too, and the console then shows each record twice: pass
+`replace_root_handlers=True` in that case. It gives back the previous behaviour: every handler of the
+root logger that pyclifer did not create is removed, whatever its type.
+
 ### Preserved Functionality
 
 - **TRACE level**: Custom debug level (value 5)
