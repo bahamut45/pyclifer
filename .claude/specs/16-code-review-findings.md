@@ -13,7 +13,7 @@ préfixer le titre de l'item par ✅ quand il est fait, archiver la spec quand t
 |---|---|---|---|
 | 1 | 1 | `option(cls=...)` : parcourir le MRO pour `is_global` | ✅ fait |
 | 2 | 2 | YAML : représenteurs `dict`, `list`, `tuple` avant `object` | ✅ fait |
-| 3 | 3 | regex du texte libre non quadratique | à faire |
+| 3 | 3 | regex du texte libre non quadratique | ✅ fait |
 | 4 | 4 | `output_format_default` insensible à la casse | à faire |
 | 5 | 5 et 6 | variable d'environnement : chaîne dans l'aide, nom par contexte | à faire |
 | 6 | 7, 8 | docstring `log_file_option`, imports locaux redondants | à faire |
@@ -103,7 +103,7 @@ JSON/YAML des valeurs. Le cas des `set` (JSON : chaîne `"{1}"`, YAML : `!!set`)
 
 **Fait.** Représenteurs `dict`, `list`, `tuple` dans `core/mixins/output.py`. Décision de l'utilisateur pour les `set` et `frozenset` : laissés tels quels (aucune donnée perdue).
 
-## Item 3 : Défaut — la regex du texte libre est quadratique (finding 5)
+## ✅ Item 3 : Défaut — la regex du texte libre est quadratique (finding 5)
 
 **Reproduit** avec `SecretsMasker(sensitive_fields=["token"], mask_free_text=True).redact_text(texte)`, texte sans
 séparateur `=` ni `:` :

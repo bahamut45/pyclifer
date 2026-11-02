@@ -2,6 +2,7 @@
 
 import logging
 import sys
+import time
 from unittest.mock import Mock, PropertyMock, patch
 
 import pytest
@@ -1017,6 +1018,23 @@ class TestSecretsMaskerFreeText:
     def test_known_false_positives_are_masked(self, text, expected):
         """A name that contains a sensitive field is masked, whatever its value means."""
         assert self._masked(text) == expected
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "a" * 50_000,
+            "Zm9v" * 12_500,
+            "/usr/lib/x." * 4_500,
+        ],
+        ids=["word-characters", "base64-like", "paths"],
+    )
+    def test_a_long_text_without_a_separator_is_masked_in_bounded_time(self, text):
+        """The cost grows linearly with the text, not with its square."""
+        started = time.perf_counter()
+
+        assert self._masked(text) == text
+
+        assert time.perf_counter() - started < 0.5
 
     def test_masking_twice_changes_nothing(self):
         once = self._masked("password=hunter2")

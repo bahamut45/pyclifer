@@ -114,10 +114,15 @@ class SecretsMasker(logging.Filter):
         The key is any name that contains a sensitive field, possibly quoted. It is followed by
         = or :, an optional authorization scheme, then the value: quoted up to the closing
         quote, or unquoted up to a space or a delimiter.
+
+        The key can only start at the beginning of a word. Without that anchor, every position
+        inside a long run of word characters restarted the greedy prefix, which made the cost
+        grow with the square of the text.
         """
         alternatives = "|".join(re.escape(f) for f in sorted(fields, key=len, reverse=True))
         return re.compile(
             rf"""
+            (?<![\w.\-])
             (?P<key>["']?[\w.\-]*(?:{alternatives})[\w.\-]*["']?)
             (?P<separator>\s*[:=]\s*)
             (?P<scheme>(?:Bearer|Basic|Token)\s+)?
