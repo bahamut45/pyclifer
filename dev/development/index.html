@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://bahamut45.github.io/pyclifer/dev/development/">
       
       
-        <link rel="prev" href="../how-to/context-options/">
+        <link rel="prev" href="../how-to/lifecycle-events/">
       
       
         <link rel="next" href="../api/">
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/favicon-96x96.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -980,6 +980,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/lifecycle-events/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifecycle events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1131,6 +1159,17 @@
     <span class="md-ellipsis">
       
         Test Categories
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-integration-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Integration Suite
       
     </span>
   </a>
@@ -1615,6 +1654,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/reexports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Re-exports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1726,6 +1793,17 @@
     <span class="md-ellipsis">
       
         Test Categories
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-integration-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Integration Suite
       
     </span>
   </a>
@@ -1980,11 +2058,35 @@
 <h3 id="test-categories">Test Categories<a class="headerlink" href="#test-categories" title="Permanent link">&para;</a></h3>
 <ol>
 <li><strong>Unit tests</strong>: Test individual components in isolation</li>
-<li><strong>Integration tests</strong>: Test decorator interactions and CLI flows</li>
+<li><strong>Integration tests</strong> (<code>tests/integration/</code>): Run every feature in a real application (see below)</li>
 <li><strong>Configuration tests</strong>: Test <code>CustomConfigOption</code> functionality</li>
 <li><strong>Logging tests</strong>: Test verbosity, file logging, Rich formatting</li>
 <li><strong>Tox compatibility tests</strong>: Marked <code>@pytest.mark.tox</code> — multi-version checks</li>
 </ol>
+<h3 id="the-integration-suite">The Integration Suite<a class="headerlink" href="#the-integration-suite" title="Permanent link">&para;</a></h3>
+<p><code>tests/integration/</code> builds real applications and drives them from the command line, to find defects
+that appear only when features are combined. It has four parts:</p>
+<ul>
+<li><strong><code>inventory.py</code></strong> discovers the features by introspection: every <code>GroupConfig</code> field, every option
+  factory, every name in <code>pyclifer.__all__</code> and every framework event. Nothing is listed by hand.</li>
+<li><strong><code>scenarios.py</code></strong> says where each feature is exercised. A feature is either <code>COVERED</code> (it maps to
+  <code>path/to/test_file.py::TestClass</code>) or <code>EXCLUDED</code> (it maps to the reason it is not tested). <code>PENDING</code>
+  stays empty.</li>
+<li><strong><code>test_inventory.py</code></strong> fails when a discovered feature is not declared, when a declaration is stale or
+  duplicated, or when a <code>COVERED</code> entry points at a test that does not exist. A new <code>GroupConfig</code> field,
+  option factory, public symbol or event therefore needs an entry in <code>scenarios.py</code>.</li>
+<li><strong><code>harness.py</code></strong> builds an application and <code>assert_healthy</code> checks the contract that says it works: no
+  warning while building, unique option names, <code>--help</code> working, a command answering in the requested
+  format, and an unknown command exiting with code 2.</li>
+</ul>
+<p>The scenarios cover the <code>GroupConfig</code> matrix (<code>test_group_config_matrix.py</code>), the automatic options
+(<code>test_automatic_options.py</code>), propagation and Rich/plain help parity at three depths
+(<code>test_propagation.py</code>) and the public API (<code>test_public_api.py</code>).</p>
+<p>When you write a scenario, run the case in a fresh process first and assert what it printed, not what
+you expect it to print. Logging is global to the process, which is why <code>conftest.py</code> restores it around
+every test. A defect found this way gets its own failing test and its own commit.</p>
+<p>The whole suite takes about 26 seconds without coverage and about 48 seconds with the default
+coverage options. The integration tests are about 17 seconds of that.</p>
 <h3 id="writing-tests">Writing Tests<a class="headerlink" href="#writing-tests" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">click.testing</span><span class="w"> </span><span class="kn">import</span> <span class="n">CliRunner</span>
@@ -2238,7 +2340,7 @@ is used.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../how-to/context-options/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Context construction and anywhere-passable options">
+          <a href="../how-to/lifecycle-events/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Lifecycle events">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2248,7 +2350,7 @@ is used.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Context construction and anywhere-passable options
+                Lifecycle events
               </div>
             </div>
           </a>
@@ -2314,10 +2416,10 @@ is used.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "default": "latest", "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "toc.follow"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "default": "latest", "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>
