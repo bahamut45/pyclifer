@@ -3,6 +3,27 @@
 > Spec jetable : elle sert au débrief, puis elle est soit transformée en items à implémenter, soit supprimée.
 > **Aucun correctif n'est appliqué.** Rien dans `src/` ni `tests/` n'a changé pour cette spec.
 
+## Plan de correction (source de vérité du suivi)
+
+Branche `feat/integration-test-inventory`, non fusionnée, non poussée : **elle ne se fusionne qu'après ce plan**, avec la
+validation de l'utilisateur. Chaque ligne = test écrit d'abord et vu échouer, un commit, doc et spec mis à jour (CLAUDE.md :
+préfixer le titre de l'item par ✅ quand il est fait, archiver la spec quand tous le sont).
+
+| Ordre | Item | Quoi | Statut |
+|---|---|---|---|
+| 1 | 1 | `option(cls=...)` : parcourir le MRO pour `is_global` | à faire |
+| 2 | 2 | YAML : représenteurs `dict`, `list`, `tuple` avant `object` | à faire |
+| 3 | 3 | regex du texte libre non quadratique | à faire |
+| 4 | 4 | `output_format_default` insensible à la casse | à faire |
+| 5 | 5 et 6 | variable d'environnement : chaîne dans l'aide, nom par contexte | à faire |
+| 6 | 7, 8 | docstring `log_file_option`, imports locaux redondants | à faire |
+| 7 | 9 | `GroupConfig.replace_root_handlers` (décidé, faux par défaut) | à faire |
+| 8 | 10 | `@group()` ne configure plus le logging (option A, décidé) | à faire |
+| après | spec 17 | initialiser à l'exécution (option B) : comparaison d'abord, après les specs 09 et 10 | brouillon |
+
+Non retenu : item 11. Hors branche : item 12. Rejouer la suite d'intégration entière et tox 3.10 à 3.13 avant la validation
+du merge.
+
 ## Méthode
 
 `/code-review high` sur `main..HEAD` (29 commits) a rendu 10 findings. Chacun a été reproduit dans une application de
