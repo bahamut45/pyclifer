@@ -3,8 +3,10 @@
 from unittest.mock import patch
 
 import click
+import pytest
 
 from pyclifer.core import app_group, command, group, option, output_filter_option, returns_response
+from pyclifer.core.context import BaseContext
 from pyclifer.core.output import Response
 from pyclifer.core.output.exit_codes import ExitCode
 from pyclifer.core.output.renderer import BaseRenderer
@@ -835,3 +837,95 @@ class TestRenderFailure:
         result = invoke(app, ["show"])
         assert result.exit_code == 2
         assert "Unhandled exception" not in result.stderr
+
+
+class _BrokenContext(BaseContext):
+    """A context whose printing always fails, the failure Response included."""
+
+    calls = 0
+
+    def print_result_based_on_format(self, response, options=None):
+        """Fail whatever is printed, with a different reason the second time."""
+        type(self).calls += 1
+        raise RuntimeError("printing broke" if type(self).calls == 1 else "printing again broke")
+
+
+EXPECTED_MESSAGE = "printing broke (printing the failure failed too: printing again broke)"
+
+
+class TestPrintingThatFailsTwice:
+    """When even the failure Response cannot be printed, structured output stays valid."""
+
+    @pytest.fixture(autouse=True)
+    def _reset_calls(self):
+        _BrokenContext.calls = 0
+
+    @staticmethod
+    def _run(output_format):
+        @app_group(
+            output_format_default=output_format,
+            context_factory=lambda **_: _BrokenContext(),
+        )
+        def app():
+            """Test app"""
+
+        @app.command()
+        def show():
+            """Return a response that cannot be printed"""
+            return Response(success=True, message="m", data={"a": 1})
+
+        return invoke(app, ["show"])
+
+    def test_json_stdout_is_a_minimal_failure_response(self):
+        result = self._run("json")
+        assert result.exit_code == ExitCode.ERROR
+        assert result.json == {
+            "success": False,
+            "message": EXPECTED_MESSAGE,
+            "error_code": int(ExitCode.ERROR),
+        }
+
+    def test_yaml_stdout_is_a_minimal_failure_response(self):
+        result = self._run("yaml")
+        assert result.exit_code == ExitCode.ERROR
+        assert result.yaml == {
+            "success": False,
+            "message": EXPECTED_MESSAGE,
+            "error_code": int(ExitCode.ERROR),
+        }
+
+    def test_both_failures_are_logged(self):
+        result = self._run("json")
+        assert result.stderr.count("Unhandled exception") == 2
+
+    def test_other_formats_keep_the_raw_failure(self):
+        result = self._run("table")
+        assert result.exit_code != 0
+        assert result.output == ""
+
+    def test_a_click_error_raised_while_printing_the_failure_keeps_click_handling(self):
+        class RefusesTheFailure(BaseContext):
+            calls = 0
+
+            def print_result_based_on_format(self, response, options=None):
+                RefusesTheFailure.calls += 1
+                if RefusesTheFailure.calls == 1:
+                    raise RuntimeError("printing broke")
+                raise click.UsageError("failure refused")
+
+        @app_group(
+            output_format_default="json",
+            context_factory=lambda **_: RefusesTheFailure(),
+        )
+        def app():
+            """Test app"""
+
+        @app.command()
+        def show():
+            """Return a response"""
+            return Response(success=True, message="m")
+
+        result = invoke(app, ["show"])
+
+        assert result.exit_code == 2
+        assert "failure refused" in result.stderr

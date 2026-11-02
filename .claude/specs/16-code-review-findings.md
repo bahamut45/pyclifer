@@ -20,9 +20,10 @@ préfixer le titre de l'item par ✅ quand il est fait, archiver la spec quand t
 | 7 | 9 | `GroupConfig.replace_root_handlers` (décidé, faux par défaut) | ✅ fait |
 | 8 | 10 | `@group()` ne configure plus le logging (option A, décidé) | ✅ fait |
 | 9 | 12 | `Enum` : écrite comme sa valeur en JSON et en YAML (décidé) | ✅ fait |
+| 10 | 11 (cas B) | JSON/YAML minimal quand l'impression de l'échec plante aussi (décidé) | ✅ fait |
 | après | spec 17 | initialiser à l'exécution (option B) : comparaison d'abord, après les specs 09 et 10 | brouillon |
 
-Non retenu : item 11, sauf le cas B (voir l'item). Rejouer la suite d'intégration entière et tox 3.10 à 3.13 avant la validation
+Rejouer la suite d'intégration entière et tox 3.10 à 3.13 avant la validation
 du merge.
 
 ## Méthode
@@ -245,7 +246,7 @@ conséquence : un `@group()` utilisé sans `app_group` n'a plus de logging confi
 l'`app_group(use_rich_logging=False, mask_free_text=True, add_verbosity_option=False)` : la console est plain et masque, dans
 les deux ordres de déclaration. Option B (initialiser à l'exécution) : voir la spec 17, sans se l'interdire.
 
-## Non retenu — Item 11 : rendu de repli (finding 7)
+## ✅ Item 11 : rendu de repli (finding 7)
 
 **Reproduit.** (A) Un renderer dont `rich()` dessine un panneau puis lève : le panneau reste à l'écran, suivi du panneau
 d'erreur, code 1. (B) Un `BaseContext` dont `print_result_based_on_format` lève toujours : le repli lève aussi, traceback
@@ -255,6 +256,8 @@ brute, stdout vide, comme avant l'item 25.
 s'impriment en un seul appel, donc il n'y a pas de sortie tronquée mesurable. (B) ne régresse pas. Le repli ne passe pas
 l'option de filtre de sortie exprès. Si on veut aller plus loin, imprimer un JSON minimal à la main en dernier recours :
 amélioration, pas défaut.
+
+**Décision de l'utilisateur.** Le cas A reste tel quel. Le cas B est corrigé : en `json` et `yaml`, un document minimal écrit à la main reste sur stdout, son message donne les deux raisons, et les deux échecs sont journalisés ; les autres formats gardent l'échec brut.
 
 ## ✅ Item 12 : le JSON d'une `Enum` expose des attributs internes
 

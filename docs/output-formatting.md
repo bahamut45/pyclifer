@@ -538,6 +538,12 @@ An exception raised while the response is being rendered, for example by a bug i
 format with exit code `1`, so `--output-format json` never leaves stdout empty. With `rich` output a
 live display already on screen stays, and the error panel follows it.
 
+If the failure itself cannot be printed (a custom `BaseContext` whose `print_result_based_on_format`
+always raises), `json` and `yaml` still get a minimal document written by hand on stdout,
+`{"success": false, "message": ..., "error_code": 1}`. The message gives both reasons, the original
+failure first and then why it could not be printed, and both failures are logged. The other formats
+promise nothing parseable and keep the raw failure.
+
 Click's own errors and exits are not unexpected exceptions. `click.UsageError`, `click.BadParameter`,
 `click.ClickException`, `click.Abort` and `ctx.exit()` raised in a command keep Click's handling: the
 usual message, Click's exit code (`2` for usage errors, `1` for the others, the code you gave to

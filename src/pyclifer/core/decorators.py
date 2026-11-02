@@ -2,6 +2,7 @@
 
 import functools
 import inspect
+import json
 import logging
 from collections.abc import Callable
 from dataclasses import fields
@@ -9,6 +10,7 @@ from time import perf_counter
 from typing import Any, TypeVar, cast
 
 import click_extra
+import yaml
 from click.exceptions import Exit as ClickExit  # click_extra does not re-export Exit
 from rich_click import rich_config
 from rich_click.decorators import command as rich_command_decorator
@@ -645,6 +647,31 @@ def _unhandled_failure(name: str, error: Exception, meta: dict, where: str) -> A
     return Response(success=False, message=str(error), error_code=ExitCode.ERROR)
 
 
+def _print_minimal_failure(response: Response, output_format: str, print_error: Exception) -> None:
+    """Write a failure Response by hand on stdout, as JSON or YAML.
+
+    Last resort for when the output context itself cannot print, so that a caller that parses
+    stdout still receives a document. The message gives both reasons: the original failure, and
+    the one that kept it from being printed.
+
+    Args:
+        response: The failure Response to write.
+        output_format: Either json or yaml.
+        print_error: The exception raised while printing the failure Response.
+    """
+    payload = {
+        "success": False,
+        "message": f"{response.message} (printing the failure failed too: {print_error})",
+        "error_code": int(response.error_code or ExitCode.ERROR),
+    }
+    text = (
+        json.dumps(payload, indent=2)
+        if output_format == "json"
+        else yaml.safe_dump(payload, sort_keys=False)
+    )
+    click_extra.echo(text)
+
+
 def returns_response(f: Callable) -> Callable:
     """Decorator that intercepts a Response return value and prints it automatically.
 
@@ -729,7 +756,20 @@ def returns_response(f: Callable) -> Callable:
                 # A bug in a renderer is answered like one in the command: in the requested format,
                 # with the failure logged, instead of an empty stdout and a raw traceback.
                 result = _unhandled_failure(f.__name__, e, meta, "while rendering command")
-                output_ctx.print_result_based_on_format(result)
+                try:
+                    output_ctx.print_result_based_on_format(result)
+                except (click_extra.ClickException, click_extra.Abort, ClickExit):
+                    raise
+                except Exception as second_error:
+                    # The failure cannot be printed either. Structured output still owes the
+                    # caller a document on stdout, so it is written by hand. Other formats keep
+                    # the raw failure, since they promise nothing parseable.
+                    if output_format not in ("json", "yaml"):
+                        raise
+                    _unhandled_failure(
+                        f.__name__, second_error, meta, "while printing the failure of command"
+                    )
+                    _print_minimal_failure(result, output_format, second_error)
             if not result.success and result.error_code and ctx is not None:
                 ctx.exit(result.error_code)
         else:
