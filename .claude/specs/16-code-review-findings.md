@@ -15,7 +15,7 @@ préfixer le titre de l'item par ✅ quand il est fait, archiver la spec quand t
 | 2 | 2 | YAML : représenteurs `dict`, `list`, `tuple` avant `object` | ✅ fait |
 | 3 | 3 | regex du texte libre non quadratique | ✅ fait |
 | 4 | 4 | `output_format_default` insensible à la casse | ✅ fait |
-| 5 | 5 et 6 | variable d'environnement : chaîne dans l'aide, nom par contexte | à faire |
+| 5 | 5 et 6 | variable d'environnement : chaîne dans l'aide, nom par contexte | ✅ fait |
 | 6 | 7, 8 | docstring `log_file_option`, imports locaux redondants | à faire |
 | 7 | 9 | `GroupConfig.replace_root_handlers` (décidé, faux par défaut) | à faire |
 | 8 | 10 | `@group()` ne configure plus le logging (option A, décidé) | à faire |
@@ -145,7 +145,7 @@ ou borner le préfixe (`{0,N}`), ou découper le texte en jetons avant d'appliqu
 **Correctif proposé.** Normaliser en minuscules avant de valider (même règle que l'option). Test d'abord : `"JSON"`,
 `"Json"` acceptés et produisent du JSON ; `"nope"` toujours refusé.
 
-## Item 5 : Régression d'affichage — la variable s'affiche comme un tuple dans l'aide Rich d'une feuille (constat 11)
+## ✅ Item 5 : Régression d'affichage — la variable s'affiche comme un tuple dans l'aide Rich d'une feuille (constat 11)
 
 Non signalé par le review, trouvé en reproduisant le finding 6. Aide Rich de `cli go --help`, avec une option globale :
 - `main` : `[env var: CLI_GO_REGION]`
@@ -160,7 +160,7 @@ dessine l'aide d'une feuille. Les tests de l'item 18 cherchent `"CLI_REGION" in 
 **Correctif proposé.** Écrire une chaîne quand il n'y a qu'un nom (ou vérifier ce que rich-click attend). Test d'abord :
 l'aide Rich de la feuille contient `[env var: CLI_REGION]` et ne contient pas `(`.
 
-## Item 6 : Défaut — le nom de variable est figé sur l'objet d'option partagé (finding 6)
+## ✅ Item 6 : Défaut — le nom de variable est figé sur l'objet d'option partagé (finding 6)
 
 **Reproduit** en invoquant la même application deux fois avec des `prog_name` différents (cas des tests `CliRunner`),
 `FIRST_REGION=from-first` puis `SECOND_REGION=from-second` et `FIRST_REGION=stale` :

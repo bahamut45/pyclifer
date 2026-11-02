@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import click
 import click_extra
+import click_extra.testing
 import pytest
 from click_extra import TimerOption
 
@@ -1569,7 +1570,7 @@ class TestNameGlobalEnvvars:
 
         GroupDecorator._name_global_envvars(self._context("CLI", option))
 
-        assert option.envvar == ("CLI_REGION",)
+        assert option.envvar == "CLI_REGION"
 
     def test_an_explicit_variable_is_kept(self):
         option = PycliferOption(["--region"], is_global=True, envvar="MY_REGION")
@@ -1598,6 +1599,55 @@ class TestNameGlobalEnvvars:
         GroupDecorator._name_global_envvars(self._context(None, option))
 
         assert option.envvar is None
+
+
+class TestGlobalEnvvarOnLeafCommands:
+    """The variable of a global option is shown and read per invocation, by the root name."""
+
+    @staticmethod
+    def _app():
+        @app_group(handle_response=False)
+        @option("--region", is_global=True, default="r0")
+        def app(region):
+            """App"""
+
+        @app.command()
+        def go(region):
+            """Go"""
+            click.echo(f"region={region}")
+
+        return app
+
+    def test_rich_help_of_a_leaf_shows_the_variable_as_a_string(self):
+        result = click_extra.testing.CliRunner().invoke(
+            self._app(), ["go", "--help"], prog_name="cli"
+        )
+
+        assert "[env var: CLI_REGION]" in result.output
+        assert "('CLI_REGION'" not in result.output
+
+    def test_two_invocations_with_different_names_read_their_own_variable(self):
+        app = self._app()
+        runner = click_extra.testing.CliRunner()
+
+        first = runner.invoke(app, ["go"], prog_name="first", env={"FIRST_REGION": "from-first"})
+        second = runner.invoke(
+            app,
+            ["go"],
+            prog_name="second",
+            env={"SECOND_REGION": "from-second", "FIRST_REGION": "stale"},
+        )
+
+        assert "region=from-first" in first.output
+        assert "region=from-second" in second.output
+
+    def test_the_shared_option_is_left_unnamed_after_the_call(self):
+        app = self._app()
+
+        click_extra.testing.CliRunner().invoke(app, ["go"], prog_name="first")
+
+        param = next(p for p in app.params if p.name == "region")
+        assert param.envvar is None
 
 
 class TestOptionWithExternalClass:

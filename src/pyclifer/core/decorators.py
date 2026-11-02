@@ -300,6 +300,9 @@ class GroupDecorator:
     def _name_global_envvars(ctx: click_extra.Context) -> None:
         """Write the environment variable of the root onto each global option that has none.
 
+        The option objects are shared by every invocation of the application, so the name only
+        lives as long as the root context: it is removed when that context closes.
+
         Args:
             ctx: The context just made for the root group.
         """
@@ -313,7 +316,8 @@ class GroupDecorator:
                 and getattr(param, "allow_from_autoenv", True)
                 and param.name
             ):
-                param.envvar = (f"{prefix}_{param.name.upper()}",)
+                param.envvar = f"{prefix}_{param.name.upper()}"
+                ctx.call_on_close(functools.partial(setattr, param, "envvar", None))
 
     @staticmethod
     def _find_subcommand_boundary(args: list[str], f: click_extra.Group) -> int:
