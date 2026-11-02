@@ -115,13 +115,30 @@ pyclifer demo tasks show "bad-id" -o json
 ```json
 {
   "success": false,
-  "message": "Task 'bad-id' not found.",
-  "data": {},
-  "error_code": 4
+  "message": "Task not found.",
+  "error_code": 3,
+  "data": {
+    "results": [
+      {
+        "id": null,
+        "title": null,
+        "description": null,
+        "priority": null,
+        "status": null,
+        "due_date": null,
+        "tags": null,
+        "assignee": null,
+        "created_at": null,
+        "item": "bad-id",
+        "success": false,
+        "error_code": 3
+      }
+    ]
+  }
 }
 ```
 
-`error_code: 4` maps to `ExitCode.NOT_FOUND`. The process exits with code 1.
+`error_code: 3` maps to `ExitCode.NOT_FOUND`. The process exits with the same code, `3`.
 
 ### Streaming sync
 
@@ -314,8 +331,8 @@ class TaskInterface(BaseInterface):
         return [OperationResult.ok(item=task.id, data=task)]
 ```
 
-`ExitCode.NOT_FOUND` is 4. The framework serialises this into `"error_code": 4` in JSON
-and exits with code 1.
+`ExitCode.NOT_FOUND` is 3. The framework serialises this into `"error_code": 3` in JSON
+and exits with code 3.
 
 !!! tip "In your project"
     See [Response Patterns](how-to/response-patterns.md) for the full interface + renderer

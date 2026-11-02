@@ -65,6 +65,7 @@ nav:
       - Mixins: api/mixins.md
       - Interfaces: api/interfaces.md
       - Models: api/models.md
+      - Re-exports: api/reexports.md
 
 not_in_nav: |
   versions.json

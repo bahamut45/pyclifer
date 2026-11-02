@@ -194,8 +194,8 @@ if __name__ == "__main__":
 When you use `@app_group`, you automatically get:
 
 - **Help options**: `-h` and `--help`
-- **Version option**: `--version`
-- **Verbosity options**: `-v`, `-vv`, `-vvv` (propagated globally to all subcommands)
+- **Version option**: `--version` (`add_version_option=False` removes it)
+- **Verbosity option**: `--verbosity LEVEL` / `-v LEVEL`, with a level from `TRACE` to `CRITICAL` (propagated globally to all subcommands)
 - **Configuration option**: `--config` / `-C`
 - **Output format option**: `--output-format` / `-o`
 - **Environment variable support**: With your custom prefix
@@ -230,7 +230,7 @@ python my_cli.py hello
 python my_cli.py --config /path/to/config.toml hello
 
 # Use verbosity
-python my_cli.py -vv hello --message "Debug mode"
+python my_cli.py -v DEBUG hello --message "Debug mode"
 ```
 
 ## Next Steps

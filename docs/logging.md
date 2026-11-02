@@ -149,6 +149,10 @@ myapp command --verbosity ERROR    # the option is accepted after the subcommand
 
 If you give two levels on the same command line, the most verbose one wins.
 
+`--verbosity` comes from `add_verbosity_option`, which is `True` by default on `@app_group`. With
+`add_verbosity_option=False` the option is not declared, and the console is still set up with the
+settings of the group.
+
 ### File Logging
 
 ```python
@@ -159,6 +163,7 @@ from pyclifer import app_group
     add_log_file_option=True,  # Adds --log-file option
     log_file_default_level="TRACE",  # Default file log level
     log_file_rotation_when="midnight",
+    log_file_rotation_interval=1,  # one rotation per `when` unit
     log_file_rotation_backup_count=7
 )
 def cli():
@@ -279,6 +284,14 @@ the same name and the same traceback.
 When pyclifer sets up the console, it replaces only its own console handler. A handler that another
 library put on the root logger (Sentry, syslog, pytest's `caplog`) is kept and keeps receiving the
 records, also after `--verbosity` rebuilds the console. File handlers are kept as well.
+
+```python
+@app_group()
+def cli():
+    """Replaces its own console handler only: a handler added elsewhere keeps receiving records."""
+```
+
+To remove every other handler of the root logger as well, ask for it:
 
 ```python
 @app_group(replace_root_handlers=True)
