@@ -265,6 +265,17 @@ Branche : `feat/lazy-commands-integration`. Avec `@app_group(...)` et `pyclifer.
 - avec fichier de config : seule la commande lancée est importée, sa config est appliquée ;
 - `--help` : n'affiche pas les commandes désactivées.
 
+**Rejeu de la suite d'intégration (spec 15, archivée).** Les items 16 et 17 de la spec 15 ont modifié les classes de
+groupe (jumelles plain dans `core/mixins/plain_help.py`) et le chemin `add_command` (options propagées), que cette spec
+modifie aussi. Avant la fusion :
+
+- lancer `python -m pytest tests/integration/` en entier ;
+- déclarer dans `tests/integration/scenarios.py` chaque nouvelle entrée que l'inventaire découvre (champs de
+  `GroupConfig` ajoutés à l'item 5, événement `commands.collect`, symboles ajoutés à `pyclifer.__all__`), sinon
+  `test_inventory.py` échoue, avec un scénario `COVERED` qui l'exerce ;
+- ajouter un scénario de propagation et de parité Rich/plain avec une commande chargée à la demande, à trois niveaux
+  (voir `tests/integration/test_propagation.py`).
+
 ## Item 8 : Documentation
 
 Dans le même commit que le dernier code (règle du `.claude/CLAUDE.md`) :
