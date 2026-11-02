@@ -84,6 +84,12 @@ class GroupDecorator:
         # The --output-format option accepts any casing, so the default does too.
         self.config.output_format_default = self.config.output_format_default.lower()
         validate_output_format(self.config.output_format_default, "output_format_default")
+        if "version" in self.click_kwargs and not self.config.add_version_option:
+            raise ValueError(
+                "version=... needs add_version_option=True: it is the version printed by "
+                "--version, and without that option there is nowhere to send it. "
+                "@app_group adds the option by default, @group does not."
+            )
         if self.configures_logging:
             self._setup_logging()
 
