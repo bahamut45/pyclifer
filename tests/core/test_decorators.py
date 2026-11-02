@@ -7,7 +7,7 @@ import click_extra
 import pytest
 from click_extra import TimerOption
 
-from pyclifer.core.classes import GroupConfig, PycliferOption
+from pyclifer.core.classes import CustomConfigOption, GroupConfig, PycliferOption
 from pyclifer.core.decorators import (
     GroupDecorator,
     app_group,
@@ -1644,3 +1644,68 @@ class TestOptionWithExternalClass:
 
         param = next(p for p in app.params if p.name == "region")
         assert param.is_global is True
+
+
+class TestOptionWithPycliferSubclass:
+    """A PycliferOption subclass that delegates by **kwargs can still be global."""
+
+    def test_subclass_forwarding_kwargs_can_be_global(self):
+        """A subclass whose constructor only takes **kwargs receives is_global."""
+
+        class ForwardingOption(PycliferOption):
+            """Subclass that delegates everything to PycliferOption."""
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        @app_group(handle_response=False)
+        @option("--region", cls=ForwardingOption, is_global=True, default="r0")
+        def app(region):
+            """App"""
+
+        param = next(p for p in app.params if p.name == "region")
+        assert type(param) is ForwardingOption
+        assert param.is_global is True
+
+    def test_subclass_with_extra_argument_can_be_global(self):
+        """A subclass declaring its own argument plus **kwargs receives is_global."""
+
+        class ExtraOption(PycliferOption):
+            """Subclass with one more named argument."""
+
+            def __init__(self, *args, extra=None, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.extra = extra
+
+        @app_group(handle_response=False)
+        @option("--region", cls=ExtraOption, is_global=True, default="r0", extra=1)
+        def app(region):
+            """App"""
+
+        param = next(p for p in app.params if p.name == "region")
+        assert param.is_global is True
+        assert param.extra == 1
+
+    def test_custom_config_option_subclass_can_be_global(self):
+        """A subclass of CustomConfigOption receives is_global."""
+
+        class MyConfig(CustomConfigOption):
+            """Subclass of the config option."""
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        decorator = option("--cfg", cls=MyConfig, is_global=True)
+        assert callable(decorator)
+
+    def test_class_without_is_global_in_its_mro_is_still_refused(self):
+        """A class that only takes **kwargs and does not inherit PycliferOption is refused."""
+
+        class OnlyKwargs(click_extra.Option):
+            """Click option whose constructor takes **kwargs."""
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        with pytest.raises(TypeError, match="OnlyKwargs does not accept is_global"):
+            option("--x", cls=OnlyKwargs, is_global=True)

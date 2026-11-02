@@ -762,8 +762,16 @@ def command(
 
 
 def _declares_argument(cls: type, name: str) -> bool:
-    """Tell whether the constructor of cls declares a parameter with this name."""
-    return name in inspect.signature(cls.__init__).parameters
+    """Tell whether the constructor of cls or of one of its bases declares this parameter.
+
+    A subclass that forwards its arguments with **kwargs does not name them itself, but the
+    base class it delegates to does, so the whole MRO is searched.
+    """
+    return any(
+        name in inspect.signature(klass.__init__).parameters
+        for klass in cls.__mro__
+        if "__init__" in vars(klass)
+    )
 
 
 def option(

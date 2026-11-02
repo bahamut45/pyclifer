@@ -11,7 +11,7 @@ préfixer le titre de l'item par ✅ quand il est fait, archiver la spec quand t
 
 | Ordre | Item | Quoi | Statut |
 |---|---|---|---|
-| 1 | 1 | `option(cls=...)` : parcourir le MRO pour `is_global` | à faire |
+| 1 | 1 | `option(cls=...)` : parcourir le MRO pour `is_global` | ✅ fait |
 | 2 | 2 | YAML : représenteurs `dict`, `list`, `tuple` avant `object` | à faire |
 | 3 | 3 | regex du texte libre non quadratique | à faire |
 | 4 | 4 | `output_format_default` insensible à la casse | à faire |
@@ -52,7 +52,7 @@ Ordre proposé : 3, 4, 5 d'abord (elles empêcheraient le merge), puis 8, 11 + 6
 
 ---
 
-## Item 1 : Régression — `option(cls=...)` refuse une sous-classe de `PycliferOption` avec `**kwargs` (finding 3)
+## ✅ Item 1 : Régression — `option(cls=...)` refuse une sous-classe de `PycliferOption` avec `**kwargs` (finding 3)
 
 **Reproduit.**
 ```python

@@ -86,7 +86,9 @@ Extends Click options with environment variable binding and optional global/cont
 - `cls=...` — the option class. It defaults to `PycliferOption`. Any `click_extra.Option` subclass
   works, such as `TimerOption`; it receives only the arguments its constructor declares. Asking
   such a class for `is_global=True` raises `TypeError`, because only `PycliferOption` subclasses,
-  `CustomConfigOption` and `PycliferVerbosityOption` can be propagated.
+  `CustomConfigOption` and `PycliferVerbosityOption` can be propagated. A subclass of one of them
+  that only forwards `**kwargs` to its parent is accepted: the constructors of the whole MRO are
+  searched for `is_global`.
 
 ::: pyclifer.option
 
