@@ -1,17 +1,19 @@
 """Configuration utilities for pyclifer logging."""
 
 import logging
+import sys
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import Any
 
-from click_extra import Choice, Context, Parameter, get_current_context
+from click_extra import Choice, Context, Parameter, ParameterSource, get_current_context
 from click_extra.logging import VerbosityOption as BaseVerbosityOption
 from click_extra.logging import basicConfig
 
+from .filters import SecretsMasker
 from .formatters import RichExtraFormatter
 from .handlers import RichExtraStreamHandler
-from .levels import PYCLIFER_LOG_LEVELS, SupportsTraceLogger, add_trace_method
+from .levels import PYCLIFER_LOG_LEVELS, SupportsTraceLogger
 
 
 class PycliferVerbosityOption(BaseVerbosityOption):
@@ -23,16 +25,21 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         Override the parent method to use PYCLIFER_LOG_LEVELS instead of LOG_LEVELS
         to support our custom TRACE level.
         """
-        # Skip setting the level if another option has already set it or is at an equal
-        # or lower level.
+        # A value nobody typed (the default every copy of a global option carries) is not a
+        # choice: it never overrides a level already set, and a level the user did choose
+        # replaces one that only came from a default.
+        from_default = ctx.get_parameter_source(param.name) is ParameterSource.DEFAULT
         current_level = ctx.meta.get("click_extra.verbosity_level")
         if current_level:
-            levels = tuple(PYCLIFER_LOG_LEVELS)
-            current_level_index = levels.index(current_level)
-            new_level_index = levels.index(value)
-            if new_level_index <= current_level_index:
+            if from_default:
                 return
+            # Between two chosen levels, skip the new one if it is not more verbose.
+            if not ctx.meta.get("pyclifer.verbosity_from_default", False):
+                levels = tuple(PYCLIFER_LOG_LEVELS)
+                if levels.index(value) <= levels.index(current_level):
+                    return
 
+        ctx.meta["pyclifer.verbosity_from_default"] = from_default
         ctx.meta["click_extra.verbosity_level"] = value
         ctx.meta["click_extra.verbosity"] = value
 
@@ -48,12 +55,21 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         for logger in self.all_loggers:
             logger.setLevel(min_level)
 
-        configure_rich_logging(force_reconfigure=True)
+        # Rebuild the console handler with the application's own settings: calling this with
+        # no arguments would put back the defaults chosen at declaration time.
+        configure_rich_logging(
+            use_rich=self.use_rich,
+            enable_secrets_filter=self.enable_secrets_filter,
+            sensitive_fields=self.sensitive_fields,
+            mask_free_text=self.mask_free_text,
+            force_reconfigure=True,
+            replace_root_handlers=self.replace_root_handlers,
+        )
 
         # Restrict stream handlers so the console output respects its explicit verbosity
         root_logger = logging.getLogger()
         for h in root_logger.handlers:
-            if isinstance(h, RichExtraStreamHandler):
+            if _is_console_handler(h):
                 h.setLevel(verb_level_int)
 
         ctx.call_on_close(self.reset_loggers)
@@ -65,6 +81,11 @@ class PycliferVerbosityOption(BaseVerbosityOption):
         type=Choice(PYCLIFER_LOG_LEVELS, case_sensitive=False),  # noqa: B008
         help="Either TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL.",
         is_global: bool = False,
+        use_rich: bool = True,
+        enable_secrets_filter: bool = True,
+        sensitive_fields: list[str] | None = None,
+        mask_free_text: bool = False,
+        replace_root_handlers: bool = False,
         **kwargs,
     ):
         """Initialize the Pyclif Verbosity Option.
@@ -74,12 +95,22 @@ class PycliferVerbosityOption(BaseVerbosityOption):
             type: Choice type with PYCLIFER_LOG_LEVELS.
             help: Help message.
             is_global: If True, this option will be propagated to subcommands.
+            use_rich: Rebuild a Rich console handler, or a plain one when False.
+            enable_secrets_filter: Mask secrets in the console handler it rebuilds.
+            sensitive_fields: Field names to mask on top of the defaults.
+            mask_free_text: Also mask key=value pairs written inside the text of a message.
+            replace_root_handlers: Also remove the root handlers that pyclifer did not create.
             **kwargs: Additional keyword arguments.
         """
         if not param_decls:
             param_decls = ("--verbosity",)
 
         self.is_global = is_global
+        self.use_rich = use_rich
+        self.enable_secrets_filter = enable_secrets_filter
+        self.sensitive_fields = sensitive_fields
+        self.mask_free_text = mask_free_text
+        self.replace_root_handlers = replace_root_handlers
         kwargs.setdefault("show_default", True)
         super().__init__(param_decls=param_decls, type=type, help=help, **kwargs)
 
@@ -89,7 +120,9 @@ def configure_rich_logging(
     rich_tracebacks: bool = True,
     enable_secrets_filter: bool = True,
     sensitive_fields: list[str] | None = None,
+    mask_free_text: bool = False,
     force_reconfigure: bool = False,
+    replace_root_handlers: bool = False,
 ) -> None:
     """Configure the Rich logging system once and centrally.
 
@@ -104,18 +137,20 @@ def configure_rich_logging(
         enable_secrets_filter: Enable automatic secrets filtering.
         sensitive_fields: Additional field names to mask on top of the defaults.
                           Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
+        mask_free_text: Also mask key=value pairs written inside the text of a message.
         force_reconfigure: Force reconfiguration even if already configured.
+        replace_root_handlers: Also remove the handlers of the root logger that pyclifer did not
+            create (Sentry, syslog, pytest's caplog). By default only the console handler of
+            pyclifer is replaced and those are kept.
     """
-    # Check if Rich configuration is already active
+    # Check if the console is already configured, with Rich or without
     if not force_reconfigure:
         root_logger = logging.getLogger()
-        has_rich_handler = any(
-            hasattr(handler, "_rich_handler") for handler in root_logger.handlers
-        )
-        if has_rich_handler:
+        if any(_is_console_handler(handler) for handler in root_logger.handlers):
             return  # Already configured, do nothing
 
     if use_rich and rich_tracebacks:
+        # Deferred import: keeps rich.traceback (about 10 ms) off the startup path of every CLI.
         from rich.traceback import install as install_rich_traceback
 
         # noinspection PyArgumentEqualDefault
@@ -126,12 +161,13 @@ def configure_rich_logging(
             rich_tracebacks=rich_tracebacks,
             enable_secrets_filter=enable_secrets_filter,
             sensitive_fields=sensitive_fields,
+            mask_free_text=mask_free_text,
         )
         shared_handler.setFormatter(RichExtraFormatter())
 
-        # Save existing file handlers before force configuration wipes them
+        # Save the handlers to keep before force configuration wipes them
         root_logger = logging.getLogger()
-        file_handlers = [h for h in root_logger.handlers if isinstance(h, TimedRotatingFileHandler)]
+        kept_handlers = _handlers_to_keep(replace_root_handlers)
 
         _preconfigure_click_extra_logger(shared_handler)
 
@@ -150,12 +186,103 @@ def configure_rich_logging(
         if shared_handler not in root_logger.handlers:  # pragma: no branch
             root_logger.addHandler(shared_handler)
 
-        # Restore file handlers
-        for h in file_handlers:
+        # Restore the saved handlers
+        for h in kept_handlers:
             if h not in root_logger.handlers:  # pragma: no branch
                 root_logger.addHandler(h)
 
-    add_trace_method(logging.Logger)
+    else:
+        _configure_plain_logging(
+            enable_secrets_filter, sensitive_fields, mask_free_text, replace_root_handlers
+        )
+
+
+def _is_console_handler(handler: logging.Handler) -> bool:
+    """Tell whether a handler is the console handler pyclifer installed, Rich or plain."""
+    return hasattr(handler, "_rich_handler") or getattr(handler, "_pyclifer_console", False)
+
+
+def _handlers_to_keep(replace_root_handlers: bool) -> list[logging.Handler]:
+    """List the handlers of the root logger that survive a reconfiguration of the console.
+
+    File handlers always survive. The console handlers never do, since they are the ones being
+    replaced: the one pyclifer installed, the one click-extra lends to the root logger for the
+    length of a run, and the plain StreamHandler on stderr that logging.basicConfig() installs,
+    which would write every record a second time and without the secrets filter. Any other
+    handler survives unless replace_root_handlers is set. The last one is recognised by its exact
+    type, not with isinstance, because pytest's caplog handler is a StreamHandler subclass too.
+
+    Args:
+        replace_root_handlers: If True, only the file handlers survive.
+
+    Returns:
+        The handlers to put back on the root logger once the console is configured.
+    """
+    return [
+        h
+        for h in logging.getLogger().handlers
+        if isinstance(h, TimedRotatingFileHandler)
+        or (
+            not replace_root_handlers
+            and not _is_console_handler(h)
+            and type(h).__module__ != "click_extra.logging"
+            and not _is_basic_config_console(h)
+        )
+    ]
+
+
+def _is_basic_config_console(handler: logging.Handler) -> bool:
+    """Tell whether a handler is the console one logging.basicConfig() installs by default.
+
+    It is a plain StreamHandler on stderr with the standard Formatter, the basic format, no date
+    format and no filter. A StreamHandler a user wrote by hand differs on at least the formatter,
+    which basicConfig always sets, so it is kept.
+    """
+    formatter = handler.formatter
+    return (
+        type(handler) is logging.StreamHandler
+        and handler.stream in (sys.stderr, sys.__stderr__)
+        and type(formatter) is logging.Formatter
+        and formatter._fmt == logging.BASIC_FORMAT
+        and formatter.datefmt is None
+        and not handler.filters
+    )
+
+
+def _configure_plain_logging(
+    enable_secrets_filter: bool,
+    sensitive_fields: list[str] | None,
+    mask_free_text: bool,
+    replace_root_handlers: bool,
+) -> None:
+    """Install click-extra's standard console handler, with the same secrets filter as Rich.
+
+    Args:
+        enable_secrets_filter: Add the SecretsMasker filter to the console handler.
+        sensitive_fields: Field names to mask on top of the defaults.
+        mask_free_text: Also mask key=value pairs written inside the text of a message.
+        replace_root_handlers: Also remove the handlers that pyclifer did not create.
+    """
+    root_logger = logging.getLogger()
+    existing = list(root_logger.handlers)
+    # basicConfig(force=True) removes every handler: keep the ones that must survive.
+    kept_handlers = _handlers_to_keep(replace_root_handlers)
+
+    basicConfig(force=True)
+
+    # Only the handler basicConfig just created is the console one. Never touch another.
+    for handler in root_logger.handlers:
+        if handler in existing:
+            continue
+        handler._pyclifer_console = True  # type: ignore[attr-defined]
+        if enable_secrets_filter:
+            handler.addFilter(
+                SecretsMasker(sensitive_fields=sensitive_fields, mask_free_text=mask_free_text)
+            )
+
+    for handler in kept_handlers:
+        if handler not in root_logger.handlers:  # pragma: no branch
+            root_logger.addHandler(handler)
 
 
 def _preconfigure_click_extra_logger(handler: logging.Handler):
@@ -186,6 +313,7 @@ def setup_file_logging(
     backup_count: int = 7,
     enable_secrets_filter: bool = True,
     sensitive_fields: list[str] | None = None,
+    mask_free_text: bool = False,
 ) -> None:
     """Configure a time-based rotating file handler for logging.
 
@@ -198,6 +326,7 @@ def setup_file_logging(
         enable_secrets_filter: Apply the secret filter to the file logs.
         sensitive_fields: Additional field names to mask on top of the defaults.
                           Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
+        mask_free_text: Also mask key=value pairs written inside the text of a message.
     """
     root_logger = logging.getLogger()
     abs_log_file = str(Path(log_file).resolve())
@@ -261,9 +390,9 @@ def setup_file_logging(
     handler.setFormatter(formatter)
 
     if enable_secrets_filter:
-        from .filters import SecretsMasker
-
-        handler.addFilter(SecretsMasker(sensitive_fields=sensitive_fields))
+        handler.addFilter(
+            SecretsMasker(sensitive_fields=sensitive_fields, mask_free_text=mask_free_text)
+        )
 
     root_logger.addHandler(handler)
 
@@ -279,6 +408,7 @@ def create_log_file_callback(
     backup_count: int = 7,
     enable_secrets_filter: bool = True,
     sensitive_fields: list[str] | None = None,
+    mask_free_text: bool = False,
 ):
     """Create a Click callback for the log file option."""
 
@@ -296,6 +426,7 @@ def create_log_file_callback(
                 backup_count=backup_count,
                 enable_secrets_filter=enable_secrets_filter,
                 sensitive_fields=sensitive_fields,
+                mask_free_text=mask_free_text,
             )
         return value
 
@@ -314,6 +445,8 @@ def get_configured_logger(name: str | None = None) -> SupportsTraceLogger:
     Returns:
         Logger automatically configured with Rich capabilities.
     """
+    # Lazy: pyclifer/__init__.py imports this module. The name is read when the function runs,
+    # so it does not depend on the order of the imports in that file.
     from pyclifer import __app_name__
 
     return logging.getLogger(name or __app_name__)  # type: ignore[return-value]

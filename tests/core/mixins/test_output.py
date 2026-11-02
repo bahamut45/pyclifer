@@ -1,13 +1,17 @@
 """Unit tests for the OutputFormatMixin."""
 
+import datetime
+import enum
 import json
+from collections import Counter, OrderedDict, defaultdict, namedtuple
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml
 from rich.panel import Panel
 
 # noinspection PyProtectedMember
-from pyclifer.core.mixins.output import OutputFormatMixin, _ExceptionRenderer
+from pyclifer.core.mixins.output import OutputFormatMixin, _ExceptionRenderer, _FallbackEncoder
 from pyclifer.core.output import Response
 from pyclifer.core.output.renderer import BaseRenderer
 from pyclifer.core.output.responses import OperationResult
@@ -331,6 +335,99 @@ class TestPrintYaml:
         yaml_content = mock_syntax.call_args[0][0]
         assert "name: Alice" in yaml_content
         ctx.console.print.assert_called_once()
+
+    @staticmethod
+    def _dumped(data) -> str:
+        """Return the YAML text _print_yaml hands to the console for data."""
+        with patch("pyclifer.core.mixins.output.Syntax") as mock_syntax:
+            DummyOutputContext()._print_yaml(data)
+        return mock_syntax.call_args[0][0]
+
+    def test_operation_result_is_dumped_without_python_tags(self) -> None:
+        content = self._dumped({"results": [OperationResult.ok("a", message="m")]})
+        assert "!!python" not in content
+        assert yaml.safe_load(content)["results"][0]["item"] == "a"
+
+    def test_plain_object_is_dumped_through_its_attributes(self) -> None:
+        class Plain:
+            def __init__(self) -> None:
+                self.name = "x"
+
+        content = self._dumped({"thing": Plain()})
+        assert yaml.safe_load(content) == {"thing": {"name": "x"}}
+
+    def test_object_without_attributes_is_dumped_as_text(self) -> None:
+        class Slotted:
+            __slots__ = ()
+
+        content = self._dumped({"value": Slotted()})
+        assert yaml.safe_load(content)["value"].startswith("<")
+
+    def test_native_types_keep_their_yaml_form(self) -> None:
+        content = self._dumped(
+            {"when": datetime.date(2026, 1, 2), "tuple": (1, 2), "none": None, "text": "é"}
+        )
+        assert yaml.safe_load(content) == {
+            "when": datetime.date(2026, 1, 2),
+            "tuple": [1, 2],
+            "none": None,
+            "text": "é",
+        }
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            OrderedDict(a=1),
+            Counter("aab"),
+            defaultdict(int, b=2),
+            namedtuple("P", "x y")(1, 2),
+        ],
+        ids=["ordereddict", "counter", "defaultdict", "namedtuple"],
+    )
+    def test_container_subclasses_are_dumped_like_json(self, value) -> None:
+        content = self._dumped({"value": value})
+        expected = json.loads(json.dumps({"value": value}, cls=_FallbackEncoder))
+        assert "!!python" not in content
+        assert yaml.safe_load(content) == expected
+
+
+class _Color(enum.Enum):
+    RED = 1
+
+
+class _Level(enum.IntEnum):
+    HIGH = 3
+
+
+class _Mode(str, enum.Enum):
+    FAST = "fast"
+
+
+class TestEnumValues:
+    """An Enum in the data is written as its value, in JSON and in YAML."""
+
+    @pytest.mark.parametrize(
+        ("member", "expected"),
+        [(_Color.RED, 1), (_Level.HIGH, 3), (_Mode.FAST, "fast")],
+        ids=["enum", "int-enum", "str-enum"],
+    )
+    def test_json_writes_the_value(self, member, expected) -> None:
+        written = json.loads(json.dumps({"value": member}, cls=_FallbackEncoder))
+
+        assert written == {"value": expected}
+
+    @pytest.mark.parametrize(
+        ("member", "expected"),
+        [(_Color.RED, 1), (_Level.HIGH, 3), (_Mode.FAST, "fast")],
+        ids=["enum", "int-enum", "str-enum"],
+    )
+    def test_yaml_writes_the_value(self, member, expected) -> None:
+        with patch("pyclifer.core.mixins.output.Syntax") as mock_syntax:
+            DummyOutputContext()._print_yaml({"value": member})
+
+        content = mock_syntax.call_args[0][0]
+        assert "!!python" not in content
+        assert yaml.safe_load(content) == {"value": expected}
 
 
 # ---------------------------------------------------------------------------

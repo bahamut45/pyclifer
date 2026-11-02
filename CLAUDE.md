@@ -49,6 +49,34 @@ decision on what it prints. Use a throwaway script in the scratchpad, outside th
   test it before implementing the item that depends on it.
 - When a measurement contradicts a spec or an earlier statement, say so and correct the spec in
   the same commit.
+- Measure each case in its own process. Logging is global to the process: the first console
+  handler counts as "already configured", so several apps in one process leak into each other and
+  a "defect" or a "pass" can be an artifact. Compare against `main` (a `git worktree` of it) to
+  tell a regression from existing behaviour.
+- `invoke()` and `CliRunner` capture stdout and stderr, so a `print` inside a command is lost:
+  collect into a list and print after the run. The secrets filter works on key names, so a
+  free-text probe proves nothing unless `mask_free_text=True`. Printing a class name hides its
+  inheritance. In zsh, `for c in "a b"` does not split `$c`. Scripts importing `tests.*` need
+  `PYTHONPATH=.`.
+
+### Design principles
+
+Decisions the maintainer has stated; follow them and raise a conflict instead of deciding silently.
+
+- A framework raises an explicit, actionable error, never a raw `AttributeError` or `KeyError`
+  from its internals. The message names the expected shape.
+- The output contract holds on failure: with `--output-format json` or `yaml`, stdout stays valid
+  structured output even when the failure happens while rendering, not only inside the command.
+  Code that can raise after the command returns goes through the same failure `Response` handling.
+- `@app_group` is the base of an application and the only place that initialises it (logging).
+  `@group()` must not. Declaration order stays free: `cli.py` imports its subgroups before it
+  writes `@app_group()`.
+- Rich and plain help paths never behave differently.
+- Breaking changes are acceptable before 1.0.
+- For a design choice, give a recommendation, and compare with other CLI frameworks (Typer,
+  Cement, Click) by observing them or citing their documentation, not from memory.
+- Fix a defect in the same branch as soon as it is found, after the maintainer chooses between
+  fixing it, documenting it, or deferring it. Each fix has a failing test first and its own commit.
 
 ## Spec lifecycle
 
@@ -217,11 +245,24 @@ handle non-serializable domain objects gracefully.
 Tests mirror the `src/` layout under `tests/`. The `tox` configuration in `pyproject.toml`
 runs the suite against Python 3.10, 3.11, 3.12, and 3.13 using `tox-uv`.
 
+`tests/integration/` runs every pyclifer feature in a real application (spec 15). Features are
+discovered by introspection (`inventory.py`: `GroupConfig` fields, option factories, `pyclifer.__all__`,
+framework events) and each one must appear in `scenarios.py` as `COVERED` (a test that exercises it) or
+`EXCLUDED` (a stated reason). Adding a `GroupConfig` field, option factory, public symbol or event without
+declaring it there fails `test_inventory.py`. `PENDING` stays empty. Measure the behaviour in a fresh
+process before writing the expectation; a defect found this way gets its own failing test and commit.
+The full suite takes about 26 s without coverage (about 48 s with the default coverage options), of
+which about 17 s is `tests/integration/`.
+
 ## Versioning
 
 Managed with `bumpversion`. Version is synced across `pyproject.toml`, `README.md`, and
 `src/pyclifer/__init__.py`. Commits follow conventional commits with emoji prefixes
 (e.g., `✨ feat`, `🐛 fix`, `♻️ refactor`).
+
+Releases are published to PyPI by `.github/workflows/release.yml` through GitHub Actions OIDC
+(trusted publishing), with no API token. This depends on the Trusted Publisher being configured
+on pypi.org for this repository, which the repository files cannot show.
 
 ### Documentation review before a bump
 

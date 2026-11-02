@@ -1,6 +1,8 @@
 """Core decorators for pyclifer applications."""
 
 import functools
+import inspect
+import json
 import logging
 from collections.abc import Callable
 from dataclasses import fields
@@ -8,6 +10,8 @@ from time import perf_counter
 from typing import Any, TypeVar, cast
 
 import click_extra
+import yaml
+from click.exceptions import Exit as ClickExit  # click_extra does not re-export Exit
 from rich_click import rich_config
 from rich_click.decorators import command as rich_command_decorator
 from rich_click.decorators import group as rich_group_decorator
@@ -22,8 +26,13 @@ from .classes import (
     PycliferTimerOption,
     StoreInMetaMixin,
 )
-from .log.config import PycliferVerbosityOption, create_log_file_callback
+from .context import BaseContext
+from .log.config import PycliferVerbosityOption, configure_rich_logging, create_log_file_callback
+from .log.levels import PYCLIFER_LOG_LEVELS
 from .output.exit_codes import ExitCode, validate_exit_codes_class
+from .output.formats import OUTPUT_FORMATS, validate_output_format
+from .output.responses import Response
+from .rich_help_config import get_rich_config
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 _log = logging.getLogger(__name__)
@@ -51,14 +60,32 @@ def _get_root_context() -> click_extra.Context | None:
 class GroupDecorator:
     """Decorator class applying GroupConfig and Click logic to a group."""
 
-    def __init__(self, config: GroupConfig, click_kwargs: dict[str, Any]):
-        """Initialize the decorator with explicit config and pass-through click arguments."""
+    def __init__(
+        self,
+        config: GroupConfig,
+        click_kwargs: dict[str, Any],
+        configures_logging: bool = False,
+    ):
+        """Initialize the decorator with explicit config and pass-through click arguments.
+
+        Args:
+            config: The configuration of the group.
+            click_kwargs: Arguments forwarded to Click.
+            configures_logging: True for the base of an application, the only group that sets the
+                logging up. A subgroup must not, since its defaults are not those of the
+                application and the order in which the groups are declared is free.
+        """
         self.config = config
         self.click_kwargs = click_kwargs
+        self.configures_logging = configures_logging
 
     def __call__(self, f: Callable) -> Any:
         """Apply the configuration and create the Click group."""
-        self._setup_logging()
+        # The --output-format option accepts any casing, so the default does too.
+        self.config.output_format_default = self.config.output_format_default.lower()
+        validate_output_format(self.config.output_format_default, "output_format_default")
+        if self.configures_logging:
+            self._setup_logging()
 
         f = self._apply_rich_help(f)
         self._configure_context()
@@ -75,22 +102,18 @@ class GroupDecorator:
 
     def _setup_logging(self) -> None:
         """Configure the logging system based on the group config."""
-        if self.config.use_rich_logging:
-            from .log.config import configure_rich_logging
-
-            # noinspection PyArgumentEqualDefault
-            configure_rich_logging(
-                use_rich=True,
-                rich_tracebacks=True,
-                enable_secrets_filter=self.config.enable_secrets_filter,
-                sensitive_fields=self.config.sensitive_fields or None,
-            )
+        configure_rich_logging(
+            use_rich=self.config.use_rich_logging,
+            rich_tracebacks=True,
+            enable_secrets_filter=self.config.enable_secrets_filter,
+            sensitive_fields=self.config.sensitive_fields or None,
+            mask_free_text=self.config.mask_free_text,
+            replace_root_handlers=self.config.replace_root_handlers,
+        )
 
     def _apply_rich_help(self, f: Callable) -> Callable:
         """Apply rich-click help formatting if enabled."""
         if self.config.use_rich_help:
-            from .rich_help_config import get_rich_config
-
             # noinspection PyNoneFunctionAssignment
             config = get_rich_config(self.config.rich_help_config)
             if config:
@@ -113,18 +136,30 @@ class GroupDecorator:
     def _apply_automatic_options(self, f: Callable) -> Callable:
         """Inject options like --config, --verbosity, etc., based on the config."""
         if self.config.timer:
-            f = click_extra.option("--time/--no-time", cls=PycliferTimerOption)(f)
+            f = click_extra.option(
+                "--time/--no-time", cls=PycliferTimerOption, show_envvar=self.config.show_envvar
+            )(f)
 
         if self.config.add_output_format_option:
             f = output_format_option(
-                default_output_format=self.config.output_format_default, is_global=True
+                default_output_format=self.config.output_format_default,
+                is_global=True,
+                show_envvar=self.config.show_envvar,
             )(f)
 
         if self.config.add_config_option:
-            f = config_option()(f)
+            f = config_option(show_envvar=self.config.show_envvar)(f)
 
         if self.config.add_verbosity_option:
-            f = verbosity_option(default=self.config.verbosity_default_level)(f)
+            f = verbosity_option(
+                default=self.config.verbosity_default_level,
+                show_envvar=self.config.show_envvar,
+                use_rich=self.config.use_rich_logging,
+                enable_secrets_filter=self.config.enable_secrets_filter,
+                sensitive_fields=self.config.sensitive_fields or None,
+                mask_free_text=self.config.mask_free_text,
+                replace_root_handlers=self.config.replace_root_handlers,
+            )(f)
 
         if self.config.add_log_file_option:
             f = log_file_option(
@@ -132,8 +167,10 @@ class GroupDecorator:
                 when=self.config.log_file_rotation_when,
                 interval=self.config.log_file_rotation_interval,
                 backup_count=self.config.log_file_rotation_backup_count,
+                show_envvar=self.config.show_envvar,
                 enable_secrets_filter=self.config.enable_secrets_filter,
                 sensitive_fields=self.config.sensitive_fields or None,
+                mask_free_text=self.config.mask_free_text,
             )(f)
 
         if self.config.add_version_option:
@@ -187,6 +224,7 @@ class GroupDecorator:
         original_make_context = f.make_context
         level = self.config.unhandled_exception_log_level
         exit_codes_cls = self.config.exit_codes_class
+        output_format_default = self.config.output_format_default
 
         @functools.wraps(original_make_context)
         def custom_make_context(
@@ -237,19 +275,29 @@ class GroupDecorator:
             # --- post-call ---
 
             # Concern 2 — early verbosity application
-            if self.config.add_verbosity_option and parent is None and level_name:
-                from .log.config import PYCLIFER_LOG_LEVELS
-
-                if level_name in PYCLIFER_LOG_LEVELS:
-                    for param in ctx.command.params:  # pragma: no branch
-                        if param.name == "verbosity" and hasattr(param, "set_level"):
-                            param.set_level(ctx, param, level_name)
-                            break
+            if (
+                self.config.add_verbosity_option
+                and parent is None
+                and level_name in PYCLIFER_LOG_LEVELS
+            ):
+                for param in ctx.command.params:  # pragma: no branch
+                    if param.name == "verbosity" and hasattr(param, "set_level"):
+                        param.set_level(ctx, param, level_name)
+                        break
 
             # Concern 3 — framework meta injection
             if parent is None:
                 ctx.meta.setdefault("pyclifer.unhandled_exception_log_level", level)
                 ctx.meta.setdefault("pyclifer.exit_codes_class", exit_codes_cls)
+                # The default format is the contract of the whole application. The option
+                # overrides it when exposed; without it, nothing else would set the format.
+                ctx.meta.setdefault("pyclifer.output_format", output_format_default)
+
+            # Concern 6 — give each global option the variable name of the root group, so that the
+            # help of every command shows the variable that is read. click-extra already does it
+            # on the plain path; rich-click would otherwise show one built from the command path.
+            if parent is None:
+                GroupDecorator._name_global_envvars(ctx)
 
             # Concern 5 — context_factory: build ctx.obj from context=True param values.
             # Skip during resilient_parsing (help mode) — required params are None
@@ -267,6 +315,29 @@ class GroupDecorator:
             return ctx
 
         f.make_context = custom_make_context
+
+    @staticmethod
+    def _name_global_envvars(ctx: click_extra.Context) -> None:
+        """Write the environment variable of the root onto each global option that has none.
+
+        The option objects are shared by every invocation of the application, so the name only
+        lives as long as the root context: it is removed when that context closes.
+
+        Args:
+            ctx: The context just made for the root group.
+        """
+        prefix = ctx.auto_envvar_prefix
+        if prefix is None:
+            return
+        for param in ctx.command.params:
+            if (
+                getattr(param, "is_global", False)
+                and param.envvar is None
+                and getattr(param, "allow_from_autoenv", True)
+                and param.name
+            ):
+                param.envvar = f"{prefix}_{param.name.upper()}"
+                ctx.call_on_close(functools.partial(setattr, param, "envvar", None))
 
     @staticmethod
     def _find_subcommand_boundary(args: list[str], f: click_extra.Group) -> int:
@@ -445,8 +516,12 @@ class GroupDecorator:
         """
         validate_exit_codes_class(self.config.exit_codes_class)
 
-        if self.config.handle_response:
+        if self.config.handle_response is True:
             f.handle_response_by_default = True
+        elif self.config.handle_response is False:
+            # An explicit False protects the group and its sub-tree from the propagation of
+            # a parent that handles responses; None leaves the choice to the parent.
+            f.handle_response_opted_out = True
 
     def _configure_events(self, f: click_extra.Group) -> None:
         """Attach the handlers declared with on= to the group instance.
@@ -481,6 +556,18 @@ class GroupDecorator:
         return None
 
 
+def _root_handle_response(value: bool | None) -> bool:
+    """Resolve handle_response for the root group, where None means the default (True).
+
+    Args:
+        value: The handle_response argument given to app_group, or its default.
+
+    Returns:
+        True unless handle_response=False was given explicitly.
+    """
+    return True if value is None else value
+
+
 def app_group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group]:
     """Decorator for the main CLI application entry point.
 
@@ -490,11 +577,13 @@ def app_group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group
     All keyword arguments map to `GroupConfig` fields or are forwarded to Click.
     Notable options:
 
-    - `handle_response` (bool): intercept and print `Response` objects automatically.
+    - `handle_response` (bool): intercept and print `Response` objects automatically. Defaults
+      to True on an application; `False` protects the whole group from the propagation.
     - `timer` (bool): inject `--time/--no-time`. Prints elapsed time in rich/table/raw;
       injects `execution_time` and `execution_time_str` into `Response.data` in json/yaml.
-    - `output_format_default` (str): default for `--output-format`
-      (json, yaml, table, rich, raw, text).
+    - `output_format_default` (str): the format the whole application answers in
+      (json, yaml, table, rich, raw, text). It is the default of `--output-format`, and the
+      fixed format when the option is not exposed. Any other value raises ValueError.
 
     Args:
         **kwargs: GroupConfig fields or Click group arguments.
@@ -511,11 +600,11 @@ def app_group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group
         add_log_file_option=config_kwargs.pop("add_log_file_option", True),
         add_version_option=config_kwargs.pop("add_version_option", True),
         add_output_format_option=config_kwargs.pop("add_output_format_option", True),
-        handle_response=config_kwargs.pop("handle_response", True),
+        handle_response=_root_handle_response(config_kwargs.pop("handle_response", True)),
         **config_kwargs,
     )
 
-    return GroupDecorator(config, click_kwargs)
+    return GroupDecorator(config, click_kwargs, configures_logging=True)
 
 
 def group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group]:
@@ -529,6 +618,58 @@ def group(**kwargs: Any) -> Callable[[Callable[..., Any]], click_extra.Group]:
     config = GroupConfig(**config_kwargs)
 
     return GroupDecorator(config, click_kwargs)
+
+
+def _unhandled_failure(name: str, error: Exception, meta: dict, where: str) -> Any:
+    """Log an unexpected exception and build the failure Response that answers it.
+
+    Args:
+        name: Name of the command function.
+        error: The exception that escaped.
+        meta: The root context meta, holding the output format and the log level to use.
+        where: Phrase placed before the command name in the log message.
+
+    Returns:
+        A Response with success False, the exception message and the generic error code.
+    """
+    log_level = meta.get("pyclifer.unhandled_exception_log_level", "error")
+    output_format = meta.get("pyclifer.output_format", "table")
+    structured = output_format in ("json", "yaml")
+    use_exc_info = not structured or _log.isEnabledFor(logging.DEBUG)
+    msg = f"Unhandled exception {where} '%s'" + ("" if use_exc_info else ": %s")
+    _log.log(
+        getattr(logging, log_level.upper(), logging.ERROR),
+        msg,
+        name,
+        *(() if use_exc_info else (str(error),)),
+        exc_info=use_exc_info,
+    )
+    return Response(success=False, message=str(error), error_code=ExitCode.ERROR)
+
+
+def _print_minimal_failure(response: Response, output_format: str, print_error: Exception) -> None:
+    """Write a failure Response by hand on stdout, as JSON or YAML.
+
+    Last resort for when the output context itself cannot print, so that a caller that parses
+    stdout still receives a document. The message gives both reasons: the original failure, and
+    the one that kept it from being printed.
+
+    Args:
+        response: The failure Response to write.
+        output_format: Either json or yaml.
+        print_error: The exception raised while printing the failure Response.
+    """
+    payload = {
+        "success": False,
+        "message": f"{response.message} (printing the failure failed too: {print_error})",
+        "error_code": int(response.error_code or ExitCode.ERROR),
+    }
+    text = (
+        json.dumps(payload, indent=2)
+        if output_format == "json"
+        else yaml.safe_dump(payload, sort_keys=False)
+    )
+    click_extra.echo(text)
 
 
 def returns_response(f: Callable) -> Callable:
@@ -558,40 +699,23 @@ def returns_response(f: Callable) -> Callable:
     @functools.wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         """Wrapper for returning a Response object based on command output"""
-        # Lazy import to avoid circular dependency at module load time
-        from .output.responses import Response as _Response
-
         root = _get_root_context()
         meta = root.meta if root is not None else {}
 
         try:
             result = f(*args, **kwargs)
+        except (click_extra.ClickException, click_extra.Abort, ClickExit):
+            # Click's own control flow (usage errors, abort, ctx.exit) is not a command failure:
+            # let Click print it and pick the exit code.
+            raise
         except Exception as e:
-            log_level = meta.get("pyclifer.unhandled_exception_log_level", "error")
-            output_format = meta.get("pyclifer.output_format", "table")
-            structured = output_format in ("json", "yaml")
-            use_exc_info = not structured or _log.isEnabledFor(logging.DEBUG)
-            msg = (
-                "Unhandled exception in command '%s'"
-                if use_exc_info
-                else "Unhandled exception in command '%s': %s"
-            )
-            _log.log(
-                getattr(logging, log_level.upper(), logging.ERROR),
-                msg,
-                f.__name__,
-                *(() if use_exc_info else (str(e),)),
-                exc_info=use_exc_info,
-            )
-            result = _Response(success=False, message=str(e), error_code=ExitCode.ERROR)
+            result = _unhandled_failure(f.__name__, e, meta, "in command")
         _log.debug(
             "returns_response: command '%s' returned %s",
             f.__name__,
             type(result).__name__,
         )
-        if isinstance(result, _Response):
-            from pyclifer.core.context import BaseContext
-
+        if isinstance(result, Response):
             ctx = click_extra.get_current_context(silent=True)
 
             # Use the actual context object (ctx.obj) if it is a BaseContext
@@ -624,7 +748,28 @@ def returns_response(f: Callable) -> Callable:
             )
             output_filter = meta.get("pyclifer.output_filter")
             options = {"filter_value": output_filter} if output_filter else {}
-            output_ctx.print_result_based_on_format(result, options=options)
+            try:
+                output_ctx.print_result_based_on_format(result, options=options)
+            except (click_extra.ClickException, click_extra.Abort, ClickExit):
+                raise
+            except Exception as e:
+                # A bug in a renderer is answered like one in the command: in the requested format,
+                # with the failure logged, instead of an empty stdout and a raw traceback.
+                result = _unhandled_failure(f.__name__, e, meta, "while rendering command")
+                try:
+                    output_ctx.print_result_based_on_format(result)
+                except (click_extra.ClickException, click_extra.Abort, ClickExit):
+                    raise
+                except Exception as second_error:
+                    # The failure cannot be printed either. Structured output still owes the
+                    # caller a document on stdout, so it is written by hand. Other formats keep
+                    # the raw failure, since they promise nothing parseable.
+                    if output_format not in ("json", "yaml"):
+                        raise
+                    _unhandled_failure(
+                        f.__name__, second_error, meta, "while printing the failure of command"
+                    )
+                    _print_minimal_failure(result, output_format, second_error)
             if not result.success and result.error_code and ctx is not None:
                 ctx.exit(result.error_code)
         else:
@@ -672,6 +817,19 @@ def command(
     return decorator
 
 
+def _declares_argument(cls: type, name: str) -> bool:
+    """Tell whether the constructor of cls or of one of its bases declares this parameter.
+
+    A subclass that forwards its arguments with **kwargs does not name them itself, but the
+    base class it delegates to does, so the whole MRO is searched.
+    """
+    return any(
+        name in inspect.signature(klass.__init__).parameters
+        for klass in cls.__mro__
+        if "__init__" in vars(klass)
+    )
+
+
 def option(
     *param_decls: str,
     is_global: bool = False,
@@ -702,8 +860,18 @@ def option(
     """
     cls = kwargs.get("cls", PycliferOption)
     kwargs["cls"] = cls
-    kwargs["is_global"] = is_global
     kwargs.setdefault("show_envvar", show_envvar)
+
+    # Only classes that declare is_global can carry it. Others (click_extra options such as
+    # TimerOption) would fail on the unexpected argument, so they are given nothing, and asking
+    # them for propagation is an explicit error rather than a silent loss.
+    if not isinstance(cls, type) or _declares_argument(cls, "is_global"):
+        kwargs["is_global"] = is_global
+    elif is_global:
+        raise TypeError(
+            f"option() cannot make an option global with cls={cls.__name__}: "
+            f"{cls.__name__} does not accept is_global. Use a PycliferOption subclass."
+        )
 
     # Only forward context to classes that declare the attribute (PycliferOption subclasses).
     if isinstance(cls, type) and issubclass(cls, PycliferOption):
@@ -756,7 +924,9 @@ def verbosity_option(
         *param_decls: Parameter declarations (default: '--verbosity', '-v').
         is_global: If True, the option is propagated to all subcommands.
         show_envvar: Show environment variables in the help output.
-        **kwargs: Additional arguments passed to the option decorator.
+        **kwargs: Additional arguments passed to the option, including use_rich,
+            enable_secrets_filter and sensitive_fields, which the option keeps when it rebuilds
+            the console handler.
 
     Returns:
         The decorated function.
@@ -782,6 +952,7 @@ def log_file_option(
     backup_count: int = 7,
     enable_secrets_filter: bool = False,
     sensitive_fields: list[str] | None = None,
+    mask_free_text: bool = False,
     is_global: bool = False,
     show_envvar: bool = True,
     **kwargs: Any,
@@ -797,6 +968,7 @@ def log_file_option(
         enable_secrets_filter: Enable secrets filtering in logs.
         sensitive_fields: Additional field names to mask on top of the defaults.
                           Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
+        mask_free_text: Also mask key=value pairs written inside the text of a message.
         is_global: If True, the option is propagated to all subcommands.
         show_envvar: Show environment variables in the help output.
         **kwargs: Additional arguments passed to the option decorator.
@@ -818,6 +990,7 @@ def log_file_option(
         backup_count=backup_count,
         enable_secrets_filter=enable_secrets_filter,
         sensitive_fields=sensitive_fields,
+        mask_free_text=mask_free_text,
     )
 
     return option(*param_decls, is_global=is_global, show_envvar=show_envvar, **kwargs)
@@ -946,7 +1119,7 @@ def output_format_option(
 
     kwargs.setdefault(
         "type",
-        click_extra.Choice(["json", "yaml", "table", "rich", "raw", "text"], case_sensitive=False),
+        click_extra.Choice(list(OUTPUT_FORMATS), case_sensitive=False),
     )
     kwargs.setdefault("help", "Specify the output format for the command.")
 

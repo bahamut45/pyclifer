@@ -3,9 +3,12 @@
 from unittest.mock import MagicMock, patch
 
 import click
+import click_extra
+import click_extra.testing
 import pytest
+from click_extra import TimerOption
 
-from pyclifer.core.classes import GroupConfig, PycliferOption
+from pyclifer.core.classes import CustomConfigOption, GroupConfig, PycliferOption
 from pyclifer.core.decorators import (
     GroupDecorator,
     app_group,
@@ -17,6 +20,7 @@ from pyclifer.core.decorators import (
     pagination_options,
     verbosity_option,
 )
+from pyclifer.core.output import Response
 from pyclifer.core.output.exit_codes import ExitCode
 from pyclifer.testing import invoke
 
@@ -29,16 +33,26 @@ from pyclifer.testing import invoke
 class TestGroupDecoratorSetupLogging:
     """Tests for _setup_logging behavior ."""
 
-    def test_use_rich_logging_false_skips_configure(self):
-        """use_rich_logging=False must not call configure_rich_logging."""
-        with patch("pyclifer.core.log.config.configure_rich_logging") as mock_cfg:
+    def test_use_rich_logging_false_configures_plain_logging(self):
+        """use_rich_logging=False still configures the console, without Rich."""
+        with patch("pyclifer.core.decorators.configure_rich_logging") as mock_cfg:
 
             @app_group(use_rich_logging=False)
             @click.pass_context
             def app(ctx):
                 """App"""
 
-            mock_cfg.assert_not_called()
+            assert mock_cfg.call_args.kwargs["use_rich"] is False
+
+    def test_use_rich_logging_true_configures_rich_logging(self):
+        with patch("pyclifer.core.decorators.configure_rich_logging") as mock_cfg:
+
+            @app_group(use_rich_logging=True)
+            @click.pass_context
+            def app(ctx):
+                """App"""
+
+            assert mock_cfg.call_args.kwargs["use_rich"] is True
 
 
 # ---------------------------------------------------------------------------
@@ -52,7 +66,7 @@ class TestGroupDecoratorApplyRichHelp:
 
     def test_rich_help_skipped_when_get_rich_config_returns_none(self):
         """When get_rich_config returns None, the rich_config decorator is not applied."""
-        with patch("pyclifer.core.rich_help_config.get_rich_config", return_value=None):
+        with patch("pyclifer.core.decorators.get_rich_config", return_value=None):
 
             @app_group(use_rich_help=True)
             @click.pass_context
@@ -654,10 +668,10 @@ class TestAppGroupContextFactory:
         captured: list = []
         original_init = GroupDecorator.__init__
 
-        def patched_init(self, config, click_kwargs):
+        def patched_init(self, config, click_kwargs, *args, **kwargs):
             """Record the config and call original."""
             captured.append(config)
-            original_init(self, config, click_kwargs)
+            original_init(self, config, click_kwargs, *args, **kwargs)
 
         with patch.object(GroupDecorator, "__init__", patched_init):
             app_group(
@@ -1457,3 +1471,297 @@ class TestPlainHelpGroupOptions:
             """App"""
 
         assert extra in app.params
+
+
+# ---------------------------------------------------------------------------
+# GroupDecorator — output_format_default is the contract of the whole application
+# ---------------------------------------------------------------------------
+
+
+class TestOutputFormatDefaultContract:
+    """An application declared in json never answers in another format on its own."""
+
+    @staticmethod
+    def _app(**config):
+        @app_group(**config)
+        def app():
+            """App"""
+
+        @app.command()
+        def hello():
+            """Hello"""
+            return Response(success=True, message="hello")
+
+        @app.command()
+        def boom():
+            """Fail"""
+            raise RuntimeError("kaboom")
+
+        return app
+
+    @pytest.mark.parametrize("output_format", ["json", "yaml"])
+    def test_default_format_applies_without_the_output_format_option(self, output_format):
+        app = self._app(output_format_default=output_format, add_output_format_option=False)
+
+        result = invoke(app, ["hello"])
+
+        parsed = result.json if output_format == "json" else result.yaml
+        assert parsed["success"] is True
+
+    @pytest.mark.parametrize("output_format", ["json", "yaml"])
+    def test_a_failing_command_answers_in_the_default_format_without_the_option(
+        self, output_format
+    ):
+        app = self._app(output_format_default=output_format, add_output_format_option=False)
+
+        result = invoke(app, ["boom"])
+
+        parsed = result.json if output_format == "json" else result.yaml
+        assert parsed["success"] is False
+
+    def test_the_option_still_overrides_the_default_when_it_is_exposed(self):
+        app = self._app(output_format_default="json")
+
+        result = invoke(app, ["--output-format", "yaml", "hello"])
+
+        assert result.yaml["success"] is True
+
+    def test_a_sub_group_does_not_apply_the_default_of_its_own(self):
+        from pyclifer.core.decorators import group
+
+        @group()
+        def sub():
+            """Sub"""
+
+        app = self._app(output_format_default="json", add_output_format_option=False)
+        app.add_command(sub)
+
+        @sub.command()
+        def leaf():
+            """Leaf"""
+            return Response(success=True, message="leaf")
+
+        assert invoke(app, ["sub", "leaf"]).json["success"] is True
+
+    @pytest.mark.parametrize("spelling", ["JSON", "Json"])
+    def test_default_format_is_case_insensitive_like_the_option(self, spelling):
+        app = self._app(output_format_default=spelling, add_output_format_option=False)
+
+        assert invoke(app, ["hello"]).json["success"] is True
+
+    def test_an_unknown_default_format_is_rejected_at_decoration(self):
+        with pytest.raises(ValueError, match="output_format_default.*'xml'"):
+            self._app(output_format_default="xml")
+
+
+class TestNameGlobalEnvvars:
+    """The root context gives each global option the environment variable of the root."""
+
+    @staticmethod
+    def _context(prefix, *params):
+        """A context-like object for a root command holding the given options."""
+        ctx = MagicMock()
+        ctx.auto_envvar_prefix = prefix
+        ctx.command.params = list(params)
+        return ctx
+
+    def test_a_global_option_receives_the_variable_of_the_root(self):
+        option = PycliferOption(["--region"], is_global=True)
+
+        GroupDecorator._name_global_envvars(self._context("CLI", option))
+
+        assert option.envvar == "CLI_REGION"
+
+    def test_an_explicit_variable_is_kept(self):
+        option = PycliferOption(["--region"], is_global=True, envvar="MY_REGION")
+
+        GroupDecorator._name_global_envvars(self._context("CLI", option))
+
+        assert option.envvar == "MY_REGION"
+
+    def test_an_option_that_is_not_global_is_left_alone(self):
+        option = PycliferOption(["--name"])
+
+        GroupDecorator._name_global_envvars(self._context("CLI", option))
+
+        assert option.envvar is None
+
+    def test_an_option_that_refuses_the_automatic_variable_is_left_alone(self):
+        option = PycliferOption(["--region"], is_global=True, allow_from_autoenv=False)
+
+        GroupDecorator._name_global_envvars(self._context("CLI", option))
+
+        assert option.envvar is None
+
+    def test_nothing_is_written_without_a_prefix(self):
+        option = PycliferOption(["--region"], is_global=True)
+
+        GroupDecorator._name_global_envvars(self._context(None, option))
+
+        assert option.envvar is None
+
+
+class TestGlobalEnvvarOnLeafCommands:
+    """The variable of a global option is shown and read per invocation, by the root name."""
+
+    @staticmethod
+    def _app():
+        @app_group(handle_response=False)
+        @option("--region", is_global=True, default="r0")
+        def app(region):
+            """App"""
+
+        @app.command()
+        def go(region):
+            """Go"""
+            click.echo(f"region={region}")
+
+        return app
+
+    def test_rich_help_of_a_leaf_shows_the_variable_as_a_string(self):
+        result = click_extra.testing.CliRunner().invoke(
+            self._app(), ["go", "--help"], prog_name="cli"
+        )
+
+        assert "[env var: CLI_REGION]" in result.output
+        assert "('CLI_REGION'" not in result.output
+
+    def test_two_invocations_with_different_names_read_their_own_variable(self):
+        app = self._app()
+        runner = click_extra.testing.CliRunner()
+
+        first = runner.invoke(app, ["go"], prog_name="first", env={"FIRST_REGION": "from-first"})
+        second = runner.invoke(
+            app,
+            ["go"],
+            prog_name="second",
+            env={"SECOND_REGION": "from-second", "FIRST_REGION": "stale"},
+        )
+
+        assert "region=from-first" in first.output
+        assert "region=from-second" in second.output
+
+    def test_the_shared_option_is_left_unnamed_after_the_call(self):
+        app = self._app()
+
+        click_extra.testing.CliRunner().invoke(app, ["go"], prog_name="first")
+
+        param = next(p for p in app.params if p.name == "region")
+        assert param.envvar is None
+
+
+class TestOptionWithExternalClass:
+    """option(cls=...) hands each class only the arguments it declares."""
+
+    def test_click_extra_timer_option_can_be_used_through_option(self):
+        """A click_extra option class that knows nothing of is_global builds and works."""
+
+        @app_group(handle_response=False)
+        @option("--stopwatch/--no-stopwatch", cls=TimerOption, default=False)
+        def app(**kwargs):
+            """App"""
+
+        @app.command()
+        def work():
+            """Work"""
+            click.echo("done")
+
+        result = invoke(app, ["--stopwatch", "work"])
+        assert result.exit_code == 0, result.exception
+        assert "Execution time" in result.output
+
+    def test_plain_click_option_class_is_accepted(self):
+        """A bare click_extra.Option subclass is built without is_global."""
+
+        class Loud(click_extra.Option):
+            """An option class with no pyclifer argument."""
+
+        @app_group(handle_response=False)
+        @option("--shout", cls=Loud, default="a")
+        def app(shout):
+            """App"""
+
+        param = next(p for p in app.params if p.name == "shout")
+        assert type(param) is Loud
+        assert not hasattr(param, "is_global")
+
+    def test_is_global_with_a_class_that_cannot_take_it_is_refused(self):
+        """Asking for propagation from a class that cannot carry it is an explicit error."""
+        with pytest.raises(TypeError, match="TimerOption does not accept is_global"):
+            option("--stopwatch/--no-stopwatch", cls=TimerOption, is_global=True)
+
+    def test_pyclifer_classes_still_receive_is_global(self):
+        """PycliferOption keeps receiving is_global and context."""
+
+        @app_group(handle_response=False)
+        @option("--region", is_global=True, default="r")
+        def app(region):
+            """App"""
+
+        param = next(p for p in app.params if p.name == "region")
+        assert param.is_global is True
+
+
+class TestOptionWithPycliferSubclass:
+    """A PycliferOption subclass that delegates by **kwargs can still be global."""
+
+    def test_subclass_forwarding_kwargs_can_be_global(self):
+        """A subclass whose constructor only takes **kwargs receives is_global."""
+
+        class ForwardingOption(PycliferOption):
+            """Subclass that delegates everything to PycliferOption."""
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        @app_group(handle_response=False)
+        @option("--region", cls=ForwardingOption, is_global=True, default="r0")
+        def app(region):
+            """App"""
+
+        param = next(p for p in app.params if p.name == "region")
+        assert type(param) is ForwardingOption
+        assert param.is_global is True
+
+    def test_subclass_with_extra_argument_can_be_global(self):
+        """A subclass declaring its own argument plus **kwargs receives is_global."""
+
+        class ExtraOption(PycliferOption):
+            """Subclass with one more named argument."""
+
+            def __init__(self, *args, extra=None, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.extra = extra
+
+        @app_group(handle_response=False)
+        @option("--region", cls=ExtraOption, is_global=True, default="r0", extra=1)
+        def app(region):
+            """App"""
+
+        param = next(p for p in app.params if p.name == "region")
+        assert param.is_global is True
+        assert param.extra == 1
+
+    def test_custom_config_option_subclass_can_be_global(self):
+        """A subclass of CustomConfigOption receives is_global."""
+
+        class MyConfig(CustomConfigOption):
+            """Subclass of the config option."""
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        decorator = option("--cfg", cls=MyConfig, is_global=True)
+        assert callable(decorator)
+
+    def test_class_without_is_global_in_its_mro_is_still_refused(self):
+        """A class that only takes **kwargs and does not inherit PycliferOption is refused."""
+
+        class OnlyKwargs(click_extra.Option):
+            """Click option whose constructor takes **kwargs."""
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        with pytest.raises(TypeError, match="OnlyKwargs does not accept is_global"):
+            option("--x", cls=OnlyKwargs, is_global=True)

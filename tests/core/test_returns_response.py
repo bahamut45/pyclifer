@@ -3,10 +3,13 @@
 from unittest.mock import patch
 
 import click
+import pytest
 
 from pyclifer.core import app_group, command, group, option, output_filter_option, returns_response
+from pyclifer.core.context import BaseContext
 from pyclifer.core.output import Response
 from pyclifer.core.output.exit_codes import ExitCode
+from pyclifer.core.output.renderer import BaseRenderer
 from pyclifer.testing import invoke
 
 # ---------------------------------------------------------------------------
@@ -643,3 +646,286 @@ class TestTracebackSuppression:
             assert call is not None
             _, kwargs = call
             assert kwargs.get("exc_info") is True
+
+
+def _raise(error):
+    """Raise error, so a lambda can raise."""
+    raise error
+
+
+class TestClickControlFlow:
+    """Click errors and exits raised in a command keep Click's own handling."""
+
+    @staticmethod
+    def _run(raiser, *, handle_response):
+        """Invoke a command that calls raiser(ctx), on an app with the given handle_response."""
+        app = _make_app(handle_response_at_group=handle_response)
+
+        @app.command()
+        @click.pass_context
+        def act(ctx):
+            """Raise what the test asks for"""
+            raiser(ctx)
+
+        return invoke(app, ["act"])
+
+    def test_bad_parameter_exits_with_usage_code(self):
+        """BadParameter exits with code 2 and is not logged as unhandled."""
+        result = self._run(lambda ctx: _raise(click.BadParameter("nope")), handle_response=True)
+        assert result.exit_code == 2
+        assert "Unhandled exception" not in result.stderr
+        assert "nope" in result.stderr
+
+    def test_usage_error_exits_with_usage_code(self):
+        """UsageError exits with code 2 and is not logged as unhandled."""
+        result = self._run(lambda ctx: _raise(click.UsageError("bad use")), handle_response=True)
+        assert result.exit_code == 2
+        assert "Unhandled exception" not in result.stderr
+
+    def test_click_exception_exits_with_its_own_code(self):
+        """ClickException exits with code 1, prints its message, and is not logged as unhandled."""
+        result = self._run(lambda ctx: _raise(click.ClickException("boom")), handle_response=True)
+        assert result.exit_code == 1
+        assert "boom" in result.stderr
+        assert "Unhandled exception" not in result.stderr
+
+    def test_abort_prints_aborted(self):
+        """Abort prints Aborted. on stderr and is not logged as unhandled."""
+        result = self._run(lambda ctx: _raise(click.Abort()), handle_response=True)
+        assert result.exit_code == 1
+        assert "Aborted." in result.stderr
+        assert "Unhandled exception" not in result.stderr
+
+    def test_ctx_exit_keeps_the_requested_code(self):
+        """ctx.exit(3) exits with 3 instead of being turned into a failure."""
+        result = self._run(lambda ctx: ctx.exit(3), handle_response=True)
+        assert result.exit_code == 3
+        assert "Unhandled exception" not in result.stderr
+
+    def test_ctx_exit_zero_succeeds(self):
+        """ctx.exit(0) exits with 0."""
+        result = self._run(lambda ctx: ctx.exit(0), handle_response=True)
+        assert result.exit_code == 0
+        assert "Unhandled exception" not in result.stderr
+
+    def test_handling_is_identical_without_handle_response(self):
+        """The same errors give the same exit codes when handle_response is off."""
+        with_handling = self._run(
+            lambda ctx: _raise(click.BadParameter("nope")), handle_response=True
+        )
+        without_handling = self._run(
+            lambda ctx: _raise(click.BadParameter("nope")), handle_response=False
+        )
+        assert with_handling.exit_code == without_handling.exit_code
+
+    def test_bad_parameter_in_json_is_a_usage_error_response(self):
+        """In a structured format, an error from the command body gets the usage_error schema."""
+        app = _make_app(handle_response_at_group=True, output_format_default="json")
+
+        @app.command()
+        def act():
+            """Raise a usage problem"""
+            raise click.BadParameter("nope")
+
+        result = invoke(app, ["act"])
+        assert result.exit_code == 2
+        assert result.json["success"] is False
+        assert result.json["data"]["error_type"] == "usage_error"
+
+
+class _BrokenRenderer(BaseRenderer):
+    """Renderer whose output methods fail, like a user renderer with a bug."""
+
+    fields = ["item"]
+    columns = ["item"]
+
+    def serialize(self, response):
+        raise RuntimeError("serialize broke")
+
+    def table(self, response):
+        raise RuntimeError("table broke")
+
+
+class TestRenderFailure:
+    """An exception raised while rendering is answered like one raised by the command."""
+
+    @staticmethod
+    def _run(output_format, data=None, **config):
+        app = _make_app(handle_response_at_group=True, output_format_default=output_format)
+
+        @app.command()
+        def show():
+            """Return a response rendered by a broken renderer"""
+            return Response(
+                success=True,
+                message="m",
+                data={} if data is None else data,
+                renderer=_BrokenRenderer(),
+            )
+
+        return invoke(app, ["show"])
+
+    def test_json_gets_a_failure_response_on_stdout(self):
+        result = self._run("json")
+        assert result.exit_code == ExitCode.ERROR
+        assert result.json["success"] is False
+        assert "serialize broke" in result.json["message"]
+        assert result.json["error_code"] == ExitCode.ERROR
+
+    def test_yaml_gets_a_failure_response_on_stdout(self):
+        result = self._run("yaml")
+        assert result.exit_code == ExitCode.ERROR
+        assert result.yaml["success"] is False
+        assert "serialize broke" in result.yaml["message"]
+
+    def test_json_stderr_has_the_log_line_without_a_traceback(self):
+        result = self._run("json")
+        assert "Unhandled exception" in result.stderr
+        assert "Traceback" not in result.stderr
+
+    def test_table_logs_the_traceback_and_exits_with_error(self):
+        result = self._run("table")
+        assert result.exit_code == ExitCode.ERROR
+        assert "table broke" in result.stderr
+        assert "Unhandled exception" in result.stderr
+
+    def test_log_line_says_the_failure_happened_while_rendering(self):
+        result = self._run("json")
+        assert "rendering" in result.stderr
+
+    def test_list_data_is_a_json_failure_response_naming_the_fix(self):
+        app = _make_app(handle_response_at_group=True, output_format_default="json")
+
+        class Items(BaseRenderer):
+            fields = ["item"]
+
+        @app.command()
+        def show():
+            """Return list data to a renderer that reads results"""
+            return Response(success=True, message="m", data=[1], renderer=Items())
+
+        result = invoke(app, ["show"])
+        assert result.exit_code == ExitCode.ERROR
+        assert "'results'" in result.json["message"]
+
+    def test_a_working_renderer_is_unaffected(self):
+        app = _make_app(handle_response_at_group=True, output_format_default="json")
+
+        @app.command()
+        def show():
+            """Return a normal response"""
+            return Response(success=True, message="ok", data={"results": []})
+
+        result = invoke(app, ["show"])
+        assert result.exit_code == 0
+        assert result.json["success"] is True
+
+    def test_click_errors_raised_while_rendering_keep_click_handling(self):
+        class Refusing(BaseRenderer):
+            fields = ["item"]
+
+            def serialize(self, response):
+                raise click.UsageError("render refused")
+
+        app = _make_app(handle_response_at_group=True, output_format_default="json")
+
+        @app.command()
+        def show():
+            """Return a response whose renderer raises a Click error"""
+            return Response(success=True, message="m", data={}, renderer=Refusing())
+
+        result = invoke(app, ["show"])
+        assert result.exit_code == 2
+        assert "Unhandled exception" not in result.stderr
+
+
+class _BrokenContext(BaseContext):
+    """A context whose printing always fails, the failure Response included."""
+
+    calls = 0
+
+    def print_result_based_on_format(self, response, options=None):
+        """Fail whatever is printed, with a different reason the second time."""
+        type(self).calls += 1
+        raise RuntimeError("printing broke" if type(self).calls == 1 else "printing again broke")
+
+
+EXPECTED_MESSAGE = "printing broke (printing the failure failed too: printing again broke)"
+
+
+class TestPrintingThatFailsTwice:
+    """When even the failure Response cannot be printed, structured output stays valid."""
+
+    @pytest.fixture(autouse=True)
+    def _reset_calls(self):
+        _BrokenContext.calls = 0
+
+    @staticmethod
+    def _run(output_format):
+        @app_group(
+            output_format_default=output_format,
+            context_factory=lambda **_: _BrokenContext(),
+        )
+        def app():
+            """Test app"""
+
+        @app.command()
+        def show():
+            """Return a response that cannot be printed"""
+            return Response(success=True, message="m", data={"a": 1})
+
+        return invoke(app, ["show"])
+
+    def test_json_stdout_is_a_minimal_failure_response(self):
+        result = self._run("json")
+        assert result.exit_code == ExitCode.ERROR
+        assert result.json == {
+            "success": False,
+            "message": EXPECTED_MESSAGE,
+            "error_code": int(ExitCode.ERROR),
+        }
+
+    def test_yaml_stdout_is_a_minimal_failure_response(self):
+        result = self._run("yaml")
+        assert result.exit_code == ExitCode.ERROR
+        assert result.yaml == {
+            "success": False,
+            "message": EXPECTED_MESSAGE,
+            "error_code": int(ExitCode.ERROR),
+        }
+
+    def test_both_failures_are_logged(self):
+        result = self._run("json")
+        assert result.stderr.count("Unhandled exception") == 2
+
+    def test_other_formats_keep_the_raw_failure(self):
+        result = self._run("table")
+        assert result.exit_code != 0
+        assert result.output == ""
+
+    def test_a_click_error_raised_while_printing_the_failure_keeps_click_handling(self):
+        class RefusesTheFailure(BaseContext):
+            calls = 0
+
+            def print_result_based_on_format(self, response, options=None):
+                RefusesTheFailure.calls += 1
+                if RefusesTheFailure.calls == 1:
+                    raise RuntimeError("printing broke")
+                raise click.UsageError("failure refused")
+
+        @app_group(
+            output_format_default="json",
+            context_factory=lambda **_: RefusesTheFailure(),
+        )
+        def app():
+            """Test app"""
+
+        @app.command()
+        def show():
+            """Return a response"""
+            return Response(success=True, message="m")
+
+        result = invoke(app, ["show"])
+
+        assert result.exit_code == 2
+        assert "failure refused" in result.stderr

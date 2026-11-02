@@ -48,6 +48,25 @@ class PycliferOption(StoreInMetaMixin, click_extra.Option):
         self.show_in_subcommand_help = show_in_subcommand_help
         super().__init__(*args, **kwargs)
 
+    def resolve_envvar_value(self, ctx: click_extra.Context) -> str | None:
+        """Find the environment variable value, a global option using the one of the root.
+
+        A global option is the same option in every command, so it has one variable name: the one
+        of the root group (CLI_REGION for an application named cli), not one built from the path of
+        the command that receives it (CLI_LEAF_REGION). Without this, the variable depended on how
+        the help is drawn, because click-extra writes the name of the root onto the option and
+        rich-click does not.
+
+        Args:
+            ctx: The context of the command that parses this option.
+
+        Returns:
+            The value of the variable, or None when it is not set.
+        """
+        if self.is_global and ctx.parent is not None:
+            ctx = ctx.find_root()
+        return super().resolve_envvar_value(ctx)
+
 
 class PycliferTimerOption(TimerOption):
     """TimerOption integrated with pyclifer output format.
@@ -366,7 +385,8 @@ class GroupConfig:
 
     # Output format settings
     output_format_default: str = "table"
-    handle_response: bool = False
+    # None inherits from the parent group, True enables, False protects the whole sub-tree.
+    handle_response: bool | None = None
     timer: bool = False
 
     # Help formatting
@@ -381,6 +401,11 @@ class GroupConfig:
 
     # Security
     sensitive_fields: list[str] = field(default_factory=list)
+    # Also mask key=value pairs written inside the text of a log message (off by default).
+    mask_free_text: bool = False
+    # Also remove the root handlers pyclifer did not create (Sentry, syslog, caplog) when it
+    # configures the console. Off by default: only its own console handler is replaced.
+    replace_root_handlers: bool = False
 
     # Context construction
     context_factory: Callable[..., Any] | None = None

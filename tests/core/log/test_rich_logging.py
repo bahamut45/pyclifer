@@ -2,9 +2,11 @@
 
 import logging
 import sys
+import time
 from unittest.mock import Mock, PropertyMock, patch
 
 import pytest
+from click_extra import ParameterSource
 
 from pyclifer.core.log import (
     PYCLIFER_LOG_LEVELS,
@@ -101,9 +103,9 @@ class TestLoggingConfiguration:
 
     @patch("pyclifer.core.log.config.basicConfig")
     def test_configure_rich_logging_use_rich_false(self, mock_extra_config):
-        """use_rich=False skips all Rich handler setup."""
+        """use_rich=False installs the standard console handler and no Rich one."""
         configure_rich_logging(use_rich=False, force_reconfigure=True)
-        mock_extra_config.assert_not_called()
+        mock_extra_config.assert_called_once_with(force=True)
 
     def test_configure_rich_logging_shared_handler_already_present(self):
         """If shared_handler is already in root_logger, addHandler is skipped."""
@@ -432,6 +434,46 @@ class TestSecretsMasker:
         assert redacted["bearer_token"] == "*CENSORED*"
         assert redacted["password"] == "*CENSORED*"
 
+    def test_a_custom_field_unrelated_to_the_defaults_is_censored(self):
+        """A name that contains no default field is masked only because it was declared.
+
+        bearer_token would pass for the wrong reason: it contains the default field token.
+        """
+        masker = SecretsMasker(sensitive_fields=["mycode"])
+
+        assert masker.redact({"mycode": "mc-777"}) == {"mycode": "*CENSORED*"}
+
+    def test_a_custom_field_is_matched_whatever_its_case_and_surroundings(self):
+        masker = SecretsMasker(sensitive_fields=["MyCode"])
+
+        redacted = masker.redact({" MYCODE ": "a", "user_mycode_2": "b", "name": "c"})
+
+        assert redacted == {" MYCODE ": "*CENSORED*", "user_mycode_2": "*CENSORED*", "name": "c"}
+
+    def test_a_custom_field_does_not_leak_to_another_masker(self):
+        SecretsMasker(sensitive_fields=["mycode"])
+
+        assert SecretsMasker().redact({"mycode": "mc-777"}) == {"mycode": "mc-777"}
+
+    def test_a_custom_field_is_censored_in_a_log_record(self):
+        masker = SecretsMasker(sensitive_fields=["mycode"])
+        record = logging.LogRecord(
+            "t", logging.INFO, "", 0, "payload %s", ({"mycode": "mc-777"},), None
+        )
+
+        masker.filter(record)
+
+        # LogRecord unwraps a lone dict argument, as it does for a real log call.
+        assert record.args == {"mycode": "*CENSORED*"}
+
+    def test_a_key_that_is_not_a_string_is_left_alone(self):
+        """A security filter must never fail on a dict keyed by something other than text."""
+        masker = SecretsMasker(sensitive_fields=["mycode"])
+
+        data = {42: "value", ("a", "b"): "other"}
+
+        assert masker.redact(data) == data
+
     def test_sensitive_fields_empty_list_behaves_like_none(self):
         """sensitive_fields=[] and sensitive_fields=None produce identical results."""
         masker_none = SecretsMasker(sensitive_fields=None)
@@ -510,7 +552,8 @@ class TestAddTraceMethod:
         mock_logger.trace("test trace message")
 
         mock_logger.isEnabledFor.assert_called_once_with(TRACE)
-        mock_logger._log.assert_called_once_with(TRACE, "test trace message", ())
+        mock_logger._log.assert_called_once()
+        assert mock_logger._log.call_args.args == (TRACE, "test trace message", ())
 
     def test_trace_method_skips_log_when_level_disabled(self):
         """Test that trace() does not call _log when the TRACE level is disabled."""
@@ -541,6 +584,130 @@ class TestPycliferVerbosityOption:
     def test_initialization_default_params(self, verbosity_option):
         """Test PycliferVerbosityOption default parameter declarations."""
         assert "--verbosity" in verbosity_option.opts
+
+    @patch("pyclifer.core.log.config.configure_rich_logging")
+    def test_set_level_reconfigures_logging_with_the_secrets_settings_of_the_option(
+        self, mock_configure
+    ):
+        """The handler rebuilt on a level change keeps the application's secrets settings."""
+        option = PycliferVerbosityOption(enable_secrets_filter=False, sensitive_fields=["mycode"])
+        mock_ctx = Mock()
+        mock_ctx.meta = {}
+
+        with patch.object(
+            type(option), "all_loggers", new_callable=PropertyMock
+        ) as mock_all_loggers:
+            mock_all_loggers.return_value = iter([])
+            with patch.object(option, "reset_loggers"):
+                option.set_level(mock_ctx, Mock(), "DEBUG")
+
+        mock_configure.assert_called_with(
+            use_rich=True,
+            enable_secrets_filter=False,
+            sensitive_fields=["mycode"],
+            mask_free_text=False,
+            force_reconfigure=True,
+            replace_root_handlers=False,
+        )
+
+    @patch("pyclifer.core.log.config.configure_rich_logging")
+    def test_set_level_forwards_replace_root_handlers(self, mock_configure):
+        """The handler rebuilt on a level change keeps the choice made on the application."""
+        option = PycliferVerbosityOption(replace_root_handlers=True)
+        mock_ctx = Mock()
+        mock_ctx.meta = {}
+
+        with patch.object(
+            type(option), "all_loggers", new_callable=PropertyMock
+        ) as mock_all_loggers:
+            mock_all_loggers.return_value = iter([])
+            with patch.object(option, "reset_loggers"):
+                option.set_level(mock_ctx, Mock(), "DEBUG")
+
+        assert mock_configure.call_args.kwargs["replace_root_handlers"] is True
+
+    @patch("pyclifer.core.log.config.configure_rich_logging")
+    def test_secrets_settings_default_to_the_filter_with_the_default_fields(
+        self, mock_configure, verbosity_option
+    ):
+        mock_ctx = Mock()
+        mock_ctx.meta = {}
+
+        with patch.object(
+            type(verbosity_option), "all_loggers", new_callable=PropertyMock
+        ) as mock_all_loggers:
+            mock_all_loggers.return_value = iter([])
+            with patch.object(verbosity_option, "reset_loggers"):
+                verbosity_option.set_level(mock_ctx, Mock(), "DEBUG")
+
+        mock_configure.assert_called_with(
+            use_rich=True,
+            enable_secrets_filter=True,
+            sensitive_fields=None,
+            mask_free_text=False,
+            force_reconfigure=True,
+            replace_root_handlers=False,
+        )
+
+    @staticmethod
+    def _set_level(option, meta, value, source):
+        """Call set_level with a context whose parameter was filled from the given source."""
+        mock_ctx = Mock()
+        mock_ctx.meta = meta
+        mock_ctx.get_parameter_source.return_value = source
+        with (
+            patch("pyclifer.core.log.config.configure_rich_logging"),
+            patch.object(
+                type(option), "all_loggers", new_callable=PropertyMock
+            ) as mock_all_loggers,
+        ):
+            mock_all_loggers.return_value = iter([])
+            with patch.object(option, "reset_loggers"):
+                option.set_level(mock_ctx, Mock(), value)
+        return meta
+
+    def test_a_default_value_never_overrides_a_level_already_chosen(self, verbosity_option):
+        """The default a sub-command's copy of the option carries is not a choice."""
+        meta = self._set_level(
+            verbosity_option,
+            {"click_extra.verbosity_level": "ERROR"},
+            "WARNING",
+            ParameterSource.DEFAULT,
+        )
+
+        assert meta["click_extra.verbosity_level"] == "ERROR"
+
+    def test_a_chosen_level_overrides_a_level_that_came_from_a_default(self, verbosity_option):
+        """A stricter level typed by the user replaces the default set earlier."""
+        meta = {"click_extra.verbosity_level": "WARNING", "pyclifer.verbosity_from_default": True}
+
+        self._set_level(verbosity_option, meta, "ERROR", ParameterSource.COMMANDLINE)
+
+        assert meta["click_extra.verbosity_level"] == "ERROR"
+
+    def test_a_chosen_level_from_the_environment_counts_as_a_choice(self, verbosity_option):
+        meta = {"click_extra.verbosity_level": "WARNING", "pyclifer.verbosity_from_default": True}
+
+        self._set_level(verbosity_option, meta, "CRITICAL", ParameterSource.ENVIRONMENT)
+
+        assert meta["click_extra.verbosity_level"] == "CRITICAL"
+
+    def test_two_chosen_levels_keep_the_most_verbose(self, verbosity_option):
+        """Several options can each set a level: the most verbose one still wins."""
+        meta = {"click_extra.verbosity_level": "DEBUG"}
+
+        self._set_level(verbosity_option, meta, "ERROR", ParameterSource.COMMANDLINE)
+
+        assert meta["click_extra.verbosity_level"] == "DEBUG"
+
+    def test_the_first_level_is_recorded_with_where_it_came_from(self, verbosity_option):
+        from_default = self._set_level(
+            {}.copy() or verbosity_option, {}, "WARNING", ParameterSource.DEFAULT
+        )
+        from_user = self._set_level(verbosity_option, {}, "ERROR", ParameterSource.COMMANDLINE)
+
+        assert from_default["pyclifer.verbosity_from_default"] is True
+        assert from_user["pyclifer.verbosity_from_default"] is False
 
     @patch("pyclifer.core.log.config.configure_rich_logging")
     def test_set_level_more_verbose_overrides_current_level(self, mock_configure, verbosity_option):
@@ -578,7 +745,14 @@ class TestPycliferVerbosityOption:
                 # noinspection PyTypeChecker
                 verbosity_option.set_level(mock_ctx, mock_param, "DEBUG")
 
-        mock_configure.assert_called_once_with(force_reconfigure=True)
+        mock_configure.assert_called_once_with(
+            use_rich=True,
+            enable_secrets_filter=True,
+            sensitive_fields=None,
+            mask_free_text=False,
+            force_reconfigure=True,
+            replace_root_handlers=False,
+        )
 
         mock_logger1.setLevel.assert_called_once_with(PYCLIFER_LOG_LEVELS["DEBUG"])
         mock_logger2.setLevel.assert_called_once_with(PYCLIFER_LOG_LEVELS["DEBUG"])
@@ -619,7 +793,7 @@ class TestPycliferVerbosityOption:
 class TestLoggerFactoryFunctions:
     """Test logger factory functions."""
 
-    @patch("pyclifer.core.log.config.get_configured_logger")
+    @patch("pyclifer.core.log.get_configured_logger")
     def test_get_logger_delegates_to_get_configured_logger(self, mock_get_configured):
         """Test that get_logger delegates to get_configured_logger."""
         mock_logger = Mock()
@@ -709,3 +883,492 @@ class TestLoggingIntegration:
 
         secrets_filters = [f for f in handler.filters if isinstance(f, SecretsMasker)]
         assert len(secrets_filters) == 1
+
+
+class TestPlainConsoleLogging:
+    """configure_rich_logging(use_rich=False) installs click-extra's standard console handler."""
+
+    @pytest.fixture(autouse=True)
+    def clean_root_logger(self):
+        """Start from a root logger with no handler and give the original ones back."""
+        root = logging.getLogger()
+        original = list(root.handlers)
+        root.handlers.clear()
+        yield root
+        for handler in root.handlers:
+            if handler not in original:
+                handler.close()
+        root.handlers[:] = original
+
+    @staticmethod
+    def _console_handlers(root):
+        """The handlers writing to a stream, files left out."""
+        return [
+            h
+            for h in root.handlers
+            if isinstance(h, logging.StreamHandler)
+            and not isinstance(h, logging.FileHandler)
+            and not type(h).__module__.startswith("_pytest")
+        ]
+
+    def test_a_standard_stream_handler_replaces_the_rich_one(self, clean_root_logger):
+        from pyclifer.core.log import configure_rich_logging
+
+        configure_rich_logging(use_rich=False, force_reconfigure=True)
+
+        handlers = self._console_handlers(clean_root_logger)
+        assert len(handlers) == 1
+        assert not isinstance(handlers[0], RichExtraStreamHandler)
+
+    def test_the_secrets_filter_is_on_by_default(self, clean_root_logger):
+        from pyclifer.core.log import configure_rich_logging
+
+        configure_rich_logging(use_rich=False, force_reconfigure=True)
+
+        (handler,) = self._console_handlers(clean_root_logger)
+        assert [type(f) for f in handler.filters] == [SecretsMasker]
+
+    def test_the_secrets_filter_can_be_turned_off(self, clean_root_logger):
+        from pyclifer.core.log import configure_rich_logging
+
+        configure_rich_logging(use_rich=False, enable_secrets_filter=False, force_reconfigure=True)
+
+        (handler,) = self._console_handlers(clean_root_logger)
+        assert handler.filters == []
+
+    def test_sensitive_fields_reach_the_filter(self, clean_root_logger):
+        from pyclifer.core.log import configure_rich_logging
+
+        configure_rich_logging(use_rich=False, sensitive_fields=["mycode"], force_reconfigure=True)
+
+        (handler,) = self._console_handlers(clean_root_logger)
+        assert handler.filters[0].redact({"mycode": "mc-777"}) == {"mycode": "*CENSORED*"}
+
+    @patch("pyclifer.core.log.config.basicConfig")
+    def test_a_handler_it_did_not_create_is_left_untouched(self, _basic_config, clean_root_logger):
+        """Only the handler basicConfig creates is marked and filtered, never a foreign one."""
+        from pyclifer.core.log import configure_rich_logging
+
+        foreign = logging.StreamHandler()
+        clean_root_logger.addHandler(foreign)
+
+        configure_rich_logging(use_rich=False, force_reconfigure=True)
+
+        assert foreign.filters == []
+        assert not hasattr(foreign, "_pyclifer_console")
+
+    def test_a_file_handler_survives_the_reconfiguration(self, clean_root_logger, tmp_path):
+        from logging.handlers import TimedRotatingFileHandler
+
+        from pyclifer.core.log import configure_rich_logging
+
+        file_handler = TimedRotatingFileHandler(tmp_path / "keep.log")
+        clean_root_logger.addHandler(file_handler)
+
+        configure_rich_logging(use_rich=False, force_reconfigure=True)
+
+        assert file_handler in clean_root_logger.handlers
+
+    def test_without_force_an_existing_console_handler_is_left_alone(self, clean_root_logger):
+        from pyclifer.core.log import configure_rich_logging
+
+        configure_rich_logging(use_rich=False, force_reconfigure=True)
+        (first,) = self._console_handlers(clean_root_logger)
+
+        configure_rich_logging(use_rich=False, enable_secrets_filter=False)
+
+        assert self._console_handlers(clean_root_logger) == [first]
+
+
+class TestSecretsMaskerFreeText:
+    """With mask_free_text, secrets written as key=value inside a message are masked too."""
+
+    @staticmethod
+    def _masked(text: str, **options) -> str:
+        return SecretsMasker(mask_free_text=True, **options).redact_text(text)
+
+    def test_free_text_is_left_alone_by_default(self):
+        record = logging.LogRecord("t", logging.INFO, "", 0, "password=hunter2", (), None)
+
+        SecretsMasker().filter(record)
+
+        assert record.getMessage() == "password=hunter2"
+
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("login with password=hunter2 for bob", "login with password=*CENSORED* for bob"),
+            ("password: hunter2", "password: *CENSORED*"),
+            ('{"password": "hunter2", "user": "bob"}', '{"password": "*CENSORED*", "user": "bob"}'),
+            ('{"password": "my long phrase"}', '{"password": "*CENSORED*"}'),
+            ("GET /api?api_key=abc123&user=bob", "GET /api?api_key=*CENSORED*&user=bob"),
+            ("Authorization: Bearer eyJhb.abc.def", "Authorization: Bearer *CENSORED*"),
+            ("refresh_token=rt_9 expires in 3600", "refresh_token=*CENSORED* expires in 3600"),
+            ("PASSWORD=HunTer2", "PASSWORD=*CENSORED*"),
+        ],
+    )
+    def test_the_value_of_a_sensitive_key_is_masked(self, text, expected):
+        assert self._masked(text) == expected
+
+    def test_a_custom_field_is_masked(self):
+        assert self._masked("mycode=mc-777 accepted", sensitive_fields=["mycode"]) == (
+            "mycode=*CENSORED* accepted"
+        )
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "the password is hunter2",
+            "token expired for user bob",
+            "/etc/secret/file.txt not found",
+            "nothing sensitive here",
+        ],
+    )
+    def test_text_without_a_key_and_a_separator_is_kept(self, text):
+        assert self._masked(text) == text
+
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("used max_tokens=100 out of 4000", "used max_tokens=*CENSORED* out of 4000"),
+            ("token: expired, please log in again", "token: *CENSORED*, please log in again"),
+        ],
+    )
+    def test_known_false_positives_are_masked(self, text, expected):
+        """A name that contains a sensitive field is masked, whatever its value means."""
+        assert self._masked(text) == expected
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "a" * 50_000,
+            "Zm9v" * 12_500,
+            "/usr/lib/x." * 4_500,
+        ],
+        ids=["word-characters", "base64-like", "paths"],
+    )
+    def test_a_long_text_without_a_separator_is_masked_in_bounded_time(self, text):
+        """The cost grows linearly with the text, not with its square."""
+        started = time.perf_counter()
+
+        assert self._masked(text) == text
+
+        assert time.perf_counter() - started < 0.5
+
+    def test_masking_twice_changes_nothing(self):
+        once = self._masked("password=hunter2")
+
+        assert self._masked(once) == once
+
+    def test_a_message_is_masked_once_its_arguments_are_filled_in(self):
+        record = logging.LogRecord("t", logging.INFO, "", 0, "pwd=%s", ("hunter2",), None)
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert record.getMessage() == "pwd=*CENSORED*"
+
+    def test_structured_arguments_are_still_masked_by_key(self):
+        record = logging.LogRecord(
+            "t", logging.INFO, "", 0, "payload %s", ({"password": "hunter2", "user": "bob"},), None
+        )
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert "hunter2" not in record.getMessage()
+        assert "bob" in record.getMessage()
+
+    def test_a_malformed_message_does_not_break_the_filter(self):
+        record = logging.LogRecord("t", logging.INFO, "", 0, "%d", ("not a number",), None)
+
+        assert SecretsMasker(mask_free_text=True).filter(record) is True
+
+    def test_a_message_that_is_not_text_is_masked_too(self):
+        record = logging.LogRecord(
+            "t", logging.INFO, "", 0, ValueError("password=hunter2"), (), None
+        )
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert record.getMessage() == "password=*CENSORED*"
+
+
+_LEAKED = "tok-9f3a7c"  # the value that must never reach the output
+
+
+def _exc_info_of(exception: BaseException):
+    """Raise and catch an exception, then return its exc_info like logging records it."""
+    try:
+        raise exception
+    except BaseException:
+        return sys.exc_info()
+
+
+def _record_with(exception: BaseException) -> logging.LogRecord:
+    """A log record carrying the exception, as log.exception() builds it."""
+    return logging.LogRecord("t", logging.ERROR, "", 0, "call failed", (), _exc_info_of(exception))
+
+
+def _filtered(exception: BaseException, **options) -> logging.LogRecord:
+    """The record, once the masker has seen it."""
+    record = _record_with(exception)
+    SecretsMasker(mask_free_text=True, **options).filter(record)
+    return record
+
+
+class TestSecretsMaskerExceptions:
+    """With mask_free_text, the message of an exception is masked in the traceback too."""
+
+    def test_the_message_of_the_exception_is_masked(self):
+        record = _filtered(ValueError(f"login failed token={_LEAKED}"))
+
+        assert str(record.exc_info[1]) == "login failed token=*CENSORED*"
+
+    def test_the_traceback_text_no_longer_holds_the_secret(self):
+        import traceback
+
+        record = _filtered(ValueError(f"login failed token={_LEAKED}"))
+
+        assert _LEAKED not in "".join(traceback.format_exception(*record.exc_info))
+
+    def test_exceptions_are_left_alone_by_default(self):
+        record = _record_with(ValueError(f"token={_LEAKED}"))
+
+        SecretsMasker().filter(record)
+
+        assert _LEAKED in str(record.exc_info[1])
+
+    def test_the_type_name_and_module_are_kept(self):
+        record = _filtered(ValueError(f"token={_LEAKED}"))
+
+        exc_type, exc_value, _ = record.exc_info
+        assert (exc_type.__name__, exc_type.__module__) == ("ValueError", "builtins")
+        assert isinstance(exc_value, ValueError)
+
+    def test_the_traceback_object_is_kept(self):
+        original = _exc_info_of(ValueError(f"token={_LEAKED}"))
+        record = logging.LogRecord("t", logging.ERROR, "", 0, "x", (), original)
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert record.exc_info[2] is original[2]
+
+    def test_the_original_exception_is_not_modified(self):
+        original = ValueError(f"token={_LEAKED}")
+
+        _filtered(original)
+
+        assert str(original) == f"token={_LEAKED}"
+
+    @pytest.mark.parametrize(
+        "exception",
+        [
+            OSError(13, f"denied token={_LEAKED}", "/tmp/x"),
+            KeyError(f"token={_LEAKED}"),
+        ],
+        ids=["oserror", "keyerror"],
+    )
+    def test_exceptions_that_format_their_arguments_are_masked(self, exception):
+        record = _filtered(exception)
+
+        assert _LEAKED not in str(record.exc_info[1])
+
+    def test_an_exception_with_its_own_constructor_and_str_is_masked(self):
+        class ApiError(Exception):
+            def __init__(self, code, url):
+                super().__init__(f"code {code}")
+                self.code, self.url = code, url
+
+            def __str__(self):
+                return f"ApiError {self.code} {self.url}"
+
+        record = _filtered(ApiError(7, f"https://h/?token={_LEAKED}"))
+
+        assert str(record.exc_info[1]) == "ApiError 7 https://h/?token=*CENSORED*"
+        assert record.exc_info[1].code == 7
+
+    def test_the_cause_is_masked(self):
+        try:
+            try:
+                raise ValueError(f"inner token={_LEAKED}")
+            except ValueError as inner:
+                raise RuntimeError("outer") from inner
+        except RuntimeError as outer:
+            record = logging.LogRecord("t", 40, "", 0, "x", (), sys.exc_info())
+            assert outer is record.exc_info[1]
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert str(record.exc_info[1]) == "outer"
+        assert str(record.exc_info[1].__cause__) == "inner token=*CENSORED*"
+
+    def test_the_context_is_masked(self):
+        try:
+            try:
+                raise ValueError(f"inner token={_LEAKED}")
+            except ValueError:
+                raise RuntimeError("outer")  # noqa: B904 - the implicit context is the point
+        except RuntimeError:
+            record = logging.LogRecord("t", 40, "", 0, "x", (), sys.exc_info())
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert str(record.exc_info[1].__context__) == "inner token=*CENSORED*"
+
+    def test_the_traceback_of_the_cause_is_kept(self):
+        import traceback
+
+        def fail_inside_the_cause():
+            raise ValueError(f"inner token={_LEAKED}")
+
+        try:
+            try:
+                fail_inside_the_cause()
+            except ValueError as inner:
+                raise RuntimeError("outer") from inner
+        except RuntimeError:
+            record = logging.LogRecord("t", 40, "", 0, "x", (), sys.exc_info())
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        text = "".join(traceback.format_exception(*record.exc_info))
+        assert "in fail_inside_the_cause" in text
+
+    def test_a_chain_that_loops_back_does_not_loop_forever(self):
+        first, second = ValueError(f"a token={_LEAKED}"), ValueError("b")
+        first.__cause__, second.__cause__ = second, first
+
+        record = _filtered(first)
+
+        assert record.exc_info[1].__cause__.__cause__ is record.exc_info[1]
+
+    def test_an_implicit_context_is_still_shown(self):
+        """Setting the cause of the copy hides the context unless the flag is given back."""
+        import traceback
+
+        try:
+            try:
+                raise ValueError(f"inner token={_LEAKED}")
+            except ValueError:
+                raise RuntimeError("outer")  # noqa: B904 - the implicit context is the point
+        except RuntimeError:
+            record = logging.LogRecord("t", 40, "", 0, "x", (), sys.exc_info())
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        text = "".join(traceback.format_exception(*record.exc_info))
+        assert "During handling of the above exception" in text
+        assert "inner token=*CENSORED*" in text
+
+    def test_the_suppress_context_flag_is_kept(self):
+        try:
+            try:
+                raise ValueError("inner")
+            except ValueError:
+                raise RuntimeError("outer") from None
+        except RuntimeError:
+            record = logging.LogRecord("t", 40, "", 0, "x", (), sys.exc_info())
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert record.exc_info[1].__suppress_context__ is True
+
+    @pytest.mark.skipif(sys.version_info < (3, 11), reason="ExceptionGroup is 3.11+")
+    def test_the_exceptions_of_a_group_are_masked(self):
+        group = ExceptionGroup("batch", [ValueError(f"one token={_LEAKED}"), KeyError("two")])  # noqa: F821
+
+        record = _filtered(group)
+
+        assert isinstance(record.exc_info[1], ExceptionGroup)  # noqa: F821
+        first, second = record.exc_info[1].exceptions
+        assert str(first) == "one token=*CENSORED*"
+        assert isinstance(second, KeyError)
+
+    @pytest.mark.skipif(sys.version_info < (3, 11), reason="notes are 3.11+")
+    def test_the_notes_of_an_exception_are_masked(self):
+        exception = ValueError("failed")
+        exception.add_note(f"retry with token={_LEAKED}")
+
+        record = _filtered(exception)
+
+        assert record.exc_info[1].__notes__ == ["retry with token=*CENSORED*"]
+
+    def test_a_text_cached_by_another_handler_is_masked(self):
+        record = _record_with(ValueError("failed"))
+        record.exc_text = f"ValueError: token={_LEAKED}"
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert record.exc_text == "ValueError: token=*CENSORED*"
+
+    def test_a_record_without_exception_is_untouched(self):
+        record = logging.LogRecord("t", logging.INFO, "", 0, "hello", (), None)
+
+        SecretsMasker(mask_free_text=True).filter(record)
+
+        assert (record.exc_info, record.exc_text) == (None, None)
+
+    def test_an_exception_that_cannot_be_copied_is_replaced_by_its_masked_text(self):
+        """The filter must never let the secret through, nor break the logging."""
+
+        class Hostile(Exception):
+            def __new__(cls, *args):
+                if args:
+                    raise TypeError("cannot copy")
+                return super().__new__(cls)
+
+        exception = Exception.__new__(Hostile)
+        exception.args = (f"token={_LEAKED}",)
+
+        record = _filtered(exception)
+
+        assert str(record.exc_info[1]) == "token=*CENSORED*"
+        assert record.exc_info[2] is not None
+
+    def test_a_masked_record_is_not_masked_again(self):
+        record = _record_with(ValueError(f"token={_LEAKED}"))
+        masker = SecretsMasker(mask_free_text=True)
+        masker.filter(record)
+        once = record.exc_info[1]
+
+        masker.filter(record)
+
+        assert record.exc_info[1] is once
+
+
+class TestExceptionMaskingEndToEnd:
+    """What a handler really writes for log.exception(), Rich and plain."""
+
+    @staticmethod
+    def _log_exception(handler: logging.Handler) -> None:
+        logger = logging.getLogger("pyclifer.test.exception_masking")
+        logger.handlers[:] = [handler]
+        logger.propagate = False
+        logger.setLevel(logging.DEBUG)
+        try:
+            raise ConnectionError(f"GET /x failed token={_LEAKED}")
+        except ConnectionError:
+            logger.exception("call failed")
+
+    def test_rich_masks_the_message_and_keeps_its_traceback_panel(self, capsys):
+        handler = RichExtraStreamHandler(mask_free_text=True)  # writes to the captured stderr
+
+        self._log_exception(handler)
+
+        output = capsys.readouterr().err
+        assert _LEAKED not in output
+        assert "token=*CENSORED*" in output
+        assert "Traceback" in output
+        assert "╭" in output  # the Rich panel, not the plain "Traceback (most recent call last)"
+
+    def test_plain_masks_the_message_of_the_exception(self):
+        from io import StringIO
+
+        stream = StringIO()
+        handler = logging.StreamHandler(stream)
+        handler.addFilter(SecretsMasker(mask_free_text=True))
+        handler.setFormatter(logging.Formatter("%(message)s"))
+
+        self._log_exception(handler)
+
+        output = stream.getvalue()
+        assert "ConnectionError: GET /x failed token=*CENSORED*" in output

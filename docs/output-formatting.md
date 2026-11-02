@@ -24,6 +24,25 @@ globally to all subcommands. The selected format is stored in `ctx.meta['pyclife
 and read automatically by `BaseContext` — you do not need to declare an `output_format` parameter
 in your functions.
 
+### The default format is the contract of the application
+
+`output_format_default` sets the format the whole application answers in: normal results, failures
+and usage errors alike. Declare it once and the application never answers in another format on its own.
+
+```python
+@app_group(output_format_default="json", add_output_format_option=False)
+def cli():
+    """Always answers in JSON."""
+```
+
+- With `--output-format` exposed (the default for `@app_group`), the option overrides the default
+  for that call: `myapp -o yaml hello`.
+- With `add_output_format_option=False`, nobody can change the format: every answer uses
+  `output_format_default`.
+- The casing is ignored, as for `--output-format`: `"JSON"` and `"json"` are the same format.
+- A value that is not one of `json`, `yaml`, `table`, `rich`, `raw`, `text` raises `ValueError` when
+  the group is declared, so a typo is caught at start-up.
+
 ## Automatic Response Dispatch
 
 pyclifer provides three complementary mechanisms to print a `Response` automatically when a command
@@ -101,7 +120,8 @@ def hello(ctx):
 ### Output Format Resolution
 
 All three mechanisms read the format from `ctx.meta['pyclifer.output_format']`, set by
-`--output-format`. Explicit values (command-line or environment variable) always take precedence.
+`--output-format`, or by `output_format_default` when the option is not exposed. Explicit values
+(command-line or environment variable) always take precedence.
 
 ```bash
 myapp --output-format json hello --name Alice   # JSON output
@@ -258,6 +278,12 @@ myapp status --output-format json -f status   # "running"        (valid JSON str
 myapp status --output-format yaml -f status   # 'running'\n      (valid YAML)
 myapp status --output-format json -f data     # {"status": "running", ...}  (valid JSON object)
 ```
+
+YAML output is always readable by a safe parser (`yaml.safe_load`). An object that YAML cannot write
+natively, such as an `OperationResult` in `data`, is written through its `to_dict()` or its attributes,
+exactly as the JSON format does, never as a `!!python/object` tag. Subclasses of `dict`, `list` and
+`tuple` (`OrderedDict`, `Counter`, `defaultdict`, named tuples) are written as plain mappings and
+sequences, so JSON and YAML carry the same content. An `Enum` member is written as its value.
 
 ## Using BaseRenderer
 
@@ -507,6 +533,23 @@ For truly unexpected exceptions (programming errors, broken invariants), the fra
   `--output-format` (JSON, table, rich, raw…)
 - Logs the traceback to **stderr** at the configured log level
 
+An exception raised while the response is being rendered, for example by a bug in a custom renderer's
+`serialize()` or `table()`, gets the same treatment: the failure is logged and answered in the requested
+format with exit code `1`, so `--output-format json` never leaves stdout empty. With `rich` output a
+live display already on screen stays, and the error panel follows it.
+
+If the failure itself cannot be printed (a custom `BaseContext` whose `print_result_based_on_format`
+always raises), `json` and `yaml` still get a minimal document written by hand on stdout,
+`{"success": false, "message": ..., "error_code": 1}`. The message gives both reasons, the original
+failure first and then why it could not be printed, and both failures are logged. The other formats
+promise nothing parseable and keep the raw failure.
+
+Click's own errors and exits are not unexpected exceptions. `click.UsageError`, `click.BadParameter`,
+`click.ClickException`, `click.Abort` and `ctx.exit()` raised in a command keep Click's handling: the
+usual message, Click's exit code (`2` for usage errors, `1` for the others, the code you gave to
+`ctx.exit()`), and no traceback. See [Usage Errors in Structured Formats](#usage-errors-in-structured-formats)
+for the JSON and YAML answer.
+
 The log level is configured on `@app_group`:
 
 ```python
@@ -681,6 +724,10 @@ myapp list-articles -p 2 -l 25
   "data": {"results": [...]}
 }
 ```
+
+When a renderer builds the output (`BaseRenderer`, so every `BaseInterface.respond()` answer), `data`
+must be a dict with a `results` key, as in the example above. A bare list raises a `ValueError` that says so
+instead of failing deep inside the renderer.
 
 When `total` is unknown (`total=None`), it is serialized as `null`. The `table`, `rich`, and
 `text` formats are unaffected — `PaginatedResponse` behaves identically to `Response` for

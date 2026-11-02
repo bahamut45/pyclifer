@@ -18,12 +18,29 @@ Key parameters:
   Set to any string to customise the heading.
 - `auto_envvar_prefix` — uppercase prefix for automatic environment variable binding.
   With `auto_envvar_prefix="MYAPP"`, `--database-url` reads `MYAPP_DATABASE_URL`.
+- `show_envvar` — `True` by default. Set it to `False` to stop the help from listing the environment
+  variables of the automatic options (`--output-format`, `--config`, `--verbosity`, `--log-file`,
+  `--time`). The variables still work. Options you declare with `@option` keep their own
+  `show_envvar` argument.
+- `sensitive_fields` — field names to mask in log records on top of the defaults (`password`, `token`,
+  `secret`, ...). `enable_secrets_filter=False` turns the filter off.
+- `mask_free_text` — `False` by default. Also masks `key=value` pairs written inside the text of a log
+  message and of the exceptions it carries. See [Masking Free Text](../logging.md#masking-free-text) for what it finds and its limits.
+- `replace_root_handlers` — `False` by default. pyclifer then replaces only its own console handler and
+  keeps the handlers other libraries put on the root logger, except the console handler that
+  `logging.basicConfig()` installs with its default arguments. Set it to `True` to remove them all.
+  See [Handlers From Other Libraries](../logging.md#handlers-from-other-libraries).
 - `rich_help_config` — `RichHelpConfiguration` instance (or dict) forwarded to rich-click.
   Lets you customise colours, column widths, and panel styles in `--help` output.
 - `use_rich_help` — set to `False` to disable rich-click rendering and use plain Click help.
-  Defaults to `True`. It only changes how the help is drawn: the group exposes the same options
-  either way, and click-extra's own default options (`--color`, `--theme`, `--show-params`, ...) are
-  not added. Pass `params=[...]` to add options of your own.
+  Defaults to `True`. It is a choice of the whole application: the subgroups and commands built by
+  `group()` and `command()` print plain help too once they are attached to it, and so do their usage
+  errors. It only changes how the help is drawn: the group exposes the same options either way, and
+  click-extra's own default options (`--color`, `--theme`, `--show-params`, ...) are not added. Pass
+  `params=[...]` to add options of your own.
+- `handle_response` — `True` by default on an application: every command returning a `Response`
+  has it printed in the output format. `False` opts the application out. See `HandleResponseMixin`
+  for the three values and how a sub-group inherits or opts out.
 - `on` — mapping of lifecycle event names to lists of handler functions, for example
   `on={"config.loaded": [check_config]}`. Keys are framework event names or `Event` objects; a plain
   string that is not a framework event raises `ValueError` at decoration time. See the
@@ -35,7 +52,12 @@ Key parameters:
 
 ## group
 
-Creates a subgroup that inherits global options from its parent.
+Creates a subgroup that inherits global options from its parent. Its `handle_response` is `None`
+by default: it follows the application once attached. `handle_response=False` protects its commands.
+
+A subgroup never sets the logging up: only `@app_group` does, so the groups can be declared in any
+order (`cli.py` imports its subgroups before it writes `@app_group()`). A `@group()` used without an
+`@app_group` has no logging configured.
 
 ::: pyclifer.group
 
@@ -69,6 +91,12 @@ Extends Click options with environment variable binding and optional global/cont
 - `store_in_meta=False` — when `True`, stores the option value in `ctx.meta` automatically
   (key: `"pyclifer.<option-name>"`). The option is not exposed as a function parameter.
   Used internally by `pagination_options` for `--page` and `--limit`.
+- `cls=...` — the option class. It defaults to `PycliferOption`. Any `click_extra.Option` subclass
+  works, such as `TimerOption`; it receives only the arguments its constructor declares. Asking
+  such a class for `is_global=True` raises `TypeError`, because only `PycliferOption` subclasses,
+  `CustomConfigOption` and `PycliferVerbosityOption` can be propagated. A subclass of one of them
+  that only forwards `**kwargs` to its parent is accepted: the constructors of the whole MRO are
+  searched for `is_global`.
 
 ::: pyclifer.option
 

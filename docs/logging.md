@@ -59,10 +59,14 @@ from pyclifer import (
 )
 import logging
 
-# Add .trace() method to any logger
+# Every logger has .trace() as soon as pyclifer is imported, no application needed
 logger = logging.getLogger("myapp")
-add_trace_method(logger)
 logger.trace("low-level trace message")  # level 5
+
+# add_trace_method takes a logger CLASS, for a custom logger class
+class MyLogger(logging.Logger): ...
+
+add_trace_method(MyLogger)
 
 # Build a handler manually
 handler = RichExtraStreamHandler()
@@ -134,6 +138,17 @@ myapp --verbosity DEBUG command
 MYAPP_VERBOSITY=TRACE myapp command
 ```
 
+The level goes both ways. The default is `WARNING` (change it with `verbosity_default_level`), and a
+level you choose replaces it, whether it is more or less verbose:
+
+```bash
+myapp --verbosity DEBUG command    # warnings, plus info and debug messages
+myapp --verbosity ERROR command    # only errors and critical messages
+myapp command --verbosity ERROR    # the option is accepted after the subcommand too
+```
+
+If you give two levels on the same command line, the most verbose one wins.
+
 ### File Logging
 
 ```python
@@ -200,6 +215,85 @@ def cli():
 `sensitive_fields` propagates to both the console handler and the file handler (if `--log-file`
 is active). The complete default list is available as `SecretsMasker.DEFAULT_FIELDS`.
 
+A field matches when its name contains one of the listed names, ignoring case: with `token` in the
+list, `bearer_token` and `Token` are masked too. Set `enable_secrets_filter=False` to turn the
+filter off.
+
+!!! note "By default, masking works on keys, not on free text"
+    The filter hides the **value of a key**, in a dict, a named tuple or a log record attribute:
+
+    ```python
+    log.warning("payload %s", {"password": "hunter2", "user": "bob"})
+    # payload {'password': '*CENSORED*', 'user': 'bob'}
+    ```
+
+    A plain message such as `log.warning("password=hunter2")` is logged as is, unless you turn on
+    `mask_free_text`.
+
+### Masking Free Text
+
+Set `mask_free_text=True` to also mask `key=value` pairs written inside a message:
+
+```python
+@app_group(mask_free_text=True, sensitive_fields=["mycode"])
+def cli():
+    """Masks secrets written in the text of a message."""
+```
+
+```python
+log.warning("login password=hunter2 mycode=mc-777 for bob")
+# login password=*CENSORED* mycode=*CENSORED* for bob
+```
+
+It finds a sensitive name followed by `=` or `:`: `password=x`, `password: x`, JSON such as
+`{"password": "x"}`, a query string `?api_key=x&user=bob`, and an `Authorization: Bearer x` header.
+It applies to the console (Rich or plain) and to the log file. It is off by default.
+
+Know its limits before turning it on:
+
+- **A secret with no name next to it is not found.** `"the password is hunter2"` is logged as is.
+- **It can mask too much.** The rule is the same as for keys: a name that *contains* a sensitive
+  field matches, whatever its value means. `max_tokens=100` and `token: expired` are masked.
+- **The source lines of a traceback are not scanned.** A traceback shows the line of code that
+  raised, so a secret written as a literal in that line (`raise Error("token=abc")`) still appears.
+  Build the message from a variable instead.
+- **`enable_secrets_filter=False` turns it off too.**
+
+The text of the exceptions you log is masked as well, in the console (Rich or plain) and in the log
+file. This covers the message of the exception, its cause and context, the exceptions of an
+`ExceptionGroup` and its notes. The Rich traceback keeps its rendering:
+
+```python
+try:
+    client.get("https://api.example.com/?api_key=abc123")
+except ConnectionError:
+    log.exception("call failed")
+# ConnectionError: GET https://api.example.com/?api_key=*CENSORED* failed
+```
+
+The exception that you catch is never modified: the handlers receive a masked copy with the same type,
+the same name and the same traceback.
+
+### Handlers From Other Libraries
+
+When pyclifer sets up the console, it replaces only its own console handler. A handler that another
+library put on the root logger (Sentry, syslog, pytest's `caplog`) is kept and keeps receiving the
+records, also after `--verbosity` rebuilds the console. File handlers are kept as well.
+
+```python
+@app_group(replace_root_handlers=True)
+def cli():
+    """Removes every handler of the root logger when it sets up the console."""
+```
+
+The console handler that `logging.basicConfig()` installs with its default arguments (a plain
+`StreamHandler` on `stderr` with the standard format) is replaced like pyclifer's own: kept, it would
+write every record a second time, without the secrets filter. A `StreamHandler` you wrote yourself
+is never taken for it, since it does not carry that formatter. A handler from
+`logging.basicConfig(format=...)` is kept too, and the console then shows each record twice: pass
+`replace_root_handlers=True` in that case. It gives back the previous behaviour: every handler of the
+root logger that pyclifer did not create is removed, whatever its type.
+
 ### Preserved Functionality
 
 - **TRACE level**: Custom debug level (value 5)
@@ -263,6 +357,16 @@ def simple_cli():
     """CLI with standard logging."""
     pass
 ```
+
+With `use_rich_logging=False` the console uses click-extra's standard handler: one line per record,
+written as `level: message` (lowercase level, no timestamp).
+
+```text
+warning: Disk usage is above 90%
+```
+
+Everything else behaves as with Rich: `--verbosity` sets the level, `enable_secrets_filter` and
+`sensitive_fields` mask secrets, and `--log-file` writes the rotating file.
 
 ### Rich Markup in Log Messages
 

@@ -1,5 +1,6 @@
 """Output formatting mixin for CLI contexts."""
 
+import enum
 import json
 import traceback
 from typing import Any
@@ -19,17 +20,50 @@ class _FallbackEncoder(json.JSONEncoder):
 
     Resolution order for each value that the default encoder cannot handle:
     1. `to_dict()` — pyclifer / domain objects that expose a serialization method.
-    2. `__dict__` — generic Python instances.
-    3. `str()` — last resort; preserves readability without crashing.
+    2. `Enum` — its value, not the internal attributes of the member.
+    3. `__dict__` — generic Python instances.
+    4. `str()` — last resort; preserves readability without crashing.
     """
 
     def default(self, obj: Any) -> Any:
         """Encode non-serializable objects using available introspection methods."""
         if callable(getattr(obj, "to_dict", None)):
             return obj.to_dict()
+        if isinstance(obj, enum.Enum):
+            return obj.value
         if hasattr(obj, "__dict__"):
             return obj.__dict__
         return str(obj)
+
+
+class _FallbackDumper(yaml.SafeDumper):
+    """YAML dumper that writes unknown objects the way _FallbackEncoder writes them to JSON.
+
+    The default dumper tags unknown objects with !!python/object, which no safe parser reads.
+    """
+
+
+def _represent_fallback(dumper: yaml.SafeDumper, obj: Any) -> yaml.Node:
+    """Represent an object the dumper has no representer for, through _FallbackEncoder."""
+    return dumper.represent_data(_FallbackEncoder().default(obj))
+
+
+def _represent_mapping(dumper: yaml.SafeDumper, data: dict) -> yaml.Node:
+    """Represent a dict subclass (OrderedDict, Counter, defaultdict) as a plain mapping."""
+    return dumper.represent_dict(dict(data))
+
+
+def _represent_sequence(dumper: yaml.SafeDumper, data: list | tuple) -> yaml.Node:
+    """Represent a list or tuple subclass (namedtuple included) as a plain sequence."""
+    return dumper.represent_list(list(data))
+
+
+# SafeDumper only knows the exact builtin types. Without these, a subclass reaches the object
+# fallback below, which reads __dict__ and loses the content, while JSON keeps it.
+_FallbackDumper.add_multi_representer(dict, _represent_mapping)
+_FallbackDumper.add_multi_representer(list, _represent_sequence)
+_FallbackDumper.add_multi_representer(tuple, _represent_sequence)
+_FallbackDumper.add_multi_representer(object, _represent_fallback)
 
 
 class _ExceptionRenderer(BaseRenderer):
@@ -278,7 +312,9 @@ class OutputFormatMixin:
         Args:
             data: Value to serialize and display as YAML.
         """
-        yaml_content = yaml.dump(data, allow_unicode=True, indent=2, sort_keys=False)
+        yaml_content = yaml.dump(
+            data, Dumper=_FallbackDumper, allow_unicode=True, indent=2, sort_keys=False
+        )
         self.console.print(  # type: ignore[attr-defined]
             Syntax(yaml_content, "yaml", theme="ansi_dark"), soft_wrap=True
         )

@@ -36,6 +36,10 @@ def _apply_handle_response_to_group(group) -> None:
     """
     from pyclifer.core.decorators import returns_response
 
+    # A group that opted out explicitly keeps its whole sub-tree out of the propagation.
+    if getattr(group, "handle_response_opted_out", False) is True:
+        return
+
     # Enable for future registrations if the group supports the mixin.
     if isinstance(group, HandleResponseMixin):
         group.handle_response_by_default = True
@@ -77,6 +81,7 @@ class HandleResponseMixin:
     """
 
     handle_response_by_default: bool = False
+    handle_response_opted_out: bool = False
     output_format_default: str = "table"
 
     def parse_args(self, ctx: click_extra.Context, args: list[str]) -> list[str]:
@@ -164,10 +169,15 @@ class HandleResponseMixin:
         self, *args: Any, handle_response: bool | None = None, **kwargs: Any
     ) -> Callable[..., Any]:
         """Override Click.Group.command to automatically handle Response objects."""
+        explicit = handle_response is not None or self.handle_response_opted_out
         if handle_response is None:
             handle_response = self.handle_response_by_default
         # noinspection PyUnresolvedReferences
         decorator = super().command(*args, **kwargs)
+        if not handle_response and not explicit:
+            # No choice was made: leave the command undecided, so that a parent group
+            # that handles responses can still wrap it when this group is attached.
+            return decorator
         if not handle_response:
             # Mark the raw function as decided *before* calling decorator(f)
             # so that our add_command() override sees the flag when Click
@@ -181,6 +191,7 @@ class HandleResponseMixin:
 
         def wrapped(f):
             """Wrapper for commands that automatically handles Response objects."""
+            # Lazy: decorators imports classes, which imports this module (circular import).
             from pyclifer.core.decorators import returns_response
 
             wrapped_f = returns_response(f)
@@ -220,6 +231,7 @@ class HandleResponseMixin:
                     cmd.callback, _PYCLIFER_RESPONSE_DECIDED, False
                 )
                 if cmd.callback is not None and not already_decided:
+                    # Lazy: decorators imports classes, which imports this module (circular import).
                     from pyclifer.core.decorators import returns_response
 
                     _log.debug(

@@ -26,6 +26,7 @@ class RichExtraStreamHandler(StreamHandler):
         rich_tracebacks: bool = True,
         enable_secrets_filter: bool = True,
         sensitive_fields: list[str] | None = None,
+        mask_free_text: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize the Rich Extra Stream Handler.
@@ -36,6 +37,7 @@ class RichExtraStreamHandler(StreamHandler):
             enable_secrets_filter: Enable automatic secrets filtering.
             sensitive_fields: Additional field names to mask on top of the defaults.
                               Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
+            mask_free_text: Also mask key=value pairs written inside the text of a message.
             **kwargs: Additional keyword arguments passed to RichHandler.
         """
         super().__init__(stream or sys.stderr)
@@ -52,7 +54,9 @@ class RichExtraStreamHandler(StreamHandler):
         )
 
         if enable_secrets_filter:
-            self.addFilter(SecretsMasker(sensitive_fields=sensitive_fields))
+            self.addFilter(
+                SecretsMasker(sensitive_fields=sensitive_fields, mask_free_text=mask_free_text)
+            )
 
     def emit(self, record: logging.LogRecord) -> None:
         """Use Rich handler for enhanced output while maintaining click-extra compatibility.

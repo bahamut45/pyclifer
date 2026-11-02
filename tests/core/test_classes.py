@@ -2,6 +2,8 @@
 
 from typing import Any
 
+import click_extra
+
 from pyclifer.core.classes import GroupConfig, PycliferOption
 
 # ---------------------------------------------------------------------------
@@ -111,3 +113,58 @@ class TestGroupConfigContextOptionsPanel:
         """context_options_panel accepts a custom string."""
         cfg = GroupConfig(context_options_panel="Connection")
         assert cfg.context_options_panel == "Connection"
+
+
+class TestPycliferOptionEnvironmentVariable:
+    """A global option reads the environment variable of the root, in any command."""
+
+    @staticmethod
+    def _contexts():
+        """A root context with prefix CLI and a child context for the command leaf."""
+        root_command = click_extra.Group("cli")
+        leaf_command = click_extra.Command("leaf")
+        root = click_extra.Context(root_command, info_name="cli", auto_envvar_prefix="CLI")
+        leaf = click_extra.Context(leaf_command, info_name="leaf", parent=root)
+        return root, leaf
+
+    def test_a_global_option_reads_the_variable_of_the_root_in_a_child_context(self, monkeypatch):
+        monkeypatch.setenv("CLI_REGION", "E1")
+        _, leaf = self._contexts()
+        option = PycliferOption(["--region"], is_global=True)
+
+        assert option.resolve_envvar_value(leaf) == "E1"
+
+    def test_a_global_option_ignores_the_variable_built_from_the_command_path(self, monkeypatch):
+        monkeypatch.setenv("CLI_LEAF_REGION", "E2")
+        _, leaf = self._contexts()
+        option = PycliferOption(["--region"], is_global=True)
+
+        assert option.resolve_envvar_value(leaf) is None
+
+    def test_a_global_option_reads_the_variable_of_the_root_in_the_root_context(self, monkeypatch):
+        monkeypatch.setenv("CLI_REGION", "E1")
+        root, _ = self._contexts()
+        option = PycliferOption(["--region"], is_global=True)
+
+        assert option.resolve_envvar_value(root) == "E1"
+
+    def test_an_explicit_variable_is_read_in_a_child_context(self, monkeypatch):
+        monkeypatch.setenv("MY_REGION", "E3")
+        _, leaf = self._contexts()
+        option = PycliferOption(["--region"], is_global=True, envvar="MY_REGION")
+
+        assert option.resolve_envvar_value(leaf) == "E3"
+
+    def test_an_option_that_is_not_global_keeps_the_variable_of_its_command(self, monkeypatch):
+        monkeypatch.setenv("CLI_LEAF_NAME", "E4")
+        monkeypatch.setenv("CLI_NAME", "E5")
+        _, leaf = self._contexts()
+        option = PycliferOption(["--name"])
+
+        assert option.resolve_envvar_value(leaf) == "E4"
+
+    def test_nothing_is_read_when_no_variable_is_set(self):
+        _, leaf = self._contexts()
+        option = PycliferOption(["--region"], is_global=True)
+
+        assert option.resolve_envvar_value(leaf) is None

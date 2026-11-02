@@ -1,5 +1,6 @@
 """Tests for GlobalOptionsMixin — context option display propagation."""
 
+import click  # a plain Click command is needed below, click_extra.Command is a cloup one
 import click_extra
 
 from pyclifer.core.classes import PycliferOption
@@ -315,3 +316,356 @@ class TestContextOptionsInHelpText:
         # --host provided at root level, not repeated before subcommand
         result = invoke(group, ["--host", "10.0.0.1", "ping"])
         assert result.exit_code == 0
+
+
+# ---------------------------------------------------------------------------
+# Integration — help text contains the global options
+# ---------------------------------------------------------------------------
+
+
+def _make_global_opt(name: str = "--region") -> PycliferOption:
+    return PycliferOption([name], is_global=True, default="r0")
+
+
+class TestGlobalOptionsInHelpText:
+    """End-to-end: a global option appears in the --help of the subcommands it is given to.
+
+    click-extra commands keep a cache of their options for the help; an option appended to
+    params afterwards is parsed but never listed unless the cache is rebuilt.
+    """
+
+    def test_option_is_listed_for_a_command_added_with_add_command(self):
+        group = _Group(name="myapp", params=[_make_global_opt()])
+
+        @click_extra.command("status")
+        def status_cmd(region):
+            """Show status."""
+
+        group.add_command(status_cmd)
+
+        result = invoke(group, ["status", "--help"])
+
+        assert result.exit_code == 0
+        assert "--region" in result.output
+
+    def test_option_is_listed_for_a_command_created_with_the_group_decorator(self):
+        group = _Group(name="myapp", params=[_make_global_opt()])
+
+        @group.command("status")
+        def status_cmd(region):
+            """Show status."""
+
+        result = invoke(group, ["status", "--help"])
+
+        assert result.exit_code == 0
+        assert "--region" in result.output
+
+    def test_option_is_listed_for_a_command_in_a_nested_group(self):
+        group = _Group(name="myapp", params=[_make_global_opt()])
+        inner = _Group(name="inner", callback=lambda **_: None)
+
+        @inner.command("status")
+        def status_cmd(region):
+            """Show status."""
+
+        group.add_command(inner)
+
+        result = invoke(group, ["inner", "status", "--help"])
+
+        assert result.exit_code == 0
+        assert "--region" in result.output
+
+    def test_option_is_still_parsed_by_the_subcommand(self):
+        group = _Group(name="myapp", params=[_make_global_opt()])
+        seen = {}
+
+        @click_extra.command("status")
+        def status_cmd(region):
+            """Show status."""
+            seen["region"] = region
+
+        group.add_command(status_cmd)
+
+        invoke(group, ["status", "--region", "eu"])
+
+        assert seen["region"] == "eu"
+
+    def test_a_command_with_no_help_cache_is_left_alone(self):
+        """A plain click command has no option-group cache to rebuild."""
+        group = _Group(name="myapp", params=[_make_global_opt()])
+        plain = click.Command("plain", callback=lambda region: None)
+
+        group.add_command(plain)
+
+        assert [p.name for p in plain.params] == ["region"]
+
+
+# ---------------------------------------------------------------------------
+# Integration — context options reach commands added after their group was attached
+# ---------------------------------------------------------------------------
+
+
+class TestContextOptionsInDeepHelpText:
+    """A context option is listed in the help of a command whatever the order of registration.
+
+    The copy a group received is display-only and has context=False, so the group did not hand
+    it on to the commands added to it afterwards.
+    """
+
+    @staticmethod
+    def _root(panel: str = CONTEXT_OPTIONS_PANEL) -> _Group:
+        root = _Group(name="myapp", params=[_make_context_opt("--host", help="Array hostname.")])
+        root._context_options_panel = panel
+        return root
+
+    def test_command_added_to_a_group_attached_before(self):
+        root = self._root()
+        inner = _Group(name="inner")
+        root.add_command(inner)
+
+        @inner.command("status")
+        def status_cmd():
+            """Show status."""
+
+        result = invoke(root, ["inner", "status", "--help"])
+
+        assert result.exit_code == 0
+        assert "--host" in result.output
+
+    def test_command_two_groups_down_added_after_both_were_attached(self):
+        root = self._root()
+        inner, deepest = _Group(name="inner"), _Group(name="deepest")
+        root.add_command(inner)
+        inner.add_command(deepest)
+
+        @deepest.command("status")
+        def status_cmd():
+            """Show status."""
+
+        result = invoke(root, ["inner", "deepest", "status", "--help"])
+
+        assert result.exit_code == 0
+        assert "--host" in result.output
+
+    def test_the_panel_of_the_root_is_kept_in_the_groups_below(self):
+        root = self._root(panel="Shared Options")
+        inner = _Group(name="inner")  # no panel of its own: it must not fall back to the default
+        root.add_command(inner)
+
+        @inner.command("status")
+        def status_cmd():
+            """Show status."""
+
+        (copy,) = [p for p in status_cmd.params if p.name == "host"]
+
+        assert copy.panel == "Shared Options"
+
+    def test_an_option_the_command_already_has_is_not_added_twice(self):
+        root = self._root()
+        inner = _Group(name="inner")
+        root.add_command(inner)
+
+        @inner.command("status")
+        def status_cmd():
+            """Show status."""
+
+        inner.add_command(status_cmd, name="status-again")  # same command, second name
+
+        assert [p.name for p in status_cmd.params].count("host") == 1
+
+    def test_the_copy_is_still_not_a_real_context_option(self):
+        """The copies stay display-only: only the root group builds the context from options."""
+        root = self._root()
+        inner = _Group(name="inner")
+        root.add_command(inner)
+
+        (copy,) = [p for p in inner.params if p.name == "host"]
+
+        assert (copy.context, copy.expose_value, copy.required) == (False, False, False)
+
+
+# ---------------------------------------------------------------------------
+# Integration — a group callback receives only the global options it declares or accepts
+# ---------------------------------------------------------------------------
+
+
+class TestGroupCallbackAndPropagatedOptions:
+    """A group that is given a global option is not called with an argument it cannot take.
+
+    The option is shared by the root and every group below it, so a group whose callback takes
+    no argument used to fail with a TypeError before its subcommand could even show its help.
+    """
+
+    @staticmethod
+    def _tree(inner_callback):
+        """Root with a global --region, a group around inner_callback, and one leaf in it."""
+        seen = {}
+        root = _Group(name="myapp", params=[_make_global_opt()])
+        inner = _Group(name="inner", callback=inner_callback)
+        root.add_command(inner)
+
+        @inner.command("leaf")
+        def leaf(region):
+            """Leaf."""
+            seen["leaf"] = region
+
+        return root, inner, seen
+
+    def test_a_group_that_takes_no_argument_runs(self):
+        root, _, seen = self._tree(lambda: None)
+
+        result = invoke(root, ["inner", "leaf", "--region", "eu"])
+
+        assert result.exit_code == 0, result.output
+        assert seen["leaf"] == "eu"
+
+    def test_the_help_of_a_leaf_below_such_a_group_is_shown(self):
+        root, _, _ = self._tree(lambda: None)
+
+        result = invoke(root, ["inner", "leaf", "--help"])
+
+        assert result.exit_code == 0, result.output
+        assert "--region" in result.output
+
+    def test_a_group_that_declares_the_argument_receives_it(self):
+        received = {}
+        root, _, _ = self._tree(lambda region: received.update(region=region))
+
+        invoke(root, ["inner", "--region", "eu", "leaf"])
+
+        assert received["region"] == "eu"
+
+    def test_a_group_that_takes_keyword_arguments_receives_them(self):
+        received = {}
+        root, _, _ = self._tree(lambda **kwargs: received.update(kwargs))
+
+        invoke(root, ["inner", "--region", "eu", "leaf"])
+
+        assert received == {"region": "eu"}
+
+    def test_a_group_wrapped_by_pass_context_runs(self):
+        received = {}
+
+        @click_extra.pass_context
+        def inner_callback(ctx):
+            received["name"] = ctx.info_name
+
+        root, _, _ = self._tree(inner_callback)
+
+        result = invoke(root, ["inner", "leaf"])
+
+        assert result.exit_code == 0, result.output
+        assert received["name"] == "inner"
+
+    def test_a_group_attached_before_it_is_filled_runs(self):
+        root = _Group(name="myapp", params=[_make_global_opt()])
+        inner = _Group(name="inner", callback=lambda: None)
+        root.add_command(inner)
+        seen = {}
+
+        @inner.command("leaf")
+        def leaf(region):
+            """Leaf."""
+            seen["leaf"] = region
+
+        result = invoke(root, ["inner", "leaf"])
+
+        assert result.exit_code == 0, result.output
+        assert seen["leaf"] == "r0"
+
+    def test_two_global_options_are_both_dropped_for_a_group_that_takes_none(self):
+        root = _Group(
+            name="myapp", params=[_make_global_opt("--region"), _make_global_opt("--zone")]
+        )
+        inner = _Group(name="inner", callback=lambda: None)
+        root.add_command(inner)
+        late = _Group(name="late", callback=lambda: None)
+        root.add_command(late)
+
+        @inner.command("leaf")
+        def leaf(region, zone):
+            """Leaf."""
+
+        result = invoke(root, ["inner", "leaf"])
+
+        assert result.exit_code == 0, result.output
+
+    def test_a_group_keeps_receiving_the_global_option_it_declares_itself(self):
+        received = {}
+        root = _Group(name="myapp")
+        inner = _Group(
+            name="inner",
+            params=[_make_global_opt("--zone")],
+            callback=lambda zone: received.update(zone=zone),
+        )
+        root.add_command(inner)
+
+        @inner.command("leaf")
+        def leaf(zone):
+            """Leaf."""
+
+        invoke(root, ["inner", "--zone", "z1", "leaf"])
+
+        assert received["zone"] == "z1"
+
+    def test_a_real_mismatch_is_not_hidden(self):
+        """Only the options propagated to a group are dropped, never one it declares itself."""
+        root = _Group(name="myapp")
+        inner = _Group(name="inner", params=[click_extra.Option(["--flag"])], callback=lambda: None)
+        root.add_command(inner)
+
+        @inner.command("leaf")
+        def leaf():
+            """Leaf."""
+
+        result = invoke(root, ["inner", "leaf"])
+
+        assert result.exit_code != 0
+        assert isinstance(result.exception, TypeError)
+
+    def test_a_callback_whose_signature_cannot_be_read_is_called_as_before(self):
+        class Opaque:
+            """A callable whose signature inspect cannot read."""
+
+            __signature__ = "not a signature"
+
+            def __call__(self, **kwargs):
+                return None
+
+        root = _Group(name="myapp", params=[_make_global_opt()])
+        inner = _Group(name="inner", callback=Opaque())
+
+        root.add_command(inner)
+
+        assert inner.callback.__class__ is Opaque
+
+    def test_options_reaching_a_group_in_two_steps_are_all_dropped(self):
+        """A group is given one option by its parent, then another when the parent is attached."""
+        root = _Group(name="myapp", params=[_make_global_opt("--region")])
+        outer = _Group(
+            name="outer", params=[_make_global_opt("--zone")], callback=lambda zone: None
+        )
+        inner = _Group(name="inner", callback=lambda: None)
+        outer.add_command(inner)  # inner receives zone
+        root.add_command(outer)  # inner receives region, outer receives region
+
+        @inner.command("leaf")
+        def leaf(region, zone):
+            """Leaf."""
+
+        result = invoke(root, ["outer", "inner", "leaf"])
+
+        assert result.exit_code == 0, result.output
+
+    def test_a_leaf_command_must_still_accept_the_global_option(self):
+        """Only groups are tolerant: the option is forwarded to the callback of a leaf command."""
+        root = _Group(name="myapp", params=[_make_global_opt()])
+
+        @root.command("leaf")
+        def leaf():
+            """Leaf."""
+
+        result = invoke(root, ["leaf"])
+
+        assert result.exit_code != 0
+        assert isinstance(result.exception, TypeError)

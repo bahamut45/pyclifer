@@ -1,6 +1,7 @@
 """Logging levels for pyclifer."""
 
 import logging
+import sys
 from typing import Any, Protocol
 
 from click_extra.logging import LogLevel
@@ -33,6 +34,12 @@ class SupportsTraceLogger(Protocol):
         """Log a message at the TRACE level."""
 
 
+# Since Python 3.11 logging counts stacklevel from the first frame outside the logging module,
+# which is trace() itself, so trace() must add its own frame. Python 3.10 counted from the caller
+# of the method that calls _log, which is already the right frame. Measured on 3.10 to 3.13.
+_TRACE_STACKLEVEL_OFFSET = 1 if sys.version_info >= (3, 11) else 0
+
+
 def add_trace_method(logger_class: type) -> type:
     """Add a trace method to a logger class.
 
@@ -53,7 +60,13 @@ def add_trace_method(logger_class: type) -> type:
             **kwargs: Additional keyword arguments for logging.
         """
         if self.isEnabledFor(TRACE):
+            kwargs["stacklevel"] = kwargs.get("stacklevel", 1) + _TRACE_STACKLEVEL_OFFSET
             self._log(TRACE, msg, args, **kwargs)
 
     logger_class.trace = trace
     return logger_class
+
+
+# Install trace() on the global Logger class when pyclifer is imported, so get_logger() keeps its
+# SupportsTraceLogger promise before any application is declared.
+add_trace_method(logging.Logger)
