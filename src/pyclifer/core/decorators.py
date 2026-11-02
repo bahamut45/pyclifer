@@ -917,8 +917,8 @@ def log_file_option(
         backup_count: Number of backup files to keep.
         enable_secrets_filter: Enable secrets filtering in logs.
         sensitive_fields: Additional field names to mask on top of the defaults.
-        mask_free_text: Also mask key=value pairs written inside the text of a message.
                           Merged into SecretsMasker.DEFAULT_FIELDS — does not replace them.
+        mask_free_text: Also mask key=value pairs written inside the text of a message.
         is_global: If True, the option is propagated to all subcommands.
         show_envvar: Show environment variables in the help output.
         **kwargs: Additional arguments passed to the option decorator.
