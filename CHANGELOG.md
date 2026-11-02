@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.1] - 2026-11-02
+
+### Tests
+
+- **conftest**: Keep colour-forcing variables out of the session
+
 ## [0.9.0] - 2026-11-02
 
 ### Bug Fixes
