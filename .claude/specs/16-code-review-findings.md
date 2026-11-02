@@ -14,7 +14,7 @@ préfixer le titre de l'item par ✅ quand il est fait, archiver la spec quand t
 | 1 | 1 | `option(cls=...)` : parcourir le MRO pour `is_global` | ✅ fait |
 | 2 | 2 | YAML : représenteurs `dict`, `list`, `tuple` avant `object` | ✅ fait |
 | 3 | 3 | regex du texte libre non quadratique | ✅ fait |
-| 4 | 4 | `output_format_default` insensible à la casse | à faire |
+| 4 | 4 | `output_format_default` insensible à la casse | ✅ fait |
 | 5 | 5 et 6 | variable d'environnement : chaîne dans l'aide, nom par contexte | à faire |
 | 6 | 7, 8 | docstring `log_file_option`, imports locaux redondants | à faire |
 | 7 | 9 | `GroupConfig.replace_root_handlers` (décidé, faux par défaut) | à faire |
@@ -130,7 +130,7 @@ inacceptable.
 ou borner le préfixe (`{0,N}`), ou découper le texte en jetons avant d'appliquer la regex. Test d'abord : un texte de
 50 000 caractères doit se traiter sous un seuil fixe (par exemple 0,5 s), plus les tests de masquage existants intacts.
 
-## Item 4 : Régression — `output_format_default` n'accepte plus les majuscules (finding 8)
+## ✅ Item 4 : Régression — `output_format_default` n'accepte plus les majuscules (finding 8)
 
 **Reproduit.** `@app_group(output_format_default="JSON")` :
 - `main` : accepté, sortie JSON.

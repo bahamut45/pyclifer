@@ -1542,6 +1542,12 @@ class TestOutputFormatDefaultContract:
 
         assert invoke(app, ["sub", "leaf"]).json["success"] is True
 
+    @pytest.mark.parametrize("spelling", ["JSON", "Json"])
+    def test_default_format_is_case_insensitive_like_the_option(self, spelling):
+        app = self._app(output_format_default=spelling, add_output_format_option=False)
+
+        assert invoke(app, ["hello"]).json["success"] is True
+
     def test_an_unknown_default_format_is_rejected_at_decoration(self):
         with pytest.raises(ValueError, match="output_format_default.*'xml'"):
             self._app(output_format_default="xml")

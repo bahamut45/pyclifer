@@ -61,6 +61,8 @@ class GroupDecorator:
 
     def __call__(self, f: Callable) -> Any:
         """Apply the configuration and create the Click group."""
+        # The --output-format option accepts any casing, so the default does too.
+        self.config.output_format_default = self.config.output_format_default.lower()
         validate_output_format(self.config.output_format_default, "output_format_default")
         self._setup_logging()
 

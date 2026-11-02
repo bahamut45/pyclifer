@@ -39,6 +39,7 @@ def cli():
   for that call: `myapp -o yaml hello`.
 - With `add_output_format_option=False`, nobody can change the format: every answer uses
   `output_format_default`.
+- The casing is ignored, as for `--output-format`: `"JSON"` and `"json"` are the same format.
 - A value that is not one of `json`, `yaml`, `table`, `rich`, `raw`, `text` raises `ValueError` when
   the group is declared, so a typo is caught at start-up.
 
