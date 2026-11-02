@@ -1,5 +1,7 @@
 """pyclifer project init <name>."""
 
+from pathlib import Path
+
 from pyclifer import Choice, Response, argument, command, option, pass_context
 
 from ..interfaces import ScaffoldingInterface
@@ -27,8 +29,6 @@ def init(ctx, name: str, integrations: str, package_manager: str) -> Response:
     def _stream():
         yield from ScaffoldingInterface(ctx).init_project(name, package_manager=package_manager)
         if integrations:
-            from pathlib import Path  # noqa: PLC0415
-
             scoped = ScaffoldingInterface(ctx, root=Path(name))
             for integration in [i.strip() for i in integrations.split(",") if i.strip()]:
                 yield from scoped.add_integration(integration)

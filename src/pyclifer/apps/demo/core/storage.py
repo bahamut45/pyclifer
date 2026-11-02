@@ -51,6 +51,8 @@ class Storage:
         Returns:
             List of Task objects, empty when no tasks are stored.
         """
+        # Lazy: importing the models loads apps/<app>/__init__.py, whose commands import
+        # core.context, which imports this module (circular import).
         from ..apps.tasks.models import Task  # noqa: PLC0415
 
         return [Task(**t) for t in self.load().get("tasks", [])]
@@ -61,6 +63,8 @@ class Storage:
         Returns:
             List of User objects, empty when no users are stored.
         """
+        # Lazy: importing the models loads apps/<app>/__init__.py, whose commands import
+        # core.context, which imports this module (circular import).
         from ..apps.users.models import User  # noqa: PLC0415
 
         return [User(**u) for u in self.load().get("users", [])]
@@ -74,6 +78,8 @@ class Storage:
         Returns:
             The matching Task, or None.
         """
+        # Lazy: importing the models loads apps/<app>/__init__.py, whose commands import
+        # core.context, which imports this module (circular import).
         from ..apps.tasks.models import Task  # noqa: PLC0415
 
         for raw in self.load().get("tasks", []):
@@ -110,6 +116,8 @@ class Storage:
         Returns:
             The matching User, or None.
         """
+        # Lazy: importing the models loads apps/<app>/__init__.py, whose commands import
+        # core.context, which imports this module (circular import).
         from ..apps.users.models import User  # noqa: PLC0415
 
         for raw in self.load().get("users", []):

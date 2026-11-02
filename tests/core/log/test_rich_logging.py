@@ -774,7 +774,7 @@ class TestPycliferVerbosityOption:
 class TestLoggerFactoryFunctions:
     """Test logger factory functions."""
 
-    @patch("pyclifer.core.log.config.get_configured_logger")
+    @patch("pyclifer.core.log.get_configured_logger")
     def test_get_logger_delegates_to_get_configured_logger(self, mock_get_configured):
         """Test that get_logger delegates to get_configured_logger."""
         mock_logger = Mock()

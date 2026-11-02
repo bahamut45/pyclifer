@@ -24,9 +24,13 @@ from .classes import (
     PycliferTimerOption,
     StoreInMetaMixin,
 )
-from .log.config import PycliferVerbosityOption, create_log_file_callback
+from .context import BaseContext
+from .log.config import PycliferVerbosityOption, configure_rich_logging, create_log_file_callback
+from .log.levels import PYCLIFER_LOG_LEVELS
 from .output.exit_codes import ExitCode, validate_exit_codes_class
 from .output.formats import OUTPUT_FORMATS, validate_output_format
+from .output.responses import Response
+from .rich_help_config import get_rich_config
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 _log = logging.getLogger(__name__)
@@ -81,8 +85,6 @@ class GroupDecorator:
 
     def _setup_logging(self) -> None:
         """Configure the logging system based on the group config."""
-        from .log.config import configure_rich_logging
-
         configure_rich_logging(
             use_rich=self.config.use_rich_logging,
             rich_tracebacks=True,
@@ -94,8 +96,6 @@ class GroupDecorator:
     def _apply_rich_help(self, f: Callable) -> Callable:
         """Apply rich-click help formatting if enabled."""
         if self.config.use_rich_help:
-            from .rich_help_config import get_rich_config
-
             # noinspection PyNoneFunctionAssignment
             config = get_rich_config(self.config.rich_help_config)
             if config:
@@ -256,14 +256,15 @@ class GroupDecorator:
             # --- post-call ---
 
             # Concern 2 — early verbosity application
-            if self.config.add_verbosity_option and parent is None and level_name:
-                from .log.config import PYCLIFER_LOG_LEVELS
-
-                if level_name in PYCLIFER_LOG_LEVELS:
-                    for param in ctx.command.params:  # pragma: no branch
-                        if param.name == "verbosity" and hasattr(param, "set_level"):
-                            param.set_level(ctx, param, level_name)
-                            break
+            if (
+                self.config.add_verbosity_option
+                and parent is None
+                and level_name in PYCLIFER_LOG_LEVELS
+            ):
+                for param in ctx.command.params:  # pragma: no branch
+                    if param.name == "verbosity" and hasattr(param, "set_level"):
+                        param.set_level(ctx, param, level_name)
+                        break
 
             # Concern 3 — framework meta injection
             if parent is None:
@@ -612,9 +613,6 @@ def _unhandled_failure(name: str, error: Exception, meta: dict, where: str) -> A
     Returns:
         A Response with success False, the exception message and the generic error code.
     """
-    # Lazy import to avoid circular dependency at module load time
-    from .output.responses import Response as _Response
-
     log_level = meta.get("pyclifer.unhandled_exception_log_level", "error")
     output_format = meta.get("pyclifer.output_format", "table")
     structured = output_format in ("json", "yaml")
@@ -627,7 +625,7 @@ def _unhandled_failure(name: str, error: Exception, meta: dict, where: str) -> A
         *(() if use_exc_info else (str(error),)),
         exc_info=use_exc_info,
     )
-    return _Response(success=False, message=str(error), error_code=ExitCode.ERROR)
+    return Response(success=False, message=str(error), error_code=ExitCode.ERROR)
 
 
 def returns_response(f: Callable) -> Callable:
@@ -657,9 +655,6 @@ def returns_response(f: Callable) -> Callable:
     @functools.wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         """Wrapper for returning a Response object based on command output"""
-        # Lazy import to avoid circular dependency at module load time
-        from .output.responses import Response as _Response
-
         root = _get_root_context()
         meta = root.meta if root is not None else {}
 
@@ -676,9 +671,7 @@ def returns_response(f: Callable) -> Callable:
             f.__name__,
             type(result).__name__,
         )
-        if isinstance(result, _Response):
-            from pyclifer.core.context import BaseContext
-
+        if isinstance(result, Response):
             ctx = click_extra.get_current_context(silent=True)
 
             # Use the actual context object (ctx.obj) if it is a BaseContext

@@ -16,7 +16,7 @@ préfixer le titre de l'item par ✅ quand il est fait, archiver la spec quand t
 | 3 | 3 | regex du texte libre non quadratique | ✅ fait |
 | 4 | 4 | `output_format_default` insensible à la casse | ✅ fait |
 | 5 | 5 et 6 | variable d'environnement : chaîne dans l'aide, nom par contexte | ✅ fait |
-| 6 | 7, 8 | docstring `log_file_option`, imports locaux redondants | 7 ✅ fait, 8 à faire |
+| 6 | 7, 8 | docstring `log_file_option`, imports locaux redondants | ✅ fait |
 | 7 | 9 | `GroupConfig.replace_root_handlers` (décidé, faux par défaut) | à faire |
 | 8 | 10 | `@group()` ne configure plus le logging (option A, décidé) | à faire |
 | après | spec 17 | initialiser à l'exécution (option B) : comparaison d'abord, après les specs 09 et 10 | brouillon |
@@ -184,7 +184,7 @@ Confirmé à la lecture de `src/pyclifer/core/decorators.py` (docstring de `log_
 SecretsMasker.DEFAULT_FIELDS — does not replace them. » est sous `mask_free_text` au lieu de `sensitive_fields`, donc la
 doc générée décrit mal les deux. `config.py` a le bon ordre. **Verdict : oui**, correction d'une ligne.
 
-## Item 8 : Qualité — imports locaux redondants (finding 10)
+## ✅ Item 8 : Qualité — imports locaux redondants (finding 10)
 
 Confirmé : `core/log/config.py:330` importe `SecretsMasker` en local alors qu'il est importé en tête de module (ligne 12) ;
 `core/decorators.py` importe `configure_rich_logging` et `PYCLIFER_LOG_LEVELS` en local alors que `.log.config` est déjà

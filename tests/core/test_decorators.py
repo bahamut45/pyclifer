@@ -35,7 +35,7 @@ class TestGroupDecoratorSetupLogging:
 
     def test_use_rich_logging_false_configures_plain_logging(self):
         """use_rich_logging=False still configures the console, without Rich."""
-        with patch("pyclifer.core.log.config.configure_rich_logging") as mock_cfg:
+        with patch("pyclifer.core.decorators.configure_rich_logging") as mock_cfg:
 
             @app_group(use_rich_logging=False)
             @click.pass_context
@@ -45,7 +45,7 @@ class TestGroupDecoratorSetupLogging:
             assert mock_cfg.call_args.kwargs["use_rich"] is False
 
     def test_use_rich_logging_true_configures_rich_logging(self):
-        with patch("pyclifer.core.log.config.configure_rich_logging") as mock_cfg:
+        with patch("pyclifer.core.decorators.configure_rich_logging") as mock_cfg:
 
             @app_group(use_rich_logging=True)
             @click.pass_context
@@ -66,7 +66,7 @@ class TestGroupDecoratorApplyRichHelp:
 
     def test_rich_help_skipped_when_get_rich_config_returns_none(self):
         """When get_rich_config returns None, the rich_config decorator is not applied."""
-        with patch("pyclifer.core.rich_help_config.get_rich_config", return_value=None):
+        with patch("pyclifer.core.decorators.get_rich_config", return_value=None):
 
             @app_group(use_rich_help=True)
             @click.pass_context

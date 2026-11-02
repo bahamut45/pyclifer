@@ -141,6 +141,7 @@ def configure_rich_logging(
             return  # Already configured, do nothing
 
     if use_rich and rich_tracebacks:
+        # Deferred import: keeps rich.traceback (about 10 ms) off the startup path of every CLI.
         from rich.traceback import install as install_rich_traceback
 
         # noinspection PyArgumentEqualDefault
@@ -327,8 +328,6 @@ def setup_file_logging(
     handler.setFormatter(formatter)
 
     if enable_secrets_filter:
-        from .filters import SecretsMasker
-
         handler.addFilter(
             SecretsMasker(sensitive_fields=sensitive_fields, mask_free_text=mask_free_text)
         )
@@ -384,6 +383,8 @@ def get_configured_logger(name: str | None = None) -> SupportsTraceLogger:
     Returns:
         Logger automatically configured with Rich capabilities.
     """
+    # Lazy: pyclifer/__init__.py imports this module. The name is read when the function runs,
+    # so it does not depend on the order of the imports in that file.
     from pyclifer import __app_name__
 
     return logging.getLogger(name or __app_name__)  # type: ignore[return-value]

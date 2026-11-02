@@ -36,8 +36,6 @@ def get_logger(name: str = None) -> SupportsTraceLogger:
     Returns:
         Logger configured with Rich capabilities.
     """
-    from .config import get_configured_logger
-
     return get_configured_logger(name)
 
 

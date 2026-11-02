@@ -191,6 +191,7 @@ class HandleResponseMixin:
 
         def wrapped(f):
             """Wrapper for commands that automatically handles Response objects."""
+            # Lazy: decorators imports classes, which imports this module (circular import).
             from pyclifer.core.decorators import returns_response
 
             wrapped_f = returns_response(f)
@@ -230,6 +231,7 @@ class HandleResponseMixin:
                     cmd.callback, _PYCLIFER_RESPONSE_DECIDED, False
                 )
                 if cmd.callback is not None and not already_decided:
+                    # Lazy: decorators imports classes, which imports this module (circular import).
                     from pyclifer.core.decorators import returns_response
 
                     _log.debug(
